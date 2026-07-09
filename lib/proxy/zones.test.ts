@@ -46,6 +46,20 @@ describe("resolveZone — prod (host-based)", () => {
       rewrittenPathname: "/catalogue",
     });
   });
+
+  it("defaults the bare root of the admin. subdomain to /pos", () => {
+    expect(resolveZone("admin.foulard-teranga.com", "/")).toEqual({
+      zone: "dashboard",
+      rewrittenPathname: "/pos",
+    });
+  });
+
+  it("defaults the bare root of the platform. subdomain to /boutiques", () => {
+    expect(resolveZone("platform.foulard-teranga.com", "/")).toEqual({
+      zone: "admin",
+      rewrittenPathname: "/boutiques",
+    });
+  });
 });
 
 describe("isPathAllowedForZone", () => {

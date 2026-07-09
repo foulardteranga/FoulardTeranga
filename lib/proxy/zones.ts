@@ -50,10 +50,11 @@ export function resolveZone(hostname: string, pathname: string): ZoneResolution 
   }
 
   if (host.startsWith(ADMIN_HOST_PREFIX)) {
-    return { zone: "dashboard", rewrittenPathname: pathname };
+    // Racine du sous-domaine privé → chemin d'entrée par défaut de la zone.
+    return { zone: "dashboard", rewrittenPathname: pathname === "/" ? "/pos" : pathname };
   }
   if (host.startsWith(PLATFORM_HOST_PREFIX)) {
-    return { zone: "admin", rewrittenPathname: pathname };
+    return { zone: "admin", rewrittenPathname: pathname === "/" ? "/boutiques" : pathname };
   }
   return { zone: "storefront", rewrittenPathname: pathname };
 }
