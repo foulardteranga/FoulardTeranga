@@ -7,7 +7,7 @@ import type { Order, OrderStatus } from "@/lib/data/types";
 import type { KycInput } from "@/lib/validators/kyc";
 import { DEFAULT_TENANT } from "@/lib/tenant/registry";
 import {
-  applyConfirmDeductions,
+  applyConfirmOnce,
   buildWebOrder,
   computeEffectiveStatus,
   computeEffectiveStock,
@@ -21,6 +21,7 @@ interface ShopState {
   orders: Order[];
   statusOverrides: Record<string, OrderStatus>;
   stockDeductions: Record<string, number>;
+  deductedOrderIds: string[];
   autoValidate: boolean;
 
   effectiveStatus: (orderId: string) => OrderStatus;
@@ -46,6 +47,7 @@ export const useShop = create<ShopState>()(
       orders: seedOrders,
       statusOverrides: {},
       stockDeductions: {},
+      deductedOrderIds: [],
       autoValidate: false,
 
       effectiveStatus: (orderId) => {
@@ -66,12 +68,20 @@ export const useShop = create<ShopState>()(
 
       confirmOrder: (orderId) => {
         const s = get();
-        if (s.effectiveStatus(orderId) !== "nouvelle") return; // idempotent — stock is deducted once
+        if (s.effectiveStatus(orderId) !== "nouvelle") return; // transition — pas de re-confirmation directe
         const order = s.orders.find((o) => o.id === orderId);
         if (!order) return;
+        // Déduction idempotente par id de commande : même si le statut repasse à
+        // "nouvelle" puis re-confirme, le stock n'est jamais déduit deux fois.
+        const { stockDeductions, deductedOrderIds } = applyConfirmOnce(
+          s.stockDeductions,
+          s.deductedOrderIds,
+          order
+        );
         set({
           statusOverrides: { ...s.statusOverrides, [orderId]: "confirmee" },
-          stockDeductions: applyConfirmDeductions(s.stockDeductions, order),
+          stockDeductions,
+          deductedOrderIds,
         });
       },
 
@@ -93,6 +103,7 @@ export const useShop = create<ShopState>()(
         orders: s.orders,
         statusOverrides: s.statusOverrides,
         stockDeductions: s.stockDeductions,
+        deductedOrderIds: s.deductedOrderIds,
         autoValidate: s.autoValidate,
       }),
     }

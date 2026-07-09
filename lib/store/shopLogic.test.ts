@@ -5,6 +5,7 @@ import {
   computeEffectiveStock,
   buildWebOrder,
   applyConfirmDeductions,
+  applyConfirmOnce,
 } from "@/lib/store/shopLogic";
 import { orders } from "@/lib/data/orders";
 import type { Order } from "@/lib/data/types";
@@ -102,5 +103,35 @@ describe("applyConfirmDeductions", () => {
   it("does not mutate other products' deductions", () => {
     const result = applyConfirmDeductions({ p3: 4 }, order);
     expect(result.p3).toBe(4);
+  });
+});
+
+describe("applyConfirmOnce", () => {
+  const order: Order = {
+    id: "#TER-9001", cid: "web", client: "Test", place: "Test", phone: "000",
+    items: 3, channel: "Web", ago: "", date: "", total: "0 FCFA", status: "nouvelle", vip: false,
+    lines: [
+      { name: "A", qty: 2, price: "0", total: "0", productId: "p1" },
+      { name: "B", qty: 1, price: "0", total: "0", productId: "p9" },
+    ],
+  };
+
+  it("deducts the order's line quantities and records its id on first application", () => {
+    const result = applyConfirmOnce({}, [], order);
+    expect(result.stockDeductions).toEqual({ p1: 2, p9: 1 });
+    expect(result.deductedOrderIds).toEqual(["#TER-9001"]);
+  });
+
+  it("does not deduct again if the order id is already recorded", () => {
+    const result = applyConfirmOnce({ p1: 2, p9: 1 }, ["#TER-9001"], order);
+    expect(result.stockDeductions).toEqual({ p1: 2, p9: 1 });
+    expect(result.deductedOrderIds).toEqual(["#TER-9001"]);
+  });
+
+  it("still deducts a different order id", () => {
+    const otherOrder: Order = { ...order, id: "#TER-9002" };
+    const result = applyConfirmOnce({ p1: 2, p9: 1 }, ["#TER-9001"], otherOrder);
+    expect(result.stockDeductions).toEqual({ p1: 4, p9: 2 });
+    expect(result.deductedOrderIds).toEqual(["#TER-9001", "#TER-9002"]);
   });
 });

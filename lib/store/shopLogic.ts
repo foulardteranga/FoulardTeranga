@@ -68,3 +68,19 @@ export function applyConfirmDeductions(
   }
   return next;
 }
+
+/** Applique la déduction de stock d'une commande une seule fois : idempotent par id
+ * de commande, quelles que soient les transitions de statut ultérieures. */
+export function applyConfirmOnce(
+  deductions: Record<string, number>,
+  deductedOrderIds: string[],
+  order: Order
+): { stockDeductions: Record<string, number>; deductedOrderIds: string[] } {
+  if (deductedOrderIds.includes(order.id)) {
+    return { stockDeductions: deductions, deductedOrderIds };
+  }
+  return {
+    stockDeductions: applyConfirmDeductions(deductions, order),
+    deductedOrderIds: [...deductedOrderIds, order.id],
+  };
+}
