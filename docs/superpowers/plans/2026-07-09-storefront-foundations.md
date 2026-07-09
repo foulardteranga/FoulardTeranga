@@ -14,7 +14,7 @@
 - Order totals are **always recomputed** from line items in store logic — never trusted from client input. (CLAUDE.md §9)
 - The shop is based in **Abidjan, Côte d'Ivoire (+225)**, but customers may order from anywhere in the sub-region or beyond — the KYC phone field must accept **free international input**, no hardcoded country prefix in validation or defaults.
 - TypeScript `strict`; **never** use `any` (prefer `unknown` + narrowing).
-- Product-facing copy in French; code identifiers, comments (when present), and commit messages in English.
+- Product-facing copy in French; code identifiers and commit messages in English. **Comments follow the existing codebase convention, which is French** (see `lib/format.ts`, `lib/data/catalog.ts`, `lib/theme/tokens.ts`) — French comments are correct and must not be flagged; CLAUDE.md mandates English only for identifiers/commits, not comments.
 - The existing `(dashboard)` route folder and its internal paths (`/pos`, `/commandes`, etc.) are **not renamed**.
 - No Supabase, Prisma, real authentication, or PWA/service-worker work in this plan — mock/client-side only, as decided in the spec.
 - Every new pure-logic module ships with Vitest tests before the glue code that wires it up (TDD for logic; UI is verified manually per project convention, covered in Plan 2).
