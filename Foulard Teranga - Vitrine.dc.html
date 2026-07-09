@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#E3DCD0;color:#1E1B18;font-family:"Inter",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:#26326B;text-decoration:none}
+  a:hover{color:#D07A34}
+  ::selection{background:#26326B;color:#fff}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:#d8cfc0;border-radius:999px;border:3px solid transparent;background-clip:content-box}
+  input,select,textarea,button{font-family:inherit}
+  @keyframes ftspin{to{transform:rotate(360deg)}}
+  @keyframes ftpulse{0%,100%{opacity:1}50%{opacity:.5}}
+  @keyframes ftfade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fttoast{from{opacity:0;transform:transl(-50%,16px)}to{opacity:1;transform:translate(-50%,0)}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#FAF7F2;color:#1E1B18;display:flex;flex-direction:column">
+
+  <!-- ============ OFFLINE BANNER ============ -->
+  <sc-if value="{{ offline }}" hint-placeholder-val="">
+  <div style="display:flex;align-items:center;gap:10px;padding:9px 16px;background:#1E1B18;color:#fff;font-size:13px;font-weight:500;position:sticky;top:0;z-index:60">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9A227" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2 22 22"/><path d="M8.5 16.5a5 5 0 0 1 7 0M5 12.8a10 10 0 0 1 4-2.4M19 12.8a10 10 0 0 0-3-2M12 20h.01"/></svg>
+    <span style="flex:1">Hors-ligne — catalogue & panier consultables. Votre demande partira au retour du réseau.</span>
+  </div>
+  </sc-if>
+
+  <!-- ============ HEADER ============ -->
+  <header style="position:sticky;top:{{ headerTop }};z-index:50;background:rgba(250,247,242,.94);backdrop-filter:blur(8px);border-bottom:1px solid rgba(30,27,24,.08)">
+    <div style="max-width:1200px;margin:0 auto;width:100%;display:flex;align-items:center;gap:14px;padding:{{ headerPad }}">
+      <sc-if value="{{ isMobile }}" hint-placeholder-val="">
+        <button onClick="{{ openMenu }}" style="width:44px;height:44px;border:none;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-left:-8px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      </sc-if>
+      <span onClick="{{ goHome }}" style="font-family:'Playfair Display',serif;font-weight:600;font-size:{{ logoSize }};letter-spacing:-.01em;cursor:pointer;line-height:1">Foulard <span style="color:#D07A34">Teranga</span></span>
+      <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
+        <nav style="display:flex;gap:26px;margin-left:32px;font:500 15px Inter">
+          <span onClick="{{ navNew }}" style="cursor:pointer;color:{{ navColors.new }}">Nouveautés</span>
+          <span onClick="{{ navFoulards }}" style="cursor:pointer;color:{{ navColors.foulards }}">Foulards</span>
+          <span onClick="{{ navTurbans }}" style="cursor:pointer;color:{{ navColors.turbans }}">Turbans</span>
+          <span onClick="{{ navAccessoires }}" style="cursor:pointer;color:{{ navColors.accessoires }}">Accessoires</span>
+          <span onClick="{{ goStory }}" style="cursor:pointer;color:#1E1B18">Notre histoire</span>
+        </nav>
+      </sc-if>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:{{ headerIconGap }}">
+        <button onClick="{{ goCatalog }}" title="Rechercher" style="width:44px;height:44px;border:none;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></button>
+        <button onClick="{{ toggleOffline }}" title="Simuler hors-ligne" style="width:44px;height:44px;border:none;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="width:9px;height:9px;border-radius:999px;background:{{ netDot }}"></span></button>
+        <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ goAccount }}" title="Mon compte" style="width:44px;height:44px;border:none;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></button>
+        </sc-if>
+        <button onClick="{{ goCart }}" title="Panier" style="position:relative;width:44px;height:44px;border:none;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          <sc-if value="{{ cartCount }}" hint-placeholder-val=""><span style="position:absolute;top:4px;right:2px;font:700 10px Inter;background:#D07A34;color:#fff;min-width:17px;height:17px;border-radius:999px;display:flex;align-items:center;justify-content:center;padding:0 4px">{{ cartCount }}</span></sc-if>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ MOBILE MENU DRAWER ============ -->
+  <sc-if value="{{ menuOpen }}" hint-placeholder-val="">
+  <div onClick="{{ closeMenu }}" style="position:fixed;inset:0;z-index:70;background:rgba(30,27,24,.4)">
+    <div style="position:absolute;top:0;left:0;bottom:0;width:284px;max-width:82vw;background:#FAF7F2;box-shadow:8px 0 24px rgba(60,40,20,.18);padding:22px 20px;animation:ftfade .18s ease">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+        <span style="font-family:'Playfair Display',serif;font-weight:600;font-size:20px">Foulard <span style="color:#D07A34">Teranga</span></span>
+        <button onClick="{{ closeMenu }}" style="width:36px;height:36px;border:none;border-radius:8px;background:#fff;border:1px solid rgba(30,27,24,.08);cursor:pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div style="display:flex;flex-direction:column">
+        <span onClick="{{ navNew }}" style="padding:14px 4px;font:600 17px Inter;border-bottom:1px solid #EAE4D9;cursor:pointer">Nouveautés</span>
+        <span onClick="{{ navFoulards }}" style="padding:14px 4px;font:600 17px Inter;border-bottom:1px solid #EAE4D9;cursor:pointer">Foulards</span>
+        <span onClick="{{ navTurbans }}" style="padding:14px 4px;font:600 17px Inter;border-bottom:1px solid #EAE4D9;cursor:pointer">Turbans</span>
+        <span onClick="{{ navAccessoires }}" style="padding:14px 4px;font:600 17px Inter;border-bottom:1px solid #EAE4D9;cursor:pointer">Accessoires</span>
+        <span onClick="{{ goStory }}" style="padding:14px 4px;font:600 17px Inter;border-bottom:1px solid #EAE4D9;cursor:pointer">Notre histoire</span>
+        <span onClick="{{ goAccount }}" style="padding:14px 4px;font:600 17px Inter;cursor:pointer">Mon compte</span>
+      </div>
+      <div style="margin-top:24px;padding:16px;background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px">
+        <div style="font:600 13px Inter;margin-bottom:6px">Une question ?</div>
+        <a href="#" style="display:inline-flex;align-items:center;gap:8px;font:600 14px Inter;color:#0E9F6E"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0E9F6E" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.4 8.4 0 0 1-4-1L3 21l1.1-4a8.4 8.4 0 0 1-1-4 8.4 8.4 0 0 1 8.4-8.4A8.4 8.4 0 0 1 21 11.5Z"/></svg>Écrire sur WhatsApp</a>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ============ MAIN ============ -->
+  <main style="flex:1">
+
+  <!-- ============================================================ HOME -->
+  <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+  <div style="animation:ftfade .3s ease;display:flex;flex-direction:column">
+
+    <sc-if value="{{ blocksMode }}" hint-placeholder-val="">
+    <div style="order:-10;position:sticky;top:{{ blocksHintTop }};z-index:40;display:flex;align-items:center;gap:10px;max-width:1200px;margin:12px auto 0;width:calc(100% - 32px);background:#FBF1D8;border:1px solid #EBD9A6;border-radius:12px;padding:11px 14px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8a6500" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      <span style="font-size:13px;color:#7a5a00;line-height:1.4">Mode éditeur — renommez un bloc, réordonnez-le (↑↓) ou masquez-le (œil). Chaque bloc est empilable et éditable sans code.</span>
+    </div>
+    </sc-if>
+
+    <!-- HERO -->
+    <section style="max-width:1200px;margin:0 auto;padding:{{ blockPad }};position:relative;order:{{ blk.hero.order }};display:{{ blk.hero.display }};opacity:{{ blk.hero.opacity }};outline:{{ blkOutline }};outline-offset:-4px;border-radius:6px;transition:opacity .15s">
+      <sc-if value="{{ blocksMode }}" hint-placeholder-val=""><div style="position:absolute;top:8px;left:14px;z-index:25;display:flex;align-items:center;gap:1px;background:#1E1B18;border-radius:9px;padding:4px;box-shadow:0 6px 18px rgba(30,27,24,.3)"><span style="display:flex;align-items:center;justify-content:center;width:22px;height:28px;cursor:grab"><svg width="13" height="13" viewBox="0 0 24 24" fill="#8a8177"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span><input value="{{ blk.hero.name }}" onInput="{{ blk.hero.set }}" style="width:150px;border:none;background:#2c2822;color:#fff;font:600 12.5px Inter;border-radius:6px;padding:6px 9px;outline:none"><button onClick="{{ blk.hero.up }}" title="Monter" style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:#C9BEB0;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg></button><button onClick="{{ blk.hero.down }}" title="Descendre" style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:#C9BEB0;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button><button onClick="{{ blk.hero.toggleHide }}" title="Masquer / afficher" style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:#C9BEB0;cursor:pointer;display:flex;align-items:center;justify-content:center" innerHTML="{{ blk.hero.eyeIcon }}"></button></div></sc-if>
+      <div style="position:relative;border-radius:{{ heroRadius }};overflow:hidden;background:repeating-linear-gradient(45deg,#d8ccb8,#d8ccb8 12px,#e2d7c4 12px,#e2d7c4 24px);min-height:{{ heroH }};display:flex;align-items:flex-end">
+        <span style="position:absolute;top:14px;left:16px;font-family:ui-monospace,monospace;font-size:11px;color:#9a8f7d">visuel hero · 16:9</span>
+        <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(30,27,24,.6),rgba(30,27,24,.05) 60%)"></div>
+        <div style="position:relative;padding:{{ heroTextPad }};color:#fff;max-width:560px">
+          <div style="display:inline-flex;align-items:center;gap:8px;padding:5px 12px;border:1px solid rgba(255,255,255,.5);border-radius:999px;font:600 12px Inter;letter-spacing:.06em;margin-bottom:16px">NOUVELLE COLLECTION 2026</div>
+          <h1 style="font-family:'Playfair Display',serif;font-weight:600;font-size:{{ heroTitleSize }};line-height:1.04;margin:0 0 12px">L'élégance<br>tissée main</h1>
+          <p style="font-size:{{ heroSubSize }};opacity:.92;line-height:1.5;margin:0 0 22px;max-width:420px">Foulards, turbans & accessoires africains pour la femme moderne. Fabriqués au Sénégal, dans l'esprit Teranga.</p>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <button onClick="{{ goCatalog }}" style="height:48px;padding:0 26px;border:none;border-radius:10px;background:#D07A34;color:#fff;font:700 15px Inter;cursor:pointer">Découvrir la boutique</button>
+            <button onClick="{{ goStory }}" style="height:48px;padding:0 22px;border:1.5px solid rgba(255,255,255,.7);border-radius:10px;background:rgba(255,255,255,.08);color:#fff;font:600 15px Inter;cursor:pointer">Notre histoire</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CATEGORY TILES -->
+    <section style="max-width:1200px;margin:0 auto;padding:{{ blockPadTight }};position:relative;order:{{ blk.cats.order }};display:{{ blk.cats.display }};opacity:{{ blk.cats.opacity }};outline:{{ blkOutline }};outline-offset:-4px;border-radius:6px;transition:opacity .15s">
+      <sc-if value="{{ blocksMode }}" hint-placeholder-val=""><div style="position:absolute;top:8px;left:14px;z-index:25;display:flex;align-items:center;gap:1px;background:#1E1B18;border-radius:9px;padding:4px;box-shadow:0 6px 18px rgba(30,27,24,.3)"><span style="display:flex;align-items:center;justify-content:center;width:22px;height:28px;cursor:grab"><svg width="13" height="13" viewBox="0 0 24 24" fill="#8a8177"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span><input value="{{ blk.cats.name }}" onInput="{{ blk.cats.set }}" style="width:150px;border:none;background:#2c2822;color:#fff;font:600 12.5px Inter;border-radius:6px;padding:6px 9px;outline:none"><button onClick="{{ blk.cats.up }}" title="Monter" style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:#C9BEB0;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg></button><button onClick="{{ blk.cats.down }}" title="Descendre" style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:#C9BEB0;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button><button onClick="{{ blk.cats.toggleHide }}" title="Masquer / afficher" style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:#C9BEB0;cursor:pointer;display:flex;align-items:center;justify-content:center" innerHTML="{{ blk.cats.eyeIcon }}"></button></div></sc-if>
+      <div style="display:grid;grid-template-columns:{{ cat3Cols }};gap:14px">
+        <sc-for list="{{ catTiles }}" as="c" hint-placeholder-count="3">
+          <div onClick="{{ c.go }}" style="position:relative;border-radius:14px;overflow:hidden;aspect-ratio:4/3;cursor:pointer;background:{{ c.stripe }}" style-hover="opacity:.94">
+            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(30,27,24,.5),transparent 65%)"></div>
+            <div style="position:absolute;left:16px;bottom:14px;color:#fff">
+              <div style="font-family:'Playfair Display',serif;font-weight:600;font-size:22px">{{ c.name }}</div>
+              <div style="font-size:12.5px;opacity:.9">{{ c.count }} modèles →</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- NOUVEAUTÉS / BEST-SELLERS -->
+    <section style="max-width:1200px;margin:0 auto;padding:{{ blockPad }};position:relative;order:{{ blk.grid.order }};display:{{ blk.grid.display }};opacity:{{ blk.grid.opacity }};outline:{{ blkOutline }};outline-offset:-4px;border-radius:6px;transition:opacity .15s">
+      <sc-if value="{{ blocksMode }}" hint-placeholder-val=""><div style="position:absolute;top:8px;left:14px;z-index:25;display:flex;align-items:center;gap:1px;background:#1E1B18;border-radius:9px;padding:4px;box-shadow:0 6px 18px rgba(30,27,24,.3)"><span style="display:flex;align-items:center;justify-content:center;width:22px;height:28px;cursor:grab"><svg width="13" height="13" viewBox="0 0 24 24" fill="#8a8177"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span><input value="{{ blk.grid.name }}" onInput="{{ blk.grid.set }}" style="width:150px;border:none;background:#2c2822;color:#fff;font:600 12.5px Inter;border-radius:6px;padding:6px 9px;outline:none"><button onClick="{{ blk.grid.up }}" title="Monter" style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:#C9BEB0;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg></button><button onClick="{{ blk.grid.down }}" title="Descendre" style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:#C9BEB0;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button><button onClick="{{ blk.grid.toggleHide }}" title="Masquer / afficher" style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:#C9BEB0;cursor:pointer;display:flex;align-items:center;justify-content:center" innerHTML="{{ blk.grid.eyeIcon }}"></button></div></sc-if>
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px;gap:16px">
+        <div>
+          <div style="font:600 12px Inter;letter-spacing:.1em;color:#C9A227;text-transform:uppercase;margin-bottom:6px">À la une</div>
+          <h2 style="font-family:'Playfair Display',serif;font-weight:600;font-size:{{ h2Size }};margin:0;letter-spacing:-.01em">Nouveautés & best-sellers</h2>
+        </div>
+        <span onClick="{{ goCatalog }}" style="font:600 14px Inter;color:#26326B;cursor:pointer;white-space:nowrap">Tout voir →</span>
+      </div>
+      <div style="display:grid;grid-template-columns:{{ prodCols }};gap:{{ prodGap }}">
+        <sc-for list="{{ homeProducts }}" as="p" hint-placeholder-count="4">
+          <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(60,40,20,.08)" style-hover="box-shadow:0 8px 24px rgba(60,40,20,.12)">
+            <div onClick="{{ p.open }}" style="position:relative;aspect-ratio:4/5;cursor:pointer;background:{{ p.stripe }};display:flex;align-items:center;justify-content:center">
+              <span style="font-family:ui-monospace,monospace;font-size:11px;color:#9a8f7d">foulard 4:5</span>
+              <sc-if value="{{ p.badge }}" hint-placeholder-val=""><span style="position:absolute;top:10px;left:10px;font:700 11px Inter;padding:4px 8px;border-radius:6px;background:{{ p.badgeBg }};color:#fff">{{ p.badge }}</span></sc-if>
+              <sc-if value="{{ p.soldOut }}" hint-placeholder-val=""><div style="position:absolute;inset:0;background:rgba(250,247,242,.5);display:flex;align-items:center;justify-content:center"><span style="font:600 12px Inter;padding:6px 12px;border-radius:999px;background:#1E1B18;color:#fff">Épuisé</span></div></sc-if>
+            </div>
+            <div style="padding:14px 16px 16px">
+              <div onClick="{{ p.open }}" style="font-family:'Playfair Display',serif;font-weight:600;font-size:17px;line-height:1.2;margin-bottom:4px;cursor:pointer">{{ p.name }}</div>
+              <div style="font-size:12.5px;color:#6B6259;margin-bottom:12px">{{ p.sub }}</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <div style="display:flex;align-items:baseline;gap:7px">
+                  <span style="font-size:16px;font-weight:700;color:#26326B">{{ p.priceLabel }}</span>
+                  <sc-if value="{{ p.hasOld }}" hint-placeholder-val=""><span style="font-size:12.5px;color:#9a8f7d;text-decoration:line-through">{{ p.oldLabel }}</span></sc-if>
+                </div>
+                <button onClick="{{ p.add }}" title="Ajouter" style="width:38px;height:38px;flex:none;border:1.5px solid {{ p.addBorder }};border-radius:10px;background:{{ p.addBg }};display:flex;align-items:center;justify-content:center;cursor:{{ p.addCursor }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{ p.addStroke }}" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- PROMO / FIDÉLITÉ BANNER -->
+    <section style="max-width:1200px;margin:0 auto;padding:{{ blockPadTight }};position:relative;order:{{ blk.loyalty.order }};display:{{ blk.loyalty.display }};opacity:{{ blk.loyalty.opacity }};outline:{{ blkOutline }};outline-offset:-4px;border-radius:6px;transition:opacity .15s">
+      <sc-if value="{{ blocksMode }}" hint-placeholder-val=""><div style="position:absolute;top:8px;left:14px;z-index:25;display:flex;align-items:center;gap:1px;background:#1E1B18;border-radius:9px;padding:4px;box-shadow:0 6px 18px rgba(30,27,24,.3)"><span style="display:flex;align-items:center;justify-content:center;width:22px;height:28px;cursor:grab"><svg width="13" height="13" viewBox="0 0 24 24" fill="#8a8177"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span><input value="{{ blk.loyalty.name }}" onInput="{{ blk.loyalty.set }}" style="width:150px;border:none;background:#2c2822;color:#fff;font:600 12.5px Inter;border-radius:6px;padding:6px 9px;outline:none"><button onClick="{{ blk.loyalty.up }}" title="Monter" style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:#C9BEB0;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg></button><button onClick="{{ blk.loyalty.down }}" title="Descendre" style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:#C9BEB0;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button><button onClick="{{ blk.loyalty.toggleHide }}" title="Masquer / afficher" style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:#C9BEB0;cursor:pointer;display:flex;align-items:center;justify-content:center" innerHTML="{{ blk.loyalty.eyeIcon }}"></button></div></sc-if>
+      <div style="background:#26326B;border-radius:16px;padding:{{ promoPad }};display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;color:#fff">
+        <div style="display:flex;align-items:center;gap:18px;min-width:260px">
+          <div style="width:52px;height:52px;flex:none;border-radius:999px;background:#1E1B18;display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="#C9A227" stroke="none"><path d="M12 2 15 9l7 .5-5.5 4.5L18.5 21 12 17l-6.5 4 2-7L2 9.5 9 9Z"/></svg></div>
+          <div>
+            <div style="font-family:'Playfair Display',serif;font-weight:600;font-size:{{ promoTitleSize }};line-height:1.1">Programme fidélité Teranga</div>
+            <div style="font-size:14px;opacity:.85;margin-top:4px">Cumulez des points à chaque commande — 5% offerts dès 300 points.</div>
+          </div>
+        </div>
+        <button onClick="{{ goAccount }}" style="height:46px;padding:0 24px;border:none;border-radius:10px;background:#D07A34;color:#fff;font:700 15px Inter;cursor:pointer;white-space:nowrap">Rejoindre le programme</button>
+      </div>
+    </section>
+
+    <!-- PRODUIT VEDETTE -->
+    <section style="max-width:1200px;margin:0 auto;padding:{{ blockPad }};position:relative;order:{{ blk.featured.order }};display:{{ blk.featured.display }};opacity:{{ blk.featured.opacity }};outline:{{ blkOutline }};outline-offset:-4px;border-radius:6px;transition:opacity .15s">
+      <sc-if value="{{ blocksMode }}" hint-placeholder-val=""><div style="position:absolute;top:8px;left:14px;z-index:25;display:flex;align-items:center;gap:1px;background:#1E1B18;border-radius:9px;padding:4px;box-shadow:0 6px 18px rgba(30,27,24,.3)"><span style="display:flex;align-items:center;justify-content:center;width:22px;height:28px;cursor:grab"><svg width="13" height="13" viewBox="0 0 24 24" fill="#8a8177"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span><input value="{{ blk.featured.name }}" onInput="{{ blk.featured.set }}" style="width:150px;border:none;background:#2c2822;color:#fff;font:600 12.5px Inter;border-radius:6px;padding:6px 9px;outline:none"><button onClick="{{ blk.featured.up }}" title="Monter" style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:#C9BEB0;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg></button><button onClick="{{ blk.featured.down }}" title="Descendre" style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:#C9BEB0;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button><button onClick="{{ blk.featured.toggleHide }}" title="Masquer / afficher" style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:#C9BEB0;cursor:pointer;display:flex;align-items:center;justify-content:center" innerHTML="{{ blk.featured.eyeIcon }}"></button></div></sc-if>
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:16px;overflow:hidden;display:grid;grid-template-columns:{{ featCols }}">
+        <div style="position:relative;min-height:{{ featImgH }};background:{{ featured.stripe }};display:flex;align-items:center;justify-content:center">
+          <span style="font-family:ui-monospace,monospace;font-size:11px;color:#9a8f7d">produit vedette</span>
+          <span style="position:absolute;top:14px;left:14px;font:700 11px Inter;padding:5px 10px;border-radius:999px;background:#1E1B18;color:#C9A227;border:1px solid #C9A227">★ Coup de cœur</span>
+        </div>
+        <div style="padding:{{ featPad }};display:flex;flex-direction:column;justify-content:center">
+          <div style="font:600 12px Inter;letter-spacing:.1em;color:#C9A227;text-transform:uppercase;margin-bottom:10px">Édition limitée</div>
+          <h3 style="font-family:'Playfair Display',serif;font-weight:600;font-size:{{ featTitleSize }};line-height:1.1;margin:0 0 10px">{{ featured.name }}</h3>
+          <p style="font-size:15px;color:#6B6259;line-height:1.55;margin:0 0 18px">{{ featured.desc }}</p>
+          <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:22px">
+            <span style="font-size:26px;font-weight:700;color:#26326B">{{ featured.priceLabel }}</span>
+            <span style="font-size:14px;color:#6B6259">· {{ featured.sub }}</span>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <button onClick="{{ featured.open }}" style="height:48px;padding:0 26px;border:none;border-radius:10px;background:#26326B;color:#fff;font:600 15px Inter;cursor:pointer">Voir le produit</button>
+            <button onClick="{{ featured.add }}" style="height:48px;padding:0 22px;border:1.5px solid #26326B;border-radius:10px;background:#fff;color:#26326B;font:600 15px Inter;cursor:pointer">Ajouter au panier</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- NOTRE HISTOIRE -->
+    <section id="ft-story" style="background:#F4EFE7;border-top:1px solid rgba(30,27,24,.06);border-bottom:1px solid rgba(30,27,24,.06);position:relative;order:{{ blk.story.order }};display:{{ blk.story.display }};opacity:{{ blk.story.opacity }};outline:{{ blkOutline }};outline-offset:-4px;transition:opacity .15s">
+      <sc-if value="{{ blocksMode }}" hint-placeholder-val=""><div style="position:absolute;top:8px;left:14px;z-index:25;display:flex;align-items:center;gap:1px;background:#1E1B18;border-radius:9px;padding:4px;box-shadow:0 6px 18px rgba(30,27,24,.3)"><span style="display:flex;align-items:center;justify-content:center;width:22px;height:28px;cursor:grab"><svg width="13" height="13" viewBox="0 0 24 24" fill="#8a8177"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span><input value="{{ blk.story.name }}" onInput="{{ blk.story.set }}" style="width:150px;border:none;background:#2c2822;color:#fff;font:600 12.5px Inter;border-radius:6px;padding:6px 9px;outline:none"><button onClick="{{ blk.story.up }}" title="Monter" style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:#C9BEB0;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg></button><button onClick="{{ blk.story.down }}" title="Descendre" style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:#C9BEB0;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button><button onClick="{{ blk.story.toggleHide }}" title="Masquer / afficher" style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:#C9BEB0;cursor:pointer;display:flex;align-items:center;justify-content:center" innerHTML="{{ blk.story.eyeIcon }}"></button></div></sc-if>
+      <div style="max-width:1200px;margin:0 auto;padding:{{ blockPad }};display:grid;grid-template-columns:{{ storyCols }};gap:{{ storyGap }};align-items:center">
+        <div>
+          <div style="font:600 12px Inter;letter-spacing:.1em;color:#C9A227;text-transform:uppercase;margin-bottom:12px">Notre histoire</div>
+          <h2 style="font-family:'Playfair Display',serif;font-weight:600;font-size:{{ h2Size }};line-height:1.12;margin:0 0 16px;letter-spacing:-.01em">L'esprit Teranga, tissé dans chaque pièce</h2>
+          <p style="font-size:16px;color:#6B6259;line-height:1.65;margin:0 0 14px">« Teranga », c'est l'hospitalité sénégalaise. Chaque foulard est choisi auprès d'artisanes de Dakar et Saint-Louis, teint à la main selon des savoir-faire transmis de mère en fille.</p>
+          <p style="font-size:16px;color:#6B6259;line-height:1.65;margin:0 0 20px">Des matières nobles, des motifs qui racontent, une élégance qui vous ressemble.</p>
+          <div style="display:flex;gap:28px;flex-wrap:wrap">
+            <div><div style="font-family:'Playfair Display',serif;font-weight:600;font-size:30px;color:#26326B">100%</div><div style="font-size:13px;color:#6B6259">tissé main</div></div>
+            <div><div style="font-family:'Playfair Display',serif;font-weight:600;font-size:30px;color:#26326B">24</div><div style="font-size:13px;color:#6B6259">artisanes partenaires</div></div>
+            <div><div style="font-family:'Playfair Display',serif;font-weight:600;font-size:30px;color:#26326B">3</div><div style="font-size:13px;color:#6B6259">régions du Sénégal</div></div>
+          </div>
+        </div>
+        <div style="position:relative;border-radius:16px;overflow:hidden;min-height:{{ storyImgH }};background:repeating-linear-gradient(45deg,#e0d4c0,#e0d4c0 11px,#ebe1d1 11px,#ebe1d1 22px);display:flex;align-items:center;justify-content:center">
+          <span style="font-family:ui-monospace,monospace;font-size:11px;color:#9a8f7d">atelier · artisanat</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- LOOKBOOK -->
+    <section style="max-width:1200px;margin:0 auto;padding:{{ blockPad }};position:relative;order:{{ blk.look.order }};display:{{ blk.look.display }};opacity:{{ blk.look.opacity }};outline:{{ blkOutline }};outline-offset:-4px;border-radius:6px;transition:opacity .15s">
+      <sc-if value="{{ blocksMode }}" hint-placeholder-val=""><div style="position:absolute;top:8px;left:14px;z-index:25;display:flex;align-items:center;gap:1px;background:#1E1B18;border-radius:9px;padding:4px;box-shadow:0 6px 18px rgba(30,27,24,.3)"><span style="display:flex;align-items:center;justify-content:center;width:22px;height:28px;cursor:grab"><svg width="13" height="13" viewBox="0 0 24 24" fill="#8a8177"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span><input value="{{ blk.look.name }}" onInput="{{ blk.look.set }}" style="width:150px;border:none;background:#2c2822;color:#fff;font:600 12.5px Inter;border-radius:6px;padding:6px 9px;outline:none"><button onClick="{{ blk.look.up }}" title="Monter" style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:#C9BEB0;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg></button><button onClick="{{ blk.look.down }}" title="Descendre" style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:#C9BEB0;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button><button onClick="{{ blk.look.toggleHide }}" title="Masquer / afficher" style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:#C9BEB0;cursor:pointer;display:flex;align-items:center;justify-content:center" innerHTML="{{ blk.look.eyeIcon }}"></button></div></sc-if>
+      <div style="text-align:center;margin-bottom:22px">
+        <div style="font:600 12px Inter;letter-spacing:.1em;color:#C9A227;text-transform:uppercase;margin-bottom:6px">Lookbook</div>
+        <h2 style="font-family:'Playfair Display',serif;font-weight:600;font-size:{{ h2Size }};margin:0;letter-spacing:-.01em">Portées avec style</h2>
+      </div>
+      <div style="display:grid;grid-template-columns:{{ lookCols }};gap:12px">
+        <sc-for list="{{ lookbook }}" as="l" hint-placeholder-count="4">
+          <div style="border-radius:14px;overflow:hidden;aspect-ratio:{{ l.ratio }};background:{{ l.stripe }};display:flex;align-items:flex-end;padding:12px">
+            <span style="font-family:ui-monospace,monospace;font-size:10.5px;color:#9a8f7d">{{ l.label }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- NEWSLETTER -->
+    <section style="max-width:1200px;margin:0 auto;padding:{{ blockPadTight }};position:relative;order:{{ blk.news.order }};display:{{ blk.news.display }};opacity:{{ blk.news.opacity }};outline:{{ blkOutline }};outline-offset:-4px;border-radius:6px;transition:opacity .15s">
+      <sc-if value="{{ blocksMode }}" hint-placeholder-val=""><div style="position:absolute;top:8px;left:14px;z-index:25;display:flex;align-items:center;gap:1px;background:#1E1B18;border-radius:9px;padding:4px;box-shadow:0 6px 18px rgba(30,27,24,.3)"><span style="display:flex;align-items:center;justify-content:center;width:22px;height:28px;cursor:grab"><svg width="13" height="13" viewBox="0 0 24 24" fill="#8a8177"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span><input value="{{ blk.news.name }}" onInput="{{ blk.news.set }}" style="width:150px;border:none;background:#2c2822;color:#fff;font:600 12.5px Inter;border-radius:6px;padding:6px 9px;outline:none"><button onClick="{{ blk.news.up }}" title="Monter" style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:#C9BEB0;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg></button><button onClick="{{ blk.news.down }}" title="Descendre" style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:#C9BEB0;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button><button onClick="{{ blk.news.toggleHide }}" title="Masquer / afficher" style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:#C9BEB0;cursor:pointer;display:flex;align-items:center;justify-content:center" innerHTML="{{ blk.news.eyeIcon }}"></button></div></sc-if>
+      <div style="background:#1E1B18;border-radius:16px;padding:{{ promoPad }};text-align:center;color:#fff">
+        <h2 style="font-family:'Playfair Display',serif;font-weight:600;font-size:{{ h2Size }};margin:0 0 10px">Restez dans la boucle</h2>
+        <p style="font-size:15px;color:#C9BEB0;margin:0 auto 22px;max-width:440px;line-height:1.55">Nouveautés, ventes privées et 25 points de bienvenue à l'inscription.</p>
+        <div style="display:flex;gap:10px;max-width:440px;margin:0 auto;flex-wrap:wrap">
+          <input placeholder="Votre numéro ou e-mail" style="flex:1;min-width:180px;height:48px;padding:0 16px;border:none;border-radius:10px;background:#2c2822;color:#fff;font:400 15px Inter;outline:none">
+          <button onClick="{{ subscribe }}" style="height:48px;padding:0 24px;border:none;border-radius:10px;background:#D07A34;color:#fff;font:700 15px Inter;cursor:pointer">S'inscrire</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACT + LOCALISATION -->
+    <section id="ft-contact" style="max-width:1200px;margin:0 auto;padding:{{ blockPad }};position:relative;order:{{ blk.contact.order }};display:{{ blk.contact.display }};opacity:{{ blk.contact.opacity }};outline:{{ blkOutline }};outline-offset:-4px;border-radius:6px;transition:opacity .15s">
+      <sc-if value="{{ blocksMode }}" hint-placeholder-val=""><div style="position:absolute;top:8px;left:14px;z-index:25;display:flex;align-items:center;gap:1px;background:#1E1B18;border-radius:9px;padding:4px;box-shadow:0 6px 18px rgba(30,27,24,.3)"><span style="display:flex;align-items:center;justify-content:center;width:22px;height:28px;cursor:grab"><svg width="13" height="13" viewBox="0 0 24 24" fill="#8a8177"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span><input value="{{ blk.contact.name }}" onInput="{{ blk.contact.set }}" style="width:150px;border:none;background:#2c2822;color:#fff;font:600 12.5px Inter;border-radius:6px;padding:6px 9px;outline:none"><button onClick="{{ blk.contact.up }}" title="Monter" style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:#C9BEB0;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg></button><button onClick="{{ blk.contact.down }}" title="Descendre" style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:#C9BEB0;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button><button onClick="{{ blk.contact.toggleHide }}" title="Masquer / afficher" style="width:28px;height:28px;border:none;border-radius:6px;background:none;color:#C9BEB0;cursor:pointer;display:flex;align-items:center;justify-content:center" innerHTML="{{ blk.contact.eyeIcon }}"></button></div></sc-if>
+      <div style="display:grid;grid-template-columns:{{ contactCols }};gap:16px">
+        <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:16px;padding:26px 28px">
+          <h3 style="font-family:'Playfair Display',serif;font-weight:600;font-size:24px;margin:0 0 18px">Nous trouver</h3>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#26326B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><path d="M20 10c0 6-8 11-8 11s-8-5-8-11a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><div><div style="font:600 15px Inter">Boutique Sandaga</div><div style="font-size:14px;color:#6B6259">Marché Sandaga, Dakar · Sénégal</div></div></div>
+            <div style="display:flex;gap:12px;align-items:flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#26326B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><div><div style="font:600 15px Inter">Horaires</div><div style="font-size:14px;color:#6B6259">Lun – Sam · 9h – 19h</div></div></div>
+            <a href="#" style="display:inline-flex;align-items:center;justify-content:center;gap:9px;height:48px;border-radius:10px;background:#0E9F6E;color:#fff;font:700 15px Inter;margin-top:4px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.4 8.4 0 0 1-4-1L3 21l1.1-4a8.4 8.4 0 0 1-1-4 8.4 8.4 0 0 1 8.4-8.4A8.4 8.4 0 0 1 21 11.5Z"/></svg>Commander sur WhatsApp</a>
+          </div>
+        </div>
+        <div style="position:relative;border-radius:16px;overflow:hidden;min-height:220px;background:repeating-linear-gradient(45deg,#dfe1e8,#dfe1e8 11px,#e9eaef 11px,#e9eaef 22px);display:flex;align-items:center;justify-content:center">
+          <span style="font-family:ui-monospace,monospace;font-size:11px;color:#8a8d99">carte · localisation</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer style="background:#1E1B18;color:#C9BEB0;margin-top:20px;order:50">
+      <div style="max-width:1200px;margin:0 auto;padding:36px 20px 100px;display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap">
+        <div><div style="font-family:'Playfair Display',serif;font-weight:600;font-size:22px;color:#fff;margin-bottom:8px">Foulard Teranga</div><div style="font-size:13px;max-width:280px;line-height:1.6">Foulards & accessoires africains élégants, tissés main au Sénégal.</div></div>
+        <div style="font-size:13.5px;line-height:2"><div style="color:#fff;font-weight:600;margin-bottom:6px">Boutique</div><div onClick="{{ navFoulards }}" style="cursor:pointer">Foulards</div><div onClick="{{ navTurbans }}" style="cursor:pointer">Turbans</div><div onClick="{{ navAccessoires }}" style="cursor:pointer">Accessoires</div></div>
+        <div style="font-size:13.5px;line-height:2"><div style="color:#fff;font-weight:600;margin-bottom:6px">Aide</div><div>WhatsApp</div><div>Livraison</div><div>Points de fidélité</div></div>
+      </div>
+    </footer>
+
+    <button onClick="{{ toggleBlocks }}" title="Aperçu des blocs éditeur" style="position:fixed;right:20px;bottom:{{ blocksBtnBottom }};z-index:55;height:46px;padding:0 18px;border:none;border-radius:999px;background:{{ blocksBtnBg }};color:#fff;font:600 14px Inter;cursor:pointer;display:flex;align-items:center;gap:9px;box-shadow:0 8px 24px rgba(30,27,24,.28)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="7" rx="1.5"/><rect x="3" y="14" width="18" height="7" rx="1.5"/></svg>
+      {{ blocksBtnLabel }}
+    </button>
+
+  </div>
+  </sc-if>
+
+  <!-- ============================================================ CATALOG -->
+  <sc-if value="{{ isCatalog }}" hint-placeholder-val="">
+  <div style="max-width:1200px;margin:0 auto;width:100%;padding:{{ pagePad }};animation:ftfade .3s ease">
+    <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#6B6259;margin-bottom:14px">
+      <span onClick="{{ goHome }}" style="cursor:pointer">Accueil</span><span style="color:#C7BFB2">/</span><span style="color:#1E1B18;font-weight:600">{{ catTitle }}</span>
+    </div>
+    <h1 style="font-family:'Playfair Display',serif;font-weight:600;font-size:{{ h1Size }};margin:0 0 4px;letter-spacing:-.01em">{{ catTitle }}</h1>
+    <p style="font-size:14px;color:#6B6259;margin:0 0 20px">{{ catCountLabel }}</p>
+
+    <!-- search + sort -->
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px;display:flex;align-items:center;height:46px;padding:0 14px;border:1.5px solid #DAD3C7;border-radius:10px;background:#fff;gap:10px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B6259" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input value="{{ query }}" onInput="{{ setQuery }}" placeholder="Rechercher un foulard, un motif…" style="flex:1;border:none;outline:none;font:400 15px Inter;color:#1E1B18;background:transparent"></div>
+      <div style="position:relative"><select value="{{ sort }}" onChange="{{ setSort }}" style="height:46px;padding:0 40px 0 14px;border:1.5px solid #DAD3C7;border-radius:10px;background:#fff;font:500 14px Inter;color:#1E1B18;appearance:none;cursor:pointer"><option value="new">Nouveautés</option><option value="asc">Prix croissant</option><option value="desc">Prix décroissant</option></select><svg style="position:absolute;right:14px;top:50%;transform:translateY(-50%);pointer-events:none" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B6259" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+      <sc-if value="{{ isMobile }}" hint-placeholder-val=""><button onClick="{{ toggleFilters }}" style="height:46px;padding:0 16px;border:1.5px solid #DAD3C7;border-radius:10px;background:#fff;font:600 14px Inter;display:flex;align-items:center;gap:8px;cursor:pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Filtres</button></sc-if>
+    </div>
+
+    <div style="display:grid;grid-template-columns:{{ catGridCols }};gap:24px;align-items:start">
+      <!-- FILTERS (desktop sidebar) -->
+      <sc-if value="{{ showFilterPanel }}" hint-placeholder-val="{{ true }}">
+      <aside style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:20px 22px;position:{{ filterPos }};top:80px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><span style="font:600 15px Inter">Filtres</span><span onClick="{{ clearFilters }}" style="font:500 13px Inter;color:#26326B;cursor:pointer">Réinitialiser</span></div>
+        <div style="font:600 12px Inter;text-transform:uppercase;letter-spacing:.06em;color:#6B6259;margin-bottom:10px">Catégorie</div>
+        <div style="display:flex;flex-direction:column;gap:2px;margin-bottom:20px">
+          <sc-for list="{{ catFilters }}" as="c" hint-placeholder-count="4"><span onClick="{{ c.select }}" style="padding:8px 10px;border-radius:8px;font:500 14px Inter;cursor:pointer;background:{{ c.bg }};color:{{ c.color }}">{{ c.label }}</span></sc-for>
+        </div>
+        <div style="font:600 12px Inter;text-transform:uppercase;letter-spacing:.06em;color:#6B6259;margin-bottom:10px">Couleur</div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px">
+          <sc-for list="{{ colorFilters }}" as="c" hint-placeholder-count="5"><span onClick="{{ c.select }}" title="{{ c.label }}" style="width:32px;height:32px;border-radius:999px;background:{{ c.hex }};cursor:pointer;outline:{{ c.outline }};outline-offset:2px"></span></sc-for>
+        </div>
+        <div style="font:600 12px Inter;text-transform:uppercase;letter-spacing:.06em;color:#6B6259;margin-bottom:10px">Motif</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">
+          <sc-for list="{{ motifFilters }}" as="m" hint-placeholder-count="5"><span onClick="{{ m.select }}" style="height:34px;padding:0 13px;display:inline-flex;align-items:center;border-radius:999px;font:600 13px Inter;cursor:pointer;border:1.5px solid {{ m.border }};background:{{ m.bg }};color:{{ m.color }}">{{ m.label }}</span></sc-for>
+        </div>
+        <div style="font:600 12px Inter;text-transform:uppercase;letter-spacing:.06em;color:#6B6259;margin-bottom:6px">Prix max · {{ priceMaxLabel }}</div>
+        <input type="range" min="4000" max="30000" step="500" value="{{ priceMax }}" onInput="{{ setPriceMax }}" style="width:100%;accent-color:#26326B;cursor:pointer">
+      </aside>
+      </sc-if>
+
+      <!-- PRODUCT GRID / STATES -->
+      <div>
+        <!-- states preview control -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+          <span style="font-size:12px;color:#9a8f7d;font-family:ui-monospace,monospace">aperçu états :</span>
+          <sc-for list="{{ stateBtns }}" as="s" hint-placeholder-count="3"><span onClick="{{ s.select }}" style="height:30px;padding:0 12px;display:inline-flex;align-items:center;border-radius:999px;font:600 12.5px Inter;cursor:pointer;border:1px solid {{ s.border }};background:{{ s.bg }};color:{{ s.color }}">{{ s.label }}</span></sc-for>
+        </div>
+
+        <sc-if value="{{ catLoading }}" hint-placeholder-val="">
+          <div style="display:grid;grid-template-columns:{{ catProdCols }};gap:{{ prodGap }}">
+            <sc-for list="{{ skeletons }}" as="k" hint-placeholder-count="6"><div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;overflow:hidden"><div style="aspect-ratio:4/5;background:#EDE7DC;animation:ftpulse 1.4s ease-in-out infinite"></div><div style="padding:14px 16px"><div style="height:14px;width:70%;border-radius:6px;background:#EDE7DC;animation:ftpulse 1.4s ease-in-out infinite;margin-bottom:9px"></div><div style="height:12px;width:45%;border-radius:6px;background:#EDE7DC;animation:ftpulse 1.4s ease-in-out infinite"></div></div></div></sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ catError }}" hint-placeholder-val="">
+          <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:56px 24px;text-align:center;display:flex;flex-direction:column;align-items:center">
+            <div style="width:60px;height:60px;border-radius:999px;background:#F8E5E3;display:flex;align-items:center;justify-content:center;margin-bottom:16px"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C4453B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg></div>
+            <div style="font-family:'Playfair Display',serif;font-weight:600;font-size:20px;margin-bottom:6px">Une erreur est survenue</div>
+            <p style="font-size:14px;color:#6B6259;margin:0 0 20px;max-width:320px">Impossible de charger le catalogue. Vérifiez votre connexion et réessayez.</p>
+            <button onClick="{{ retryCat }}" style="height:46px;padding:0 24px;border:1.5px solid #26326B;border-radius:10px;background:#fff;color:#26326B;font:600 15px Inter;cursor:pointer">Réessayer</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ catEmpty }}" hint-placeholder-val="">
+          <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:56px 24px;text-align:center;display:flex;flex-direction:column;align-items:center">
+            <div style="width:60px;height:60px;border-radius:999px;background:#F4F0E9;display:flex;align-items:center;justify-content:center;margin-bottom:16px"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#B6AEA1" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div>
+            <div style="font-family:'Playfair Display',serif;font-weight:600;font-size:20px;margin-bottom:6px">Aucun résultat</div>
+            <p style="font-size:14px;color:#6B6259;margin:0 0 20px;max-width:320px">Aucun produit ne correspond à ces filtres. Essayez d'élargir votre recherche.</p>
+            <button onClick="{{ clearFilters }}" style="height:46px;padding:0 24px;border:none;border-radius:10px;background:#26326B;color:#fff;font:600 15px Inter;cursor:pointer">Réinitialiser les filtres</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ catReady }}" hint-placeholder-val="{{ true }}">
+          <sc-if value="{{ offline }}" hint-placeholder-val=""><div style="display:flex;align-items:center;gap:9px;padding:11px 14px;background:#F4EFE7;border:1px solid #E7DECF;border-radius:10px;font-size:13px;color:#6B6259;margin-bottom:14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8a6a3a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Catalogue disponible hors-ligne — dernière mise à jour enregistrée.</div></sc-if>
+          <div style="display:grid;grid-template-columns:{{ catProdCols }};gap:{{ prodGap }}">
+            <sc-for list="{{ catProducts }}" as="p" hint-placeholder-count="6">
+              <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(60,40,20,.08)" style-hover="box-shadow:0 8px 24px rgba(60,40,20,.12)">
+                <div onClick="{{ p.open }}" style="position:relative;aspect-ratio:4/5;cursor:pointer;background:{{ p.stripe }};display:flex;align-items:center;justify-content:center">
+                  <span style="font-family:ui-monospace,monospace;font-size:11px;color:#9a8f7d">foulard 4:5</span>
+                  <sc-if value="{{ p.badge }}" hint-placeholder-val=""><span style="position:absolute;top:10px;left:10px;font:700 11px Inter;padding:4px 8px;border-radius:6px;background:{{ p.badgeBg }};color:#fff">{{ p.badge }}</span></sc-if>
+                  <sc-if value="{{ p.soldOut }}" hint-placeholder-val=""><div style="position:absolute;inset:0;background:rgba(250,247,242,.5);display:flex;align-items:center;justify-content:center"><span style="font:600 12px Inter;padding:6px 12px;border-radius:999px;background:#1E1B18;color:#fff">Épuisé</span></div></sc-if>
+                </div>
+                <div style="padding:14px 16px 16px">
+                  <div onClick="{{ p.open }}" style="font-family:'Playfair Display',serif;font-weight:600;font-size:17px;line-height:1.2;margin-bottom:4px;cursor:pointer">{{ p.name }}</div>
+                  <div style="font-size:12.5px;color:#6B6259;margin-bottom:12px">{{ p.sub }}</div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                    <div style="display:flex;align-items:baseline;gap:7px"><span style="font-size:16px;font-weight:700;color:#26326B">{{ p.priceLabel }}</span><sc-if value="{{ p.hasOld }}" hint-placeholder-val=""><span style="font-size:12.5px;color:#9a8f7d;text-decoration:line-through">{{ p.oldLabel }}</span></sc-if></div>
+                    <button onClick="{{ p.add }}" title="Ajouter" style="width:38px;height:38px;flex:none;border:1.5px solid {{ p.addBorder }};border-radius:10px;background:{{ p.addBg }};display:flex;align-items:center;justify-content:center;cursor:{{ p.addCursor }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{ p.addStroke }}" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ============================================================ PRODUCT -->
+  <sc-if value="{{ isProduct }}" hint-placeholder-val="">
+  <div style="max-width:1200px;margin:0 auto;width:100%;padding:{{ pagePad }};animation:ftfade .3s ease">
+    <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#6B6259;margin-bottom:18px">
+      <span onClick="{{ goHome }}" style="cursor:pointer">Accueil</span><span style="color:#C7BFB2">/</span><span onClick="{{ goCatalog }}" style="cursor:pointer">{{ prod.cat }}</span><span style="color:#C7BFB2">/</span><span style="color:#1E1B18;font-weight:600">{{ prod.name }}</span>
+    </div>
+    <div style="display:grid;grid-template-columns:{{ prodDetailCols }};gap:{{ storyGap }};align-items:start">
+      <!-- gallery -->
+      <div>
+        <div style="position:relative;border-radius:16px;overflow:hidden;aspect-ratio:4/5;background:{{ prod.stripe }};display:flex;align-items:center;justify-content:center;margin-bottom:12px">
+          <span style="font-family:ui-monospace,monospace;font-size:12px;color:#9a8f7d">photo produit 4:5</span>
+          <button onClick="{{ toggleFav }}" style="position:absolute;top:14px;right:14px;width:42px;height:42px;border:none;border-radius:999px;background:rgba(255,255,255,.92);display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="{{ favFill }}" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 15 9l7 .5-5.5 4.5L18.5 21 12 17l-6.5 4 2-7L2 9.5 9 9Z"/></svg></button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+          <sc-for list="{{ prodThumbs }}" as="t" hint-placeholder-count="4"><div style="aspect-ratio:1;border-radius:10px;background:{{ t.stripe }};border:{{ t.border }};cursor:pointer"></div></sc-for>
+        </div>
+      </div>
+      <!-- info -->
+      <div>
+        <sc-if value="{{ prod.badge }}" hint-placeholder-val=""><span style="display:inline-block;font:700 11px Inter;padding:4px 9px;border-radius:6px;background:{{ prod.badgeBg }};color:#fff;margin-bottom:12px">{{ prod.badge }}</span></sc-if>
+        <h1 style="font-family:'Playfair Display',serif;font-weight:600;font-size:{{ h1Size }};line-height:1.08;margin:0 0 8px;letter-spacing:-.01em">{{ prod.name }}</h1>
+        <div style="font-size:14px;color:#6B6259;margin-bottom:16px">{{ prod.sub }}</div>
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:16px"><span style="font-size:28px;font-weight:700;color:#26326B">{{ prod.priceLabel }}</span><sc-if value="{{ prod.hasOld }}" hint-placeholder-val=""><span style="font-size:15px;color:#9a8f7d;text-decoration:line-through">{{ prod.oldLabel }}</span></sc-if></div>
+        <div style="margin-bottom:20px">{{ availChip }}</div>
+        <p style="font-size:15px;color:#6B6259;line-height:1.6;margin:0 0 24px">{{ prod.desc }}</p>
+
+        <div style="font:600 13px Inter;margin-bottom:10px">Couleur — <span style="color:#6B6259;font-weight:500">{{ selColorLabel }}</span></div>
+        <div style="display:flex;gap:12px;margin-bottom:22px">
+          <sc-for list="{{ prodColors }}" as="c" hint-placeholder-count="3"><span onClick="{{ c.select }}" title="{{ c.label }}" style="width:34px;height:34px;border-radius:999px;background:{{ c.hex }};cursor:pointer;outline:{{ c.outline }};outline-offset:2px"></span></sc-for>
+        </div>
+        <div style="font:600 13px Inter;margin-bottom:10px">Longueur</div>
+        <div style="display:flex;gap:8px;margin-bottom:28px">
+          <sc-for list="{{ prodLens }}" as="l" hint-placeholder-count="3"><span onClick="{{ l.select }}" style="height:40px;padding:0 18px;display:inline-flex;align-items:center;border-radius:8px;font:600 13.5px Inter;cursor:pointer;border:1.5px solid {{ l.border }};background:{{ l.bg }};color:{{ l.color }}">{{ l.label }}</span></sc-for>
+        </div>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+          <div style="display:inline-flex;align-items:center;height:50px;border:1.5px solid #DAD3C7;border-radius:10px;overflow:hidden"><button onClick="{{ qtyDec }}" style="width:46px;height:100%;border:none;background:#FAF7F2;font-size:20px;color:#26326B;cursor:pointer">−</button><span style="width:48px;text-align:center;font:600 16px Inter">{{ qty }}</span><button onClick="{{ qtyInc }}" style="width:46px;height:100%;border:none;background:#FAF7F2;font-size:20px;color:#26326B;cursor:pointer">+</button></div>
+          <button onClick="{{ addFromDetail }}" style="flex:1;min-width:180px;height:50px;padding:0 24px;border:none;border-radius:10px;background:{{ addMainBg }};color:#fff;font:700 15px Inter;cursor:{{ addMainCursor }}">{{ addMainLabel }}</button>
+        </div>
+        <button onClick="{{ buyNow }}" style="width:100%;height:50px;margin-top:12px;border:1.5px solid #26326B;border-radius:10px;background:#fff;color:#26326B;font:600 15px Inter;cursor:pointer">Commander maintenant — en 3 clics</button>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:16px;font-size:13px;color:#6B6259"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0E9F6E" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Commande = demande à confirmer, sans paiement en ligne. La gérante vous recontacte.</div>
+      </div>
+    </div>
+
+    <!-- related -->
+    <section style="margin-top:48px">
+      <h2 style="font-family:'Playfair Display',serif;font-weight:600;font-size:{{ h2Size }};margin:0 0 18px;letter-spacing:-.01em">Vous aimerez aussi</h2>
+      <div style="display:grid;grid-template-columns:{{ prodCols }};gap:{{ prodGap }}">
+        <sc-for list="{{ related }}" as="p" hint-placeholder-count="4">
+          <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(60,40,20,.08)" style-hover="box-shadow:0 8px 24px rgba(60,40,20,.12)">
+            <div onClick="{{ p.open }}" style="position:relative;aspect-ratio:4/5;cursor:pointer;background:{{ p.stripe }};display:flex;align-items:center;justify-content:center"><span style="font-family:ui-monospace,monospace;font-size:11px;color:#9a8f7d">foulard 4:5</span></div>
+            <div style="padding:14px 16px 16px"><div onClick="{{ p.open }}" style="font-family:'Playfair Display',serif;font-weight:600;font-size:16px;margin-bottom:4px;cursor:pointer">{{ p.name }}</div><span style="font-size:15px;font-weight:700;color:#26326B">{{ p.priceLabel }}</span></div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+  </div>
+  </sc-if>
+
+  <!-- ============================================================ CART -->
+  <sc-if value="{{ isCart }}" hint-placeholder-val="">
+  <div style="max-width:920px;margin:0 auto;width:100%;padding:{{ pagePad }};animation:ftfade .3s ease">
+    <h1 style="font-family:'Playfair Display',serif;font-weight:600;font-size:{{ h1Size }};margin:0 0 20px;letter-spacing:-.01em">Mon panier</h1>
+
+    <sc-if value="{{ cartEmpty }}" hint-placeholder-val="{{ true }}">
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:16px;padding:64px 24px;text-align:center;display:flex;flex-direction:column;align-items:center">
+        <div style="width:64px;height:64px;border-radius:999px;background:#F4F0E9;display:flex;align-items:center;justify-content:center;margin-bottom:16px"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#B6AEA1" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></div>
+        <div style="font-family:'Playfair Display',serif;font-weight:600;font-size:22px;margin-bottom:6px">Votre panier est vide</div>
+        <p style="font-size:14px;color:#6B6259;margin:0 0 22px;max-width:320px">Découvrez nos nouveautés et ajoutez vos coups de cœur.</p>
+        <button onClick="{{ goCatalog }}" style="height:48px;padding:0 26px;border:none;border-radius:10px;background:#26326B;color:#fff;font:600 15px Inter;cursor:pointer">Voir la boutique</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ cartHasItems }}" hint-placeholder-val="">
+      <sc-if value="{{ offline }}" hint-placeholder-val=""><div style="display:flex;align-items:center;gap:9px;padding:11px 14px;background:#F4EFE7;border:1px solid #E7DECF;border-radius:10px;font-size:13px;color:#6B6259;margin-bottom:16px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8a6a3a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2 22 22"/><path d="M8.5 16.5a5 5 0 0 1 7 0M12 20h.01"/></svg>Panier enregistré hors-ligne. Vous pourrez l'envoyer au retour du réseau.</div></sc-if>
+      <div style="display:grid;grid-template-columns:{{ cartCols }};gap:20px;align-items:start">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <sc-for list="{{ cartLines }}" as="l" hint-placeholder-count="2">
+            <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:16px;display:flex;gap:14px;align-items:center">
+              <div style="width:74px;height:90px;flex:none;border-radius:10px;background:{{ l.stripe }}"></div>
+              <div style="flex:1;min-width:0">
+                <div style="font-family:'Playfair Display',serif;font-weight:600;font-size:16px">{{ l.name }}</div>
+                <div style="font-size:12.5px;color:#6B6259;margin:3px 0 10px">{{ l.variant }}</div>
+                <div style="display:inline-flex;align-items:center;height:38px;border:1.5px solid #DAD3C7;border-radius:8px;overflow:hidden"><button onClick="{{ l.dec }}" style="width:38px;height:100%;border:none;background:#FAF7F2;font-size:17px;color:#26326B;cursor:pointer">−</button><span style="width:42px;text-align:center;font:600 14px Inter">{{ l.qty }}</span><button onClick="{{ l.inc }}" style="width:38px;height:100%;border:none;background:#FAF7F2;font-size:17px;color:#26326B;cursor:pointer">+</button></div>
+              </div>
+              <div style="text-align:right"><div style="font:700 16px Inter;color:#26326B">{{ l.lineTotal }}</div><div style="font-size:11px;color:#9a8f7d">FCFA</div><button onClick="{{ l.remove }}" style="border:none;background:none;color:#C4453B;font:500 12px Inter;cursor:pointer;margin-top:8px">Retirer</button></div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:22px;position:{{ filterPos }};top:80px">
+          <div style="font:600 16px Inter;margin-bottom:16px">Récapitulatif</div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;color:#6B6259;margin-bottom:10px"><span>Sous-total ({{ cartCount }} art.)</span><span style="color:#1E1B18;font-weight:600">{{ subtotalLabel }}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;color:#6B6259;margin-bottom:16px"><span>Livraison</span><span>À convenir</span></div>
+          <div style="height:1px;background:#EAE4D9;margin-bottom:16px"></div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:20px"><span style="font:600 15px Inter">Total estimé</span><span style="font:700 22px Inter;color:#26326B">{{ subtotalLabel }}</span></div>
+          <button onClick="{{ goCheckout }}" style="width:100%;height:50px;border:none;border-radius:10px;background:#D07A34;color:#fff;font:700 15px Inter;cursor:pointer">Valider le panier</button>
+          <button onClick="{{ goCatalog }}" style="width:100%;height:46px;margin-top:10px;border:1.5px solid #26326B;border-radius:10px;background:#fff;color:#26326B;font:600 14px Inter;cursor:pointer">Continuer mes achats</button>
+          <p style="font-size:12.5px;color:#6B6259;margin:14px 0 0;line-height:1.5;text-align:center">Sans paiement en ligne. La gérante vous recontacte pour confirmer.</p>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+  </sc-if>
+
+  <!-- ============================================================ CHECKOUT / KYC -->
+  <sc-if value="{{ isCheckout }}" hint-placeholder-val="">
+  <div style="max-width:860px;margin:0 auto;width:100%;padding:{{ pagePad }};animation:ftfade .3s ease">
+    <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#6B6259;margin-bottom:14px"><span onClick="{{ goCart }}" style="cursor:pointer">Panier</span><span style="color:#C7BFB2">/</span><span style="color:#1E1B18;font-weight:600">Ma demande</span></div>
+    <h1 style="font-family:'Playfair Display',serif;font-weight:600;font-size:{{ h1Size }};margin:0 0 6px;letter-spacing:-.01em">Envoyer ma demande</h1>
+    <p style="font-size:14px;color:#6B6259;margin:0 0 22px">Quelques informations et c'est parti — aucun paiement maintenant.</p>
+
+    <div style="display:grid;grid-template-columns:{{ checkoutCols }};gap:20px;align-items:start">
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:16px;padding:26px 28px">
+        <div style="display:flex;align-items:center;gap:10px;background:#EEF0F7;border-radius:12px;padding:14px 16px;margin-bottom:24px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#26326B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg><span style="font-size:13.5px;color:#26326B;font-weight:500;line-height:1.45">La gérante vous contactera pour confirmer votre commande, le mode de livraison et le paiement.</span></div>
+
+        <div style="margin-bottom:18px">
+          <label style="display:block;font:600 13px Inter;margin-bottom:7px">Nom complet *</label>
+          <input value="{{ kycName }}" onInput="{{ setKycName }}" placeholder="Ex. Awa Diallo" style="width:100%;height:48px;padding:0 14px;border:1.5px solid {{ nameBorder }};border-radius:10px;background:#fff;font:400 15px Inter;color:#1E1B18;outline:none">
+          <sc-if value="{{ nameErr }}" hint-placeholder-val=""><p style="font:500 12.5px Inter;color:#9c352d;margin:7px 0 0">Merci d'indiquer votre nom.</p></sc-if>
+        </div>
+        <div style="margin-bottom:18px">
+          <label style="display:block;font:600 13px Inter;margin-bottom:7px">Lieu de livraison *</label>
+          <input value="{{ kycPlace }}" onInput="{{ setKycPlace }}" placeholder="Ex. Dakar, Plateau — quartier / repère" style="width:100%;height:48px;padding:0 14px;border:1.5px solid {{ placeBorder }};border-radius:10px;background:#fff;font:400 15px Inter;color:#1E1B18;outline:none">
+          <sc-if value="{{ placeErr }}" hint-placeholder-val=""><p style="font:500 12.5px Inter;color:#9c352d;margin:7px 0 0">Indiquez où livrer.</p></sc-if>
+        </div>
+        <div style="margin-bottom:18px">
+          <label style="display:block;font:600 13px Inter;margin-bottom:7px">Numéro de contact *</label>
+          <div style="display:flex;align-items:center;height:48px;padding:0 14px;border:1.5px solid {{ phoneBorder }};border-radius:10px;background:#fff"><span style="color:#6B6259;font-size:15px;margin-right:8px">+221</span><input value="{{ kycPhone }}" onInput="{{ setKycPhone }}" placeholder="77 123 45 67" style="flex:1;border:none;outline:none;font:400 15px Inter;color:#1E1B18"></div>
+          <sc-if value="{{ phoneErr }}" hint-placeholder-val=""><p style="font:500 12.5px Inter;color:#9c352d;margin:7px 0 0">Un numéro pour vous joindre.</p></sc-if>
+        </div>
+        <div style="margin-bottom:22px">
+          <label style="display:block;font:600 13px Inter;margin-bottom:7px">Note (optionnel)</label>
+          <textarea onInput="{{ setKycNote }}" placeholder="Une précision sur votre commande…" style="width:100%;height:80px;padding:12px 14px;border:1.5px solid #DAD3C7;border-radius:10px;background:#fff;font:400 15px Inter;color:#1E1B18;outline:none;resize:none">{{ kycNote }}</textarea>
+        </div>
+        <label style="display:flex;align-items:center;gap:12px;cursor:pointer;margin-bottom:22px"><span onClick="{{ toggleWa }}" style="width:44px;height:26px;border-radius:999px;background:{{ waBg }};position:relative;flex:none"><span style="position:absolute;top:3px;left:{{ waLeft }};width:20px;height:20px;border-radius:999px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:left .15s"></span></span><span style="font-size:14px">Être recontactée par WhatsApp</span></label>
+
+        <button onClick="{{ submitKyc }}" style="width:100%;height:52px;border:none;border-radius:10px;background:#D07A34;color:#fff;font:700 16px Inter;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px">
+          <sc-if value="{{ sending }}" hint-placeholder-val=""><span style="width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:999px;display:inline-block;animation:ftspin .7s linear infinite"></span></sc-if>
+          {{ sendLabel }}
+        </button>
+      </div>
+
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:16px;padding:22px;position:{{ filterPos }};top:80px">
+        <div style="font:600 15px Inter;margin-bottom:16px">Votre demande</div>
+        <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">
+          <sc-for list="{{ cartLines }}" as="l" hint-placeholder-count="2">
+            <div style="display:flex;gap:12px;align-items:center"><div style="width:44px;height:54px;flex:none;border-radius:8px;background:{{ l.stripe }}"></div><div style="flex:1;min-width:0"><div style="font:600 13.5px Inter;line-height:1.2">{{ l.name }}</div><div style="font-size:11.5px;color:#6B6259">× {{ l.qty }} · {{ l.variant }}</div></div><div style="font:700 13.5px Inter;color:#26326B">{{ l.lineTotal }}</div></div>
+          </sc-for>
+        </div>
+        <div style="height:1px;background:#EAE4D9;margin-bottom:14px"></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 14px Inter">Total estimé</span><span style="font:700 20px Inter;color:#26326B">{{ subtotalLabel }}</span></div>
+        <div style="display:flex;align-items:center;gap:7px;margin-top:14px;font-size:12.5px;color:#0b6e4d;background:#E6F4EE;padding:8px 12px;border-radius:999px"><svg width="14" height="14" viewBox="0 0 24 24" fill="#C9A227" stroke="none"><path d="M12 2 15 9l7 .5-5.5 4.5L18.5 21 12 17l-6.5 4 2-7L2 9.5 9 9Z"/></svg>+{{ pointsToEarn }} points de fidélité</div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ============================================================ CONFIRMATION -->
+  <sc-if value="{{ isConfirm }}" hint-placeholder-val="">
+  <div style="max-width:720px;margin:0 auto;width:100%;padding:{{ pagePad }};animation:ftfade .3s ease">
+    <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:16px;padding:{{ confPad }};text-align:center">
+      <div style="width:64px;height:64px;border-radius:999px;background:#E6F4EE;display:flex;align-items:center;justify-content:center;margin:0 auto 18px"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0E9F6E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5 5L20 6"/></svg></div>
+      <h1 style="font-family:'Playfair Display',serif;font-weight:600;font-size:{{ h1Size }};margin:0 0 8px;letter-spacing:-.01em">Demande envoyée !</h1>
+      <p style="font-size:15px;color:#6B6259;margin:0 auto 6px;max-width:420px;line-height:1.55">Merci {{ orderName }}. La gérante vous contactera très vite pour confirmer votre commande.</p>
+      <div style="display:inline-flex;align-items:center;gap:8px;font:600 13px Inter;color:#26326B;background:#EEF0F7;padding:6px 14px;border-radius:999px;margin-top:8px">Commande {{ orderRef }}</div>
+    </div>
+
+    <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:16px;padding:26px 28px;margin-top:16px">
+      <div style="font:600 15px Inter;margin-bottom:22px">Suivi de la demande</div>
+      <div style="display:flex;flex-direction:column;gap:0">
+        <sc-for list="{{ trackSteps }}" as="s" hint-placeholder-count="4">
+          <div style="display:flex;gap:14px;align-items:flex-start">
+            <div style="display:flex;flex-direction:column;align-items:center;flex:none"><span style="width:30px;height:30px;border-radius:999px;background:{{ s.dotBg }};display:flex;align-items:center;justify-content:center;color:{{ s.dotColor }};font:700 13px Inter" innerHTML="{{ s.mark }}"></span><span style="width:2px;height:{{ s.lineH }};background:{{ s.lineColor }}"></span></div>
+            <div style="padding-bottom:{{ s.pb }}"><div style="font:600 14.5px Inter;color:{{ s.titleColor }}">{{ s.title }}</div><div style="font-size:13px;color:#6B6259;margin-top:2px">{{ s.desc }}</div></div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap">
+      <a href="#" style="flex:1;min-width:180px;display:inline-flex;align-items:center;justify-content:center;gap:9px;height:50px;border-radius:10px;background:#0E9F6E;color:#fff;font:700 15px Inter"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.4 8.4 0 0 1-4-1L3 21l1.1-4a8.4 8.4 0 0 1-1-4 8.4 8.4 0 0 1 8.4-8.4A8.4 8.4 0 0 1 21 11.5Z"/></svg>Suivre sur WhatsApp</a>
+      <button onClick="{{ goAccount }}" style="flex:1;min-width:180px;height:50px;border:1.5px solid #26326B;border-radius:10px;background:#fff;color:#26326B;font:600 15px Inter;cursor:pointer">Voir mes commandes</button>
+    </div>
+    <div style="text-align:center;margin-top:16px"><span onClick="{{ goCatalog }}" style="font:600 14px Inter;color:#26326B;cursor:pointer">Continuer mes achats →</span></div>
+  </div>
+  </sc-if>
+
+  <!-- ============================================================ ACCOUNT -->
+  <sc-if value="{{ isAccount }}" hint-placeholder-val="">
+  <div style="max-width:920px;margin:0 auto;width:100%;padding:{{ pagePad }};animation:ftfade .3s ease">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:22px">
+      <span style="width:60px;height:60px;flex:none;border-radius:999px;background:#26326B;display:flex;align-items:center;justify-content:center;font:600 22px Inter;color:#fff">AD</span>
+      <div><h1 style="font-family:'Playfair Display',serif;font-weight:600;font-size:{{ h1Size }};margin:0;letter-spacing:-.01em">Bonjour, Awa</h1><div style="font-size:14px;color:#6B6259">awa.diallo@email.com</div></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:{{ acctCols }};gap:16px;margin-bottom:16px">
+      <div style="background:#1E1B18;border-radius:16px;padding:22px 24px;color:#fff">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span style="width:36px;height:36px;border-radius:999px;background:#2c2822;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="#C9A227" stroke="none"><path d="M12 2 15 9l7 .5-5.5 4.5L18.5 21 12 17l-6.5 4 2-7L2 9.5 9 9Z"/></svg></span><span style="font:600 13px Inter;color:#C9BEB0">Points Teranga</span><span style="margin-left:auto;font:700 11px Inter;padding:3px 9px;border-radius:999px;background:#2c2822;color:#C9A227;border:1px solid #C9A227">Palier Or</span></div>
+        <div style="font-family:'Playfair Display',serif;font-weight:600;font-size:38px;line-height:1">340 <span style="font-size:16px;color:#C9BEB0">pts</span></div>
+        <div style="height:6px;border-radius:999px;background:#2c2822;margin:14px 0 8px;overflow:hidden"><span style="display:block;height:100%;width:68%;background:#C9A227"></span></div>
+        <div style="font-size:12.5px;color:#C9BEB0">Plus que 60 points avant votre bon de 5%.</div>
+      </div>
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:16px;padding:22px 24px">
+        <div style="font:600 14px Inter;margin-bottom:16px">Mes coordonnées</div>
+        <div style="display:flex;flex-direction:column;gap:12px;font-size:14px">
+          <div style="display:flex;justify-content:space-between"><span style="color:#6B6259">Téléphone</span><span style="font-weight:600">+221 77 123 45 67</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:#6B6259">Livraison</span><span style="font-weight:600">Dakar, Plateau</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:#6B6259">WhatsApp</span><span style="font-weight:600;color:#0E9F6E">Activé</span></div>
+        </div>
+        <button style="width:100%;height:44px;margin-top:18px;border:1.5px solid #26326B;border-radius:10px;background:#fff;color:#26326B;font:600 14px Inter;cursor:pointer">Modifier</button>
+      </div>
+    </div>
+
+    <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:16px;padding:22px 24px">
+      <div style="font:600 15px Inter;margin-bottom:16px">Historique des commandes</div>
+      <div style="display:flex;flex-direction:column">
+        <sc-for list="{{ orderHistory }}" as="o" hint-placeholder-count="3">
+          <div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-top:1px solid #EFEAE0">
+            <div style="width:46px;height:56px;flex:none;border-radius:8px;background:{{ o.stripe }}"></div>
+            <div style="flex:1;min-width:0"><div style="font:600 14px Inter">{{ o.ref }}</div><div style="font-size:12.5px;color:#6B6259">{{ o.date }} · {{ o.items }} article(s)</div></div>
+            <div style="text-align:right"><div style="font:700 15px Inter;color:#26326B;margin-bottom:5px">{{ o.total }}</div><span style="display:inline-flex;align-items:center;gap:5px;font:600 11.5px Inter;padding:3px 9px;border-radius:999px;background:{{ o.badgeBg }};color:{{ o.badgeColor }}"><span style="width:6px;height:6px;border-radius:999px;background:{{ o.dot }}"></span>{{ o.status }}</span></div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  </main>
+
+  <!-- ============ BOTTOM TAB (mobile) ============ -->
+  <sc-if value="{{ isMobile }}" hint-placeholder-val="">
+  <div style="position:sticky;bottom:0;z-index:50;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-top:1px solid #EAE4D9;display:flex;justify-content:space-around;padding:6px 4px 8px">
+    <div onClick="{{ goHome }}" style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:56px;height:52px;justify-content:center;cursor:pointer;color:{{ tabColors.home }}"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="{{ tabColors.home }}" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg><span style="font:600 10.5px Inter">Accueil</span></div>
+    <div onClick="{{ goCatalog }}" style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:56px;height:52px;justify-content:center;cursor:pointer;color:{{ tabColors.cat }}"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="{{ tabColors.cat }}" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><span style="font:600 10.5px Inter">Boutique</span></div>
+    <div onClick="{{ goCart }}" style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:56px;height:52px;justify-content:center;cursor:pointer;color:{{ tabColors.cart }}"><span style="position:relative"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="{{ tabColors.cart }}" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><sc-if value="{{ cartCount }}" hint-placeholder-val=""><span style="position:absolute;top:-5px;right:-7px;font:700 9px Inter;background:#D07A34;color:#fff;min-width:15px;height:15px;border-radius:999px;display:flex;align-items:center;justify-content:center;padding:0 3px">{{ cartCount }}</span></sc-if></span><span style="font:600 10.5px Inter">Panier</span></div>
+    <div onClick="{{ goAccount }}" style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:56px;height:52px;justify-content:center;cursor:pointer;color:{{ tabColors.account }}"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="{{ tabColors.account }}" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span style="font:600 10.5px Inter">Compte</span></div>
+  </div>
+  </sc-if>
+
+  <!-- ============ TOAST ============ -->
+  <sc-if value="{{ toast }}" hint-placeholder-val="">
+  <div style="position:fixed;bottom:{{ toastBottom }};left:50%;transform:translateX(-50%);z-index:90;display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #EAE4D9;border-left:4px solid {{ toastAccent }};border-radius:12px;padding:14px 16px;box-shadow:0 8px 24px rgba(60,40,20,.16);animation:fttoast .22s ease;max-width:90vw">
+    <span innerHTML="{{ toastIcon }}" style="display:flex;flex:none"></span>
+    <div style="font:600 14px Inter">{{ toast }}</div>
+  </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:900},&quot;startScreen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;home&quot;,&quot;catalog&quot;,&quot;product&quot;,&quot;cart&quot;,&quot;checkout&quot;,&quot;confirm&quot;,&quot;account&quot;],&quot;default&quot;:&quot;home&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Démo&quot;}}">
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    const P = props || {};
+    this.state = {
+      route: P.startScreen || 'home',
+      w: (typeof window!=='undefined'? window.innerWidth : 1280),
+      offline: false,
+      catState: 'ready',
+      cart: [],
+      selProdId: 'soie',
+      selColor: 0,
+      selLen: 0,
+      qty: 1,
+      fav: false,
+      filters: { cat:'Tous', color:'', motif:'', sort:'new', priceMax:30000, q:'' },
+      filtersOpen: false,
+      menuOpen: false,
+      kyc: { name:'', place:'', phone:'', note:'', wa:true },
+      kycTouched: false,
+      sending: false,
+      order: null,
+      blocksMode: false,
+      blockOrder: ['hero','cats','grid','loyalty','featured','story','look','news','contact'],
+      blockNames: {hero:'Bandeau Hero', cats:'Vignettes catégories', grid:'Nouveautés & best-sellers', loyalty:'Bandeau fidélité', featured:'Produit vedette', story:'Notre histoire', look:'Galerie / Lookbook', news:'Newsletter', contact:'Contact & localisation'},
+      blockHidden: {},
+      toast: null, toastType: 'success'
+    };
+    this._products = [
+      {id:'wax', name:'Foulard Wax Sénégal', cat:'Foulards', motif:'Wax', price:12500, old:15000, colors:['#26326B','#D07A34','#C9A227'], len:'90 × 90 cm', badge:'Nouveau', stock:14, desc:"Coton wax authentique, teint à la main à Dakar. Un imprimé vibrant qui traverse les saisons."},
+      {id:'bazinor', name:'Turban Bazin Or', cat:'Turbans', motif:'Bazin', price:18000, colors:['#C9A227','#1E1B18'], len:'Taille unique', stock:0, desc:"Bazin riche brodé main, éclat doré pour les grandes occasions."},
+      {id:'soie', name:'Foulard Soie Teranga', cat:'Foulards', motif:'Uni', price:22000, colors:['#26326B','#0E9F6E','#C9A227'], len:'140 × 40 cm', badge:'★ Coup de cœur', stock:6, desc:"Soie fluide au toucher précieux, teinte unie profonde et bords roulottés à la main. Notre pièce signature."},
+      {id:'kente', name:'Châle Kente', cat:'Foulards', motif:'Kente', price:16500, old:19000, colors:['#D07A34','#C9A227','#26326B'], len:'180 × 60 cm', stock:9, desc:"Tissage Kente aux couleurs chaudes, un drapé généreux qui habille toutes les silhouettes."},
+      {id:'ankara', name:'Turban Ankara', cat:'Turbans', motif:'Wax', price:9500, colors:['#26326B','#D07A34'], len:'Taille unique', stock:20, desc:"Pré-noué et ajustable, l'imprimé Ankara qui se pose en une seconde."},
+      {id:'coton', name:'Foulard Léger Coton', cat:'Foulards', motif:'Uni', price:7500, colors:['#0E9F6E','#26326B','#C9A227'], len:'70 × 70 cm', badge:'Nouveau', stock:25, desc:"Coton léger et respirant, l'essentiel du quotidien, doux et facile à nouer."},
+      {id:'pochette', name:'Pochette Assortie', cat:'Accessoires', motif:'Wax', price:6000, colors:['#D07A34','#1E1B18'], len:'22 × 15 cm', stock:12, desc:"Petite pochette en wax pour compléter votre tenue avec caractère."},
+      {id:'bandeau', name:'Bandeau Wax', cat:'Accessoires', motif:'Wax', price:4500, colors:['#C9A227','#26326B'], len:'Taille unique', stock:30, desc:"Bandeau confortable, l'accent coloré parfait pour relever un look sobre."},
+      {id:'etole', name:'Étole Bazin Brodée', cat:'Foulards', motif:'Bazin', price:25000, colors:['#1E1B18','#C9A227'], len:'200 × 70 cm', badge:'★ VIP', stock:3, desc:"Étole d'exception en bazin, broderie main fil d'or. Édition très limitée."},
+      {id:'indigo', name:'Foulard Indigo Tie & Dye', cat:'Foulards', motif:'Tie & dye', price:13500, colors:['#26326B'], len:'100 × 100 cm', stock:8, desc:"Teinture indigo tie & dye artisanale — chaque pièce est unique."}
+    ];
+    this._colorNames = {'#26326B':'Indigo','#D07A34':'Terracotta','#C9A227':'Or','#0E9F6E':'Vert','#1E1B18':'Noir'};
+  }
+  componentDidMount(){
+    this._onResize = () => this.setState({w: window.innerWidth});
+    window.addEventListener('resize', this._onResize);
+  }
+  componentWillUnmount(){ window.removeEventListener('resize', this._onResize); if(this._tt) clearTimeout(this._tt); if(this._st) clearTimeout(this._st); }
+
+  fmt(n){ return Math.round(n).toLocaleString('fr-FR').replace(/\u202f/g,' ').replace(/\u00a0/g,' '); }
+  money(n){ return this.fmt(n)+' FCFA'; }
+  stripe(hex){ return `repeating-linear-gradient(45deg, ${hex}22, ${hex}22 11px, #efe8dc 11px, #efe8dc 22px)`; }
+  top(){ if(typeof window!=='undefined') window.scrollTo(0,0); }
+  go(r){ this.setState({route:r, menuOpen:false, filtersOpen:false}); this.top(); }
+  toast(msg,type){ this.setState({toast:msg,toastType:type||'success'}); if(this._tt)clearTimeout(this._tt); this._tt=setTimeout(()=>this.setState({toast:null}),2400); }
+
+  openProduct(id){ this.setState({route:'product', selProdId:id, selColor:0, selLen:0, qty:1, fav:false, menuOpen:false}); this.top(); }
+  addToCart(p, variant, q){
+    if(p.stock<=0){ this.toast('Article épuisé','danger'); return; }
+    const qn = q||1;
+    const key = p.id+'|'+variant;
+    const cart=[...this.state.cart];
+    const ex=cart.find(l=>l.key===key);
+    if(ex){ ex.qty+=qn; } else { cart.push({key, id:p.id, name:p.name, variant, price:p.price, qty:qn, hex:p.colors[0]}); }
+    this.setState({cart});
+    this.toast('Ajouté au panier','success');
+  }
+  quickAdd(p){ this.addToCart(p, p.colors.length?this._colorNames[p.colors[0]]:'Standard', 1); }
+  incLine(key,d){ const cart=this.state.cart.map(l=>({...l})); const l=cart.find(x=>x.key===key); if(!l)return; l.qty+=d; this.setState({cart:cart.filter(x=>x.qty>0)}); }
+  rmLine(key){ this.setState({cart:this.state.cart.filter(l=>l.key!==key)}); }
+
+  setFilter(k,v){ this.setState({filters:{...this.state.filters,[k]:v}}); }
+  clearFilters(){ this.setState({filters:{cat:'Tous',color:'',motif:'',sort:'new',priceMax:30000,q:''}, catState:'ready'}); }
+  setCat(c){ this.setState({filters:{...this.state.filters,cat:c}, route:'catalog', menuOpen:false, catState:'ready'}); this.top(); }
+  loadCat(){ this.setState({catState:'loading'}); if(this._st)clearTimeout(this._st); this._st=setTimeout(()=>this.setState({catState:'ready'}),1100); }
+  moveBlock(id,dir){ const o=[...this.state.blockOrder]; const i=o.indexOf(id); const j=i+dir; if(j<0||j>=o.length)return; const t=o[i]; o[i]=o[j]; o[j]=t; this.setState({blockOrder:o}); }
+  toggleHideBlock(id){ const h={...this.state.blockHidden}; h[id]=!h[id]; this.setState({blockHidden:h}); }
+
+  submitKyc(){
+    const k=this.state.kyc;
+    this.setState({kycTouched:true});
+    if(!k.name.trim() || !k.place.trim() || !k.phone.trim()) return;
+    this.setState({sending:true});
+    setTimeout(()=>{
+      const ref='#TER-'+(2600+Math.floor(Math.random()*400));
+      this.setState({sending:false, route:'confirm', order:{ref, name:k.name.trim()}, cart:[], kyc:{name:'',place:'',phone:'',note:'',wa:true}, kycTouched:false});
+      this.top();
+    }, 900);
+  }
+
+  renderVals(){
+    const s=this.state, self=this, R=s.route;
+    const isMobile = s.w < 860;
+    const isDesktop = !isMobile;
+    const f=s.filters;
+    const cartCount = s.cart.reduce((a,l)=>a+l.qty,0);
+    const subtotal = s.cart.reduce((a,l)=>a+l.price*l.qty,0);
+
+    // products display helper
+    const pcard = (p)=>({
+      id:p.id, name:p.name, sub:(p.motif!=='Uni'?p.motif+' · ':'')+p.len,
+      priceLabel:this.money(p.price), hasOld:!!p.old, oldLabel:p.old?this.fmt(p.old):'',
+      badge:p.badge||'', badgeBg:(p.badge&&p.badge.indexOf('★')>=0)?'#1E1B18':'#D07A34',
+      soldOut:p.stock<=0, stripe:this.stripe(p.colors[0]),
+      open:()=>self.openProduct(p.id),
+      add:()=>self.quickAdd(p),
+      addBg:p.stock<=0?'#F4F0E9':'#fff', addBorder:p.stock<=0?'#EAE4D9':'#26326B',
+      addStroke:p.stock<=0?'#C7BFB2':'#26326B', addCursor:p.stock<=0?'not-allowed':'pointer'
+    });
+
+    // home
+    const homeProducts = this._products.slice(0,4).map(pcard);
+    const featuredRaw = this._products.find(p=>p.id==='soie');
+    const featured = {...pcard(featuredRaw), desc:featuredRaw.desc};
+    const catTiles = [
+      {name:'Foulards', cat:'Foulards'}, {name:'Turbans', cat:'Turbans'}, {name:'Accessoires', cat:'Accessoires'}
+    ].map(c=>({name:c.name, count:this._products.filter(p=>p.cat===c.cat).length,
+      stripe:this.stripe(c.cat==='Foulards'?'#26326B':c.cat==='Turbans'?'#D07A34':'#C9A227'),
+      go:()=>self.setCat(c.cat)}));
+    const lookbook = [
+      {label:'look 01 · 3:4', ratio:'3/4', hex:'#26326B'},
+      {label:'look 02 · 3:4', ratio:'3/4', hex:'#D07A34'},
+      {label:'look 03 · 3:4', ratio:'3/4', hex:'#C9A227'},
+      {label:'look 04 · 3:4', ratio:'3/4', hex:'#0E9F6E'}
+    ].map(l=>({...l, stripe:this.stripe(l.hex)}));
+
+    // catalog filtering
+    let list = this._products.filter(p=> f.cat==='Tous' || p.cat===f.cat);
+    if(f.cat==='Nouveautés') list = this._products.filter(p=>p.badge==='Nouveau');
+    if(f.color) list = list.filter(p=>p.colors.indexOf(f.color)>=0);
+    if(f.motif) list = list.filter(p=>p.motif===f.motif);
+    list = list.filter(p=>p.price<=f.priceMax);
+    if(f.q.trim()){ const q=f.q.trim().toLowerCase(); list=list.filter(p=>p.name.toLowerCase().indexOf(q)>=0 || p.motif.toLowerCase().indexOf(q)>=0); }
+    if(f.sort==='asc') list=[...list].sort((a,b)=>a.price-b.price);
+    if(f.sort==='desc') list=[...list].sort((a,b)=>b.price-a.price);
+    const catProducts = list.map(pcard);
+    const catReady = s.catState==='ready' && catProducts.length>0;
+    const catEmpty = s.catState==='ready' && catProducts.length===0;
+
+    const catFilterDefs=['Tous','Foulards','Turbans','Accessoires'];
+    const catFilters = catFilterDefs.map(c=>({label:c, select:()=>self.setFilter('cat',c),
+      bg:f.cat===c?'#EEF0F7':'transparent', color:f.cat===c?'#26326B':'#1E1B18'}));
+    const colorDefs=['#26326B','#D07A34','#C9A227','#0E9F6E','#1E1B18'];
+    const colorFilters = colorDefs.map(hex=>({hex, label:this._colorNames[hex],
+      outline:f.color===hex?'2px solid #1E1B18':'2px solid transparent',
+      select:()=>self.setFilter('color', f.color===hex?'':hex)}));
+    const motifDefs=['Wax','Bazin','Uni','Kente','Tie & dye'];
+    const motifFilters = motifDefs.map(m=>({label:m, select:()=>self.setFilter('motif', f.motif===m?'':m),
+      bg:f.motif===m?'#26326B':'#fff', border:f.motif===m?'#26326B':'#DAD3C7', color:f.motif===m?'#fff':'#6B6259'}));
+    const stateDefs=[['ready','Normal'],['loading','Chargement'],['error','Erreur']];
+    const stateBtns = stateDefs.map(st=>({label:st[1],
+      select:()=> st[0]==='loading'?self.loadCat():self.setState({catState:st[0]}),
+      bg:s.catState===st[0]?'#1E1B18':'#fff', border:s.catState===st[0]?'#1E1B18':'#DAD3C7', color:s.catState===st[0]?'#fff':'#6B6259'}));
+
+    // product detail
+    const prodRaw = this._products.find(p=>p.id===s.selProdId) || this._products[0];
+    const prod = {...pcard(prodRaw), cat:prodRaw.cat, desc:prodRaw.desc};
+    const lensFor = prodRaw.len==='Taille unique' ? ['Taille unique'] : [prodRaw.len, 'Sur-mesure'];
+    const prodColors = prodRaw.colors.map((hex,i)=>({hex, label:this._colorNames[hex],
+      outline:s.selColor===i?'2px solid #1E1B18':'2px solid transparent', select:()=>self.setState({selColor:i})}));
+    const prodLens = lensFor.map((lb,i)=>({label:lb, select:()=>self.setState({selLen:i}),
+      bg:s.selLen===i?'#26326B':'#fff', border:s.selLen===i?'#26326B':'#DAD3C7', color:s.selLen===i?'#fff':'#1E1B18'}));
+    const prodThumbs = [0,1,2,3].map(i=>({stripe:this.stripe(prodRaw.colors[i%prodRaw.colors.length]), border:i===0?'2px solid #26326B':'1px solid rgba(30,27,24,.1)'}));
+    const related = this._products.filter(p=>p.cat===prodRaw.cat && p.id!==prodRaw.id).slice(0,4).map(pcard);
+    const selColorLabel = this._colorNames[prodRaw.colors[s.selColor]] || '';
+    const variantStr = selColorLabel + (lensFor[s.selLen]&&lensFor[s.selLen]!=='Taille unique'?' · '+lensFor[s.selLen]:'');
+    // availability chip
+    let availChip;
+    if(prodRaw.stock<=0){ availChip = React.createElement('span',{style:{display:'inline-flex',alignItems:'center',gap:'7px',font:'600 12.5px Inter',padding:'6px 12px',borderRadius:'999px',background:'#F8E5E3',color:'#9c352d'}},React.createElement('span',{style:{width:'7px',height:'7px',borderRadius:'999px',background:'#C4453B'}}),'Épuisé — bientôt de retour'); }
+    else if(prodRaw.stock<=5){ availChip = React.createElement('span',{style:{display:'inline-flex',alignItems:'center',gap:'7px',font:'600 12.5px Inter',padding:'6px 12px',borderRadius:'999px',background:'#FBF1D8',color:'#8a6500'}},React.createElement('span',{style:{width:'7px',height:'7px',borderRadius:'999px',background:'#E0A400'}}),'Plus que '+prodRaw.stock+' en stock'); }
+    else { availChip = React.createElement('span',{style:{display:'inline-flex',alignItems:'center',gap:'7px',font:'600 12.5px Inter',padding:'6px 12px',borderRadius:'999px',background:'#E6F4EE',color:'#0b6e4d'}},React.createElement('span',{style:{width:'7px',height:'7px',borderRadius:'999px',background:'#0E9F6E'}}),'En stock · expédié sous 48h'); }
+
+    // cart lines
+    const cartLines = s.cart.map(l=>({key:l.key, name:l.name, variant:l.variant, qty:l.qty,
+      lineTotal:this.fmt(l.price*l.qty), stripe:this.stripe(l.hex),
+      inc:()=>self.incLine(l.key,1), dec:()=>self.incLine(l.key,-1), remove:()=>self.rmLine(l.key)}));
+
+    // kyc
+    const k=s.kyc, kt=s.kycTouched;
+    const nameErr=kt&&!k.name.trim(), placeErr=kt&&!k.place.trim(), phoneErr=kt&&!k.phone.trim();
+
+    // confirmation tracking
+    const steps=[
+      ['En attente de confirmation','Nous avons bien reçu votre demande.'],
+      ['Confirmée','La gérante valide la disponibilité et le prix.'],
+      ['En préparation','Vos articles sont emballés avec soin.'],
+      ['Livrée','Remise en main propre ou par livreur.']
+    ];
+    const trackSteps = steps.map((st,i)=>{
+      const active=i===0, done=false, last=i===steps.length-1;
+      return {title:st[0], desc:st[1],
+        mark: active?'●':(i+1)+'',
+        dotBg: active?'#0E9F6E':'#F1ECE2', dotColor: active?'#fff':'#9a8f7d',
+        titleColor: active?'#1E1B18':'#9a8f7d',
+        lineColor: '#EAE4D9', lineH: last?'0':'26px', pb: last?'0':'18px'};
+    });
+
+    // account order history
+    const orderHistory=[
+      {ref:'#TER-0481', date:'2 juil. 2026', items:3, total:this.money(37500), status:'En préparation', badgeBg:'#F4EDE1', badgeColor:'#8a6a3a', dot:'#D07A34', hex:'#26326B'},
+      {ref:'#TER-0463', date:'18 juin 2026', items:1, total:this.money(22000), status:'Livrée', badgeBg:'#E6F4EE', badgeColor:'#0b6e4d', dot:'#0E9F6E', hex:'#0E9F6E'},
+      {ref:'#TER-0448', date:'2 juin 2026', items:2, total:this.money(16500), status:'Livrée', badgeBg:'#E6F4EE', badgeColor:'#0b6e4d', dot:'#0E9F6E', hex:'#D07A34'}
+    ];
+
+    // toast icon
+    const tType=s.toastType;
+    const tColor = tType==='danger'?'#C4453B':tType==='warning'?'#E0A400':'#0E9F6E';
+    const tIcon = tType==='danger'
+      ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C4453B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>'
+      : tType==='warning'
+      ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E0A400" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.3 3.9-8 13.9A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3.2l-8-13.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>'
+      : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0E9F6E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>';
+
+    const navColor=(c)=> (R==='catalog'&&f.cat===c)?'#D07A34':'#1E1B18';
+
+    // ---- block editor preview mode ----
+    const bm=s.blocksMode;
+    const eyeSvg='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+    const eyeOffSvg='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2 22 22"/><path d="M10.6 6.1A9.7 9.7 0 0 1 12 6c6.5 0 10 6 10 6a17 17 0 0 1-3 3.5M6.6 6.6A17 17 0 0 0 2 12s3.5 7 10 7a9.6 9.6 0 0 0 4-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+    const blkIds=['hero','cats','grid','loyalty','featured','story','look','news','contact'];
+    const blk={};
+    blkIds.forEach(id=>{
+      const idx=s.blockOrder.indexOf(id);
+      const hidden=!!s.blockHidden[id];
+      blk[id]={
+        name:s.blockNames[id],
+        set:(e)=>self.setState({blockNames:{...s.blockNames,[id]:e.target.value}}),
+        order:idx,
+        display:(hidden && !bm)?'none':'block',
+        opacity:hidden?'.4':'1',
+        up:()=>self.moveBlock(id,-1),
+        down:()=>self.moveBlock(id,1),
+        toggleHide:()=>self.toggleHideBlock(id),
+        eyeIcon:hidden?eyeOffSvg:eyeSvg
+      };
+    });
+
+    return {
+      isMobile, isDesktop,
+      isHome:R==='home', isCatalog:R==='catalog', isProduct:R==='product', isCart:R==='cart',
+      isCheckout:R==='checkout', isConfirm:R==='confirm', isAccount:R==='account',
+      // chrome sizes
+      headerTop: s.offline?'0':'0', headerPad: isMobile?'10px 16px':'14px 20px',
+      logoSize: isMobile?'20px':'23px', headerIconGap: isMobile?'2px':'6px',
+      blockPad: isMobile?'20px 16px':'40px 20px', blockPadTight: isMobile?'8px 16px':'12px 20px',
+      pagePad: isMobile?'18px 16px 32px':'32px 20px 48px',
+      h1Size: isMobile?'28px':'36px', h2Size: isMobile?'24px':'30px',
+      heroRadius: isMobile?'18px':'22px', heroH: isMobile?'440px':'520px',
+      heroTextPad: isMobile?'22px 20px 26px':'44px 48px 48px',
+      heroTitleSize: isMobile?'36px':'52px', heroSubSize: isMobile?'14px':'16px',
+      cat3Cols: isMobile?'1fr':'repeat(3,1fr)',
+      prodCols: isMobile?'repeat(2,1fr)':'repeat(4,1fr)',
+      catProdCols: isMobile?'repeat(2,1fr)':'repeat(3,1fr)',
+      prodGap: isMobile?'12px':'18px',
+      promoPad: isMobile?'24px 20px':'32px 40px', promoTitleSize: isMobile?'21px':'25px',
+      featCols: isMobile?'1fr':'1fr 1fr', featImgH: isMobile?'300px':'420px',
+      featPad: isMobile?'26px 22px':'44px 48px', featTitleSize: isMobile?'26px':'34px',
+      storyCols: isMobile?'1fr':'1fr 1fr', storyGap: isMobile?'24px':'48px', storyImgH: isMobile?'260px':'400px',
+      lookCols: isMobile?'repeat(2,1fr)':'repeat(4,1fr)',
+      contactCols: isMobile?'1fr':'1fr 1.2fr',
+      catGridCols: (isDesktop)?'260px 1fr':'1fr',
+      showFilterPanel: isDesktop || s.filtersOpen,
+      filterPos: isDesktop?'sticky':'static',
+      prodDetailCols: isMobile?'1fr':'1fr 1fr',
+      cartCols: isMobile?'1fr':'1fr 320px',
+      checkoutCols: isMobile?'1fr':'1.4fr 1fr',
+      acctCols: isMobile?'1fr':'1fr 1fr',
+      confPad: isMobile?'32px 22px':'44px 40px',
+      toastBottom: isMobile?'80px':'28px',
+      // header nav
+      goHome:()=>self.go('home'), goCatalog:()=>self.setCat('Tous'), goCart:()=>self.go('cart'),
+      goCheckout:()=>{ if(!s.cart.length){self.toast('Panier vide','warning');return;} self.go('checkout'); },
+      goAccount:()=>self.go('account'), goStory:()=>{ self.go('home'); },
+      navNew:()=>self.setCat('Nouveautés'), navFoulards:()=>self.setCat('Foulards'),
+      navTurbans:()=>self.setCat('Turbans'), navAccessoires:()=>self.setCat('Accessoires'),
+      navColors:{new:navColor('Nouveautés'),foulards:navColor('Foulards'),turbans:navColor('Turbans'),accessoires:navColor('Accessoires')},
+      openMenu:()=>self.setState({menuOpen:true}), closeMenu:()=>self.setState({menuOpen:false}), menuOpen:s.menuOpen,
+      offline:s.offline, toggleOffline:()=>{const nx=!s.offline;self.setState({offline:nx});self.toast(nx?'Mode hors-ligne simulé':'De retour en ligne',nx?'warning':'success');},
+      netDot: s.offline?'#E0A400':'#0E9F6E',
+      cartCount,
+      tabColors:{home:R==='home'?'#26326B':'#8a8177', cat:R==='catalog'?'#26326B':'#8a8177', cart:R==='cart'?'#26326B':'#8a8177', account:R==='account'?'#26326B':'#8a8177'},
+      // home data
+      homeProducts, featured, catTiles, lookbook,
+      subscribe:()=>self.toast('Inscription enregistrée · +25 points','success'),
+      // catalog
+      catTitle: f.cat==='Tous'?'Toute la boutique':f.cat,
+      catCountLabel: catProducts.length+' produit'+(catProducts.length>1?'s':''),
+      catCountLabel2:'',
+      query:f.q, setQuery:(e)=>self.setFilter('q',e.target.value),
+      sort:f.sort, setSort:(e)=>self.setFilter('sort',e.target.value),
+      toggleFilters:()=>self.setState({filtersOpen:!s.filtersOpen}),
+      catFilters, colorFilters, motifFilters, stateBtns,
+      priceMax:f.priceMax, priceMaxLabel:this.money(f.priceMax), setPriceMax:(e)=>self.setFilter('priceMax',parseInt(e.target.value,10)),
+      clearFilters:()=>self.clearFilters(),
+      catLoading:s.catState==='loading', catError:s.catState==='error', catReady, catEmpty,
+      retryCat:()=>self.loadCat(),
+      skeletons:[0,1,2,3,4,5], catProducts,
+      // product
+      prod, prodColors, prodLens, prodThumbs, related, selColorLabel, availChip,
+      qty:s.qty, qtyInc:()=>self.setState({qty:s.qty+1}), qtyDec:()=>self.setState({qty:Math.max(1,s.qty-1)}),
+      fav:s.fav, favFill:s.fav?'#D07A34':'none', toggleFav:()=>self.setState({fav:!s.fav}),
+      addFromDetail:()=>self.addToCart(prodRaw, variantStr, s.qty),
+      buyNow:()=>{ if(prodRaw.stock<=0){self.toast('Article épuisé','danger');return;} self.addToCart(prodRaw, variantStr, s.qty); self.go('checkout'); },
+      addMainBg: prodRaw.stock<=0?'#C7C1B6':'#26326B', addMainCursor:prodRaw.stock<=0?'not-allowed':'pointer',
+      addMainLabel: prodRaw.stock<=0?'Indisponible':'Ajouter au panier',
+      // cart
+      cartLines, cartEmpty:s.cart.length===0, cartHasItems:s.cart.length>0, subtotalLabel:this.money(subtotal),
+      // checkout
+      kycName:k.name, kycPlace:k.place, kycPhone:k.phone, kycNote:k.note,
+      setKycName:(e)=>self.setState({kyc:{...s.kyc,name:e.target.value}}),
+      setKycPlace:(e)=>self.setState({kyc:{...s.kyc,place:e.target.value}}),
+      setKycPhone:(e)=>self.setState({kyc:{...s.kyc,phone:e.target.value}}),
+      setKycNote:(e)=>self.setState({kyc:{...s.kyc,note:e.target.value}}),
+      nameErr, placeErr, phoneErr,
+      nameBorder:nameErr?'#C4453B':'#DAD3C7', placeBorder:placeErr?'#C4453B':'#DAD3C7', phoneBorder:phoneErr?'#C4453B':'#DAD3C7',
+      toggleWa:()=>self.setState({kyc:{...s.kyc,wa:!s.kyc.wa}}), waBg:k.wa?'#0E9F6E':'#DAD3C7', waLeft:k.wa?'21px':'3px',
+      sending:s.sending, sendLabel:s.sending?'Envoi…':'Envoyer ma demande',
+      submitKyc:()=>self.submitKyc(),
+      pointsToEarn: Math.round(subtotal/500),
+      // confirmation
+      orderRef: s.order?s.order.ref:'#TER-0000', orderName: s.order?s.order.name:'', trackSteps,
+      // account
+      orderHistory,
+      // block editor preview
+      blocksMode:bm, blk, blkOutline: bm?'2px dashed rgba(208,122,52,.95)':'none',
+      toggleBlocks:()=>{ const nx=!bm; self.setState({blocksMode:nx}); self.toast(nx?'Mode aperçu des blocs activé':'Aperçu des blocs désactivé', nx?'success':'success'); },
+      blocksBtnBg: bm?'#D07A34':'#1E1B18', blocksBtnLabel: bm?'Quitter l\u2019aperçu':'Aperçu des blocs',
+      blocksHintTop: isMobile?'62px':'70px', blocksBtnBottom: isMobile?'84px':'28px',
+      // toast
+      toast:s.toast, toastAccent:tColor, toastIcon:tIcon
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,282 @@
+@import "tailwindcss";
+
+/*
+  Foulard Teranga — Système de design "Teranga Moderne"
+  Tokens issus de DESIGN.md. Appliqués via variables CSS pour permettre
+  la personnalisation de la vitrine par la gérante (thème boutique).
+*/
+:root {
+  /* Couleurs de marque */
+  --color-ivory: #faf7f2;
+  --color-surface: #ffffff;
+  --color-ink: #1e1b18;
+  --color-muted: #6b6259;
+  --color-primary: #26326b;
+  --color-primary-hover: #1c2652;
+  --color-accent: #d07a34;
+  --color-accent-hover: #bd6b28;
+  --color-sable: #e7decf;
+  --color-gold: #c9a227;
+  --color-page: #e3dcd0;
+
+  /* Sémantiques */
+  --color-success: #0e9f6e;
+  --color-warning: #e0a400;
+  --color-danger: #c4453b;
+  --color-danger-hover: #a83a31;
+
+  /* Fonds sémantiques */
+  --bg-success: #e6f4ee;
+  --fg-success: #0b6e4d;
+  --bg-warning: #fbf1d8;
+  --fg-warning: #8a6500;
+  --bg-danger: #f8e5e3;
+  --fg-danger: #9c352d;
+  --bg-info: #eef0f7;
+  --fg-info: #26326b;
+
+  /* Séparateurs / surfaces douces */
+  --border-hair: rgba(30, 27, 24, 0.08);
+  --border-soft: #eae4d9;
+  --border-field: #dad3c7;
+  --row-alt: #fdfcfa;
+
+  /* Typographie (alimentée par next/font via layout.tsx) */
+  --font-display: var(--font-playfair), "Playfair Display", Georgia, serif;
+  --font-ui: var(--font-inter), "Inter", system-ui, -apple-system, sans-serif;
+
+  /* Rayons */
+  --radius-card: 14px;
+  --radius-control: 10px;
+  --radius-pill: 999px;
+
+  /* Ombres chaudes */
+  --shadow-sm: 0 1px 3px rgba(60, 40, 20, 0.1);
+  --shadow-lg: 0 8px 24px rgba(60, 40, 20, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--color-accent);
+}
+
+button {
+  font-family: inherit;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #d8cfc0;
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #c7bda9;
+  background-clip: content-box;
+}
+
+/* Accessibilité : focus visibles partout */
+:focus-visible {
+  outline: 3px solid rgba(38, 50, 107, 0.35);
+  outline-offset: 2px;
+}
+
+@keyframes ft-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes ft-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+@keyframes ft-slideup {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes ft-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/*
+  Bascule responsive back-office. Breakpoint 860px (isMobile < 860 dans la
+  maquette). On rend les deux variantes et on masque par CSS pour un rendu
+  SSR déterministe.
+*/
+@media (max-width: 859.98px) {
+  .ft-desktop-only {
+    display: none !important;
+  }
+}
+@media (min-width: 860px) {
+  .ft-mobile-only {
+    display: none !important;
+  }
+}
+
+/* Zone de contenu : espace bas pour dégager la barre d'onglets mobile. */
+.ft-main {
+  padding-bottom: 0;
+}
+@media (max-width: 859.98px) {
+  .ft-main {
+    padding-bottom: 76px;
+  }
+}
+
+/* Padding d'écran (dense en admin, plus serré sur mobile). */
+.ft-pad {
+  padding: 22px 26px;
+}
+@media (max-width: 859.98px) {
+  .ft-pad {
+    padding: 14px;
+  }
+}
+
+/* Grilles responsives réutilisées par les écrans (mobile → 1 colonne). */
+.ft-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.ft-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.ft-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.ft-orders-cols {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(340px, 1.2fr);
+  gap: 14px;
+  align-items: start;
+}
+.ft-cust-cols {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.3fr);
+  gap: 14px;
+  align-items: start;
+}
+.ft-theme-cols {
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) minmax(320px, 1.1fr);
+  gap: 16px;
+  align-items: start;
+}
+.ft-fin-split {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 14px;
+  align-items: start;
+}
+@media (max-width: 859.98px) {
+  .ft-grid-3,
+  .ft-grid-2,
+  .ft-orders-cols,
+  .ft-cust-cols,
+  .ft-theme-cols,
+  .ft-fin-split {
+    grid-template-columns: 1fr;
+  }
+  .ft-grid-4 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Tiroir latéral (inventaire) : pleine largeur sur mobile. */
+.ft-drawer {
+  width: 440px;
+}
+@media (max-width: 859.98px) {
+  .ft-drawer {
+    width: 100vw;
+  }
+}
+
+/* Grille catalogue POS. */
+.ft-pos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+@media (max-width: 859.98px) {
+  .ft-pos-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Survols réutilisables (équivalents des style-hover du prototype). */
+.ft-hover-surface:hover {
+  background: var(--color-ivory);
+}
+.ft-hover-row:hover {
+  background: #f7f3ec;
+}
+.ft-card-hover:hover {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 3px 12px rgba(38, 50, 107, 0.14);
+}
+.ft-primary-btn:hover {
+  filter: brightness(1.06);
+}
+.ft-dropzone:hover {
+  border-color: var(--color-primary) !important;
+}
+
+/* Skeleton de chargement */
+.ft-skeleton {
+  background: linear-gradient(90deg, #efe9df 25%, #f6f2ea 37%, #efe9df 63%);
+  background-size: 400% 100%;
+  animation: ft-pulse 1.4s ease-in-out infinite;
+  border-radius: 8px;
+}

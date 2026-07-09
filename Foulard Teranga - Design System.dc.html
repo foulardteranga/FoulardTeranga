@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<template id="__bundler_thumbnail" data-bg-color="#FAF7F2">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#FAF7F2"/>
+    <rect x="470" y="250" width="120" height="120" rx="24" fill="#26326B"/>
+    <rect x="610" y="250" width="120" height="120" rx="24" fill="#D07A34"/>
+    <rect x="470" y="390" width="120" height="120" rx="24" fill="#C9A227"/>
+    <rect x="610" y="390" width="120" height="120" rx="24" fill="#E7DECF"/>
+    <text x="600" y="600" font-family="Georgia, 'Times New Roman', serif" font-size="64" font-weight="600" fill="#1E1B18" text-anchor="middle">Teranga</text>
+  </svg>
+</template>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#E3DCD0;color:#1E1B18;font-family:"Inter",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:#26326B;text-decoration:none}
+  a:hover{color:#D07A34}
+  ::selection{background:#26326B;color:#fff}
+  @keyframes ft-spin{to{transform:rotate(360deg)}}
+  @keyframes ft-pulse{0%,100%{opacity:1}50%{opacity:.45}}
+</style>
+</helmet>
+<div style="max-width:1560px;margin:0 auto;padding:0 0 80px">
+
+  <!-- ===== COVER ===== -->
+  <section style="padding:80px 72px 56px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:40px;flex-wrap:wrap">
+      <div style="max-width:760px">
+        <div style="display:inline-flex;align-items:center;gap:10px;padding:6px 12px;border:1px solid #C9A227;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8a7320;margin-bottom:28px">
+          <span style="width:7px;height:7px;border-radius:999px;background:#C9A227"></span>Design System · v1.0
+        </div>
+        <h1 style="font-family:'Playfair Display',serif;font-weight:600;font-size:64px;line-height:1.02;letter-spacing:-.01em;margin:0 0 20px">Foulard Teranga</h1>
+        <p style="font-size:20px;line-height:1.5;color:#6B6259;margin:0 0 8px;max-width:640px">Système de design d'un commerce omnicanal — foulards & accessoires africains élégants pour la femme moderne.</p>
+        <p style="font-size:15px;line-height:1.6;color:#6B6259;margin:0;max-width:640px">Chaleureux, féminin, artisanal, premium mais accessible. Une seule base de tokens, deux densités : vitrine confortable, admin/POS compacte.</p>
+      </div>
+      <div style="display:flex;gap:10px">
+        <span style="width:52px;height:52px;border-radius:12px;background:#26326B;box-shadow:0 2px 10px rgba(38,50,107,.25)"></span>
+        <span style="width:52px;height:52px;border-radius:12px;background:#D07A34"></span>
+        <span style="width:52px;height:52px;border-radius:12px;background:#C9A227"></span>
+        <span style="width:52px;height:52px;border-radius:12px;background:#E7DECF;border:1px solid rgba(30,27,24,.08)"></span>
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:36px">
+      <span style="font-size:12px;font-weight:500;color:#6B6259;padding:6px 12px;background:#FAF7F2;border:1px solid rgba(30,27,24,.08);border-radius:999px">Mobile-first · zones tactiles ≥ 44px</span>
+      <span style="font-size:12px;font-weight:500;color:#6B6259;padding:6px 12px;background:#FAF7F2;border:1px solid rgba(30,27,24,.08);border-radius:999px">Contraste AA · focus visibles</span>
+      <span style="font-size:12px;font-weight:500;color:#6B6259;padding:6px 12px;background:#FAF7F2;border:1px solid rgba(30,27,24,.08);border-radius:999px">Léger & rapide · iconographie ligne</span>
+      <span style="font-size:12px;font-weight:500;color:#6B6259;padding:6px 12px;background:#FAF7F2;border:1px solid rgba(30,27,24,.08);border-radius:999px">Montants en FCFA · textes FR</span>
+    </div>
+  </section>
+
+  <!-- ===== 01 · PALETTE ===== -->
+  <section id="palette" style="padding:56px 72px;background:#FAF7F2;border-top:1px solid rgba(30,27,24,.08);border-bottom:1px solid rgba(30,27,24,.08)">
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:6px">
+      <span style="font-family:ui-monospace,Menlo,monospace;font-size:13px;font-weight:600;color:#C9A227">01</span>
+      <h2 style="font-family:'Playfair Display',serif;font-weight:600;font-size:34px;margin:0;letter-spacing:-.01em">Palette</h2>
+    </div>
+    <p style="font-size:15px;color:#6B6259;margin:0 0 32px;max-width:620px">Chaque couleur porte un rôle précis. Ratios de contraste vérifiés AA (WCAG 2.1) pour le texte.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:16px">
+      <!-- ivoire -->
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;overflow:hidden">
+        <div style="height:96px;background:#FAF7F2;border-bottom:1px solid rgba(30,27,24,.06)"></div>
+        <div style="padding:14px 16px 16px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><strong style="font-size:14px">Ivoire</strong><code style="font-family:ui-monospace,monospace;font-size:12px;color:#6B6259">#FAF7F2</code></div>
+          <p style="font-size:12.5px;color:#6B6259;margin:6px 0 0;line-height:1.45">Fond global. Surfaces = #FFFFFF.</p>
+        </div>
+      </div>
+      <!-- ink -->
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;overflow:hidden">
+        <div style="height:96px;background:#1E1B18;display:flex;align-items:flex-end;padding:10px 12px"><span style="color:#fff;font-size:12px;font-weight:600">Aa 15:1 AAA</span></div>
+        <div style="padding:14px 16px 16px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><strong style="font-size:14px">Ink</strong><code style="font-family:ui-monospace,monospace;font-size:12px;color:#6B6259">#1E1B18</code></div>
+          <p style="font-size:12.5px;color:#6B6259;margin:6px 0 0;line-height:1.45">Texte principal, noir chaud.</p>
+        </div>
+      </div>
+      <!-- muted -->
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;overflow:hidden">
+        <div style="height:96px;background:#6B6259;display:flex;align-items:flex-end;padding:10px 12px"><span style="color:#fff;font-size:12px;font-weight:600">Aa 5.1:1 AA</span></div>
+        <div style="padding:14px 16px 16px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><strong style="font-size:14px">Muted</strong><code style="font-family:ui-monospace,monospace;font-size:12px;color:#6B6259">#6B6259</code></div>
+          <p style="font-size:12.5px;color:#6B6259;margin:6px 0 0;line-height:1.45">Texte secondaire, légendes.</p>
+        </div>
+      </div>
+      <!-- primary -->
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;overflow:hidden">
+        <div style="height:96px;background:#26326B;display:flex;align-items:flex-end;padding:10px 12px"><span style="color:#fff;font-size:12px;font-weight:600">Aa 9.4:1 AAA</span></div>
+        <div style="padding:14px 16px 16px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><strong style="font-size:14px">Primary · Indigo</strong><code style="font-family:ui-monospace,monospace;font-size:12px;color:#6B6259">#26326B</code></div>
+          <p style="font-size:12.5px;color:#6B6259;margin:6px 0 0;line-height:1.45">Actions principales, liens.</p>
+        </div>
+      </div>
+      <!-- accent -->
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;overflow:hidden">
+        <div style="height:96px;background:#D07A34;display:flex;align-items:flex-end;padding:10px 12px"><span style="color:#fff;font-size:12px;font-weight:700">Aa blanc ≥16px/600</span></div>
+        <div style="padding:14px 16px 16px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><strong style="font-size:14px">Accent · Terracotta</strong><code style="font-family:ui-monospace,monospace;font-size:12px;color:#6B6259">#D07A34</code></div>
+          <p style="font-size:12.5px;color:#6B6259;margin:6px 0 0;line-height:1.45">CTA vitrine, mises en avant.</p>
+        </div>
+      </div>
+      <!-- sand -->
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;overflow:hidden">
+        <div style="height:96px;background:#E7DECF"></div>
+        <div style="padding:14px 16px 16px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><strong style="font-size:14px">Sable</strong><code style="font-family:ui-monospace,monospace;font-size:12px;color:#6B6259">#E7DECF</code></div>
+          <p style="font-size:12.5px;color:#6B6259;margin:6px 0 0;line-height:1.45">Séparateurs, fonds doux.</p>
+        </div>
+      </div>
+      <!-- gold -->
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;overflow:hidden">
+        <div style="height:96px;background:#C9A227;display:flex;align-items:flex-end;padding:10px 12px"><span style="color:#1E1B18;font-size:12px;font-weight:600">détail / non-texte</span></div>
+        <div style="padding:14px 16px 16px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><strong style="font-size:14px">Or</strong><code style="font-family:ui-monospace,monospace;font-size:12px;color:#6B6259">#C9A227</code></div>
+          <p style="font-size:12.5px;color:#6B6259;margin:6px 0 0;line-height:1.45">Détails fins, badges VIP (parcimonie).</p>
+        </div>
+      </div>
+      <!-- semantic trio -->
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;overflow:hidden">
+        <div style="height:96px;display:flex">
+          <div style="flex:1;background:#0E9F6E"></div><div style="flex:1;background:#E0A400"></div><div style="flex:1;background:#C4453B"></div>
+        </div>
+        <div style="padding:14px 16px 16px">
+          <strong style="font-size:14px">Sémantiques</strong>
+          <div style="display:flex;gap:12px;margin-top:8px;font-family:ui-monospace,monospace;font-size:11px;color:#6B6259">
+            <span><span style="color:#0E9F6E">●</span> Succès</span><span><span style="color:#E0A400">●</span> Alerte</span><span><span style="color:#C4453B">●</span> Danger</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 02 · TYPOGRAPHIE ===== -->
+  <section id="typo" style="padding:56px 72px">
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:6px">
+      <span style="font-family:ui-monospace,Menlo,monospace;font-size:13px;font-weight:600;color:#C9A227">02</span>
+      <h2 style="font-family:'Playfair Display',serif;font-weight:600;font-size:34px;margin:0;letter-spacing:-.01em">Typographie</h2>
+    </div>
+    <p style="font-size:15px;color:#6B6259;margin:0 0 32px;max-width:620px"><strong style="color:#1E1B18">Playfair Display</strong> pour les titres éditoriaux (vitrine, marque). <strong style="color:#1E1B18">Inter</strong> pour l'UI et le corps de texte. Échelle 12 / 14 / 16 / 20 / 24 / 32 / 40.</p>
+
+    <div style="display:grid;grid-template-columns:1.1fr .9fr;gap:24px">
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:32px 36px">
+        <div style="font-family:ui-monospace,monospace;font-size:11px;color:#C9A227;text-transform:uppercase;letter-spacing:.1em;margin-bottom:20px">Display · Playfair</div>
+        <div style="font-family:'Playfair Display',serif;font-weight:600;font-size:40px;line-height:1.08;letter-spacing:-.01em;margin-bottom:14px">L'élégance au quotidien</div>
+        <div style="font-family:'Playfair Display',serif;font-weight:500;font-size:32px;line-height:1.12;margin-bottom:14px">Foulards tissés main</div>
+        <div style="font-family:'Playfair Display',serif;font-weight:400;font-style:italic;font-size:24px;line-height:1.2;color:#6B6259">Collection Teranga</div>
+      </div>
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:32px 36px">
+        <div style="font-family:ui-monospace,monospace;font-size:11px;color:#C9A227;text-transform:uppercase;letter-spacing:.1em;margin-bottom:20px">UI / Corps · Inter</div>
+        <div style="font-size:24px;font-weight:600;line-height:1.3;margin-bottom:10px">Titre de section</div>
+        <div style="font-size:20px;font-weight:600;line-height:1.35;margin-bottom:10px">Sous-titre / carte</div>
+        <p style="font-size:16px;line-height:1.6;margin:0 0 10px">Corps de texte confortable à 16px avec une interligne généreuse pour la lecture sur mobile.</p>
+        <p style="font-size:14px;line-height:1.55;color:#6B6259;margin:0 0 10px">Texte secondaire à 14px pour les métadonnées et les descriptions denses.</p>
+        <p style="font-size:12px;line-height:1.5;color:#6B6259;margin:0">Légende / label à 12px — usage parcimonieux, jamais sous le contraste AA.</p>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:20px">
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:10px;padding:12px 16px;display:flex;align-items:baseline;gap:12px"><span style="font-size:40px;font-weight:600;line-height:1">Aa</span><code style="font-family:ui-monospace,monospace;font-size:12px;color:#6B6259">40 / display</code></div>
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:10px;padding:12px 16px;display:flex;align-items:baseline;gap:12px"><span style="font-size:32px;font-weight:600;line-height:1">Aa</span><code style="font-family:ui-monospace,monospace;font-size:12px;color:#6B6259">32 / H1</code></div>
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:10px;padding:12px 16px;display:flex;align-items:baseline;gap:12px"><span style="font-size:24px;font-weight:600;line-height:1">Aa</span><code style="font-family:ui-monospace,monospace;font-size:12px;color:#6B6259">24 / H2</code></div>
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:10px;padding:12px 16px;display:flex;align-items:baseline;gap:12px"><span style="font-size:20px;font-weight:600;line-height:1">Aa</span><code style="font-family:ui-monospace,monospace;font-size:12px;color:#6B6259">20 / H3</code></div>
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:10px;padding:12px 16px;display:flex;align-items:baseline;gap:12px"><span style="font-size:16px;font-weight:500;line-height:1">Aa</span><code style="font-family:ui-monospace,monospace;font-size:12px;color:#6B6259">16 / corps</code></div>
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:10px;padding:12px 16px;display:flex;align-items:baseline;gap:12px"><span style="font-size:14px;font-weight:500;line-height:1">Aa</span><code style="font-family:ui-monospace,monospace;font-size:12px;color:#6B6259">14 / dense</code></div>
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:10px;padding:12px 16px;display:flex;align-items:baseline;gap:12px"><span style="font-size:12px;font-weight:500;line-height:1">Aa</span><code style="font-family:ui-monospace,monospace;font-size:12px;color:#6B6259">12 / label</code></div>
+    </div>
+  </section>
+
+  <!-- ===== 03 · GRILLE, RAYONS, OMBRES ===== -->
+  <section id="foundations" style="padding:56px 72px;background:#FAF7F2;border-top:1px solid rgba(30,27,24,.08);border-bottom:1px solid rgba(30,27,24,.08)">
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:6px">
+      <span style="font-family:ui-monospace,Menlo,monospace;font-size:13px;font-weight:600;color:#C9A227">03</span>
+      <h2 style="font-family:'Playfair Display',serif;font-weight:600;font-size:34px;margin:0;letter-spacing:-.01em">Espacement · Rayons · Ombres</h2>
+    </div>
+    <p style="font-size:15px;color:#6B6259;margin:0 0 32px;max-width:620px">Grille de base 4 px. Rayons doux. Ombres chaudes et très légères — sur l'admin, on préfère une bordure 1 px.</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px">
+      <!-- spacing -->
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:24px 26px">
+        <div style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#6B6259;margin-bottom:18px">Grille 4 px</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:12px"><span style="height:16px;width:4px;background:#26326B;border-radius:2px"></span><code style="font-family:ui-monospace,monospace;font-size:12px;color:#6B6259">4</code></div>
+          <div style="display:flex;align-items:center;gap:12px"><span style="height:16px;width:8px;background:#26326B;border-radius:2px"></span><code style="font-family:ui-monospace,monospace;font-size:12px;color:#6B6259">8</code></div>
+          <div style="display:flex;align-items:center;gap:12px"><span style="height:16px;width:12px;background:#26326B;border-radius:2px"></span><code style="font-family:ui-monospace,monospace;font-size:12px;color:#6B6259">12</code></div>
+          <div style="display:flex;align-items:center;gap:12px"><span style="height:16px;width:16px;background:#26326B;border-radius:2px"></span><code style="font-family:ui-monospace,monospace;font-size:12px;color:#6B6259">16</code></div>
+          <div style="display:flex;align-items:center;gap:12px"><span style="height:16px;width:24px;background:#26326B;border-radius:2px"></span><code style="font-family:ui-monospace,monospace;font-size:12px;color:#6B6259">24</code></div>
+          <div style="display:flex;align-items:center;gap:12px"><span style="height:16px;width:32px;background:#26326B;border-radius:2px"></span><code style="font-family:ui-monospace,monospace;font-size:12px;color:#6B6259">32</code></div>
+          <div style="display:flex;align-items:center;gap:12px"><span style="height:16px;width:48px;background:#26326B;border-radius:2px"></span><code style="font-family:ui-monospace,monospace;font-size:12px;color:#6B6259">48</code></div>
+        </div>
+      </div>
+      <!-- radius -->
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:24px 26px">
+        <div style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#6B6259;margin-bottom:18px">Rayons</div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;align-items:center;gap:14px"><span style="width:56px;height:44px;background:#E7DECF;border:1px solid rgba(30,27,24,.12);border-radius:14px"></span><div><div style="font-size:14px;font-weight:600">Cartes</div><code style="font-family:ui-monospace,monospace;font-size:12px;color:#6B6259">14 px</code></div></div>
+          <div style="display:flex;align-items:center;gap:14px"><span style="width:56px;height:44px;background:#E7DECF;border:1px solid rgba(30,27,24,.12);border-radius:10px"></span><div><div style="font-size:14px;font-weight:600">Boutons</div><code style="font-family:ui-monospace,monospace;font-size:12px;color:#6B6259">10 px</code></div></div>
+          <div style="display:flex;align-items:center;gap:14px"><span style="width:56px;height:44px;background:#E7DECF;border:1px solid rgba(30,27,24,.12);border-radius:10px"></span><div><div style="font-size:14px;font-weight:600">Champs</div><code style="font-family:ui-monospace,monospace;font-size:12px;color:#6B6259">10 px</code></div></div>
+          <div style="display:flex;align-items:center;gap:14px"><span style="width:56px;height:44px;background:#E7DECF;border:1px solid rgba(30,27,24,.12);border-radius:999px"></span><div><div style="font-size:14px;font-weight:600">Chips / pastilles</div><code style="font-family:ui-monospace,monospace;font-size:12px;color:#6B6259">999 px</code></div></div>
+        </div>
+      </div>
+      <!-- shadow -->
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:24px 26px">
+        <div style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#6B6259;margin-bottom:18px">Ombres chaudes</div>
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;align-items:center;gap:14px"><span style="width:56px;height:44px;background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:10px"></span><div><div style="font-size:14px;font-weight:600">Bordure (admin)</div><code style="font-family:ui-monospace,monospace;font-size:11.5px;color:#6B6259">1px rgba(30,27,24,.08)</code></div></div>
+          <div style="display:flex;align-items:center;gap:14px"><span style="width:56px;height:44px;background:#fff;border-radius:10px;box-shadow:0 1px 3px rgba(60,40,20,.10)"></span><div><div style="font-size:14px;font-weight:600">sm — cartes</div><code style="font-family:ui-monospace,monospace;font-size:11px;color:#6B6259">0 1px 3px rgba(60,40,20,.10)</code></div></div>
+          <div style="display:flex;align-items:center;gap:14px"><span style="width:56px;height:44px;background:#fff;border-radius:10px;box-shadow:0 8px 24px rgba(60,40,20,.12)"></span><div><div style="font-size:14px;font-weight:600">lg — overlays</div><code style="font-family:ui-monospace,monospace;font-size:11px;color:#6B6259">0 8px 24px rgba(60,40,20,.12)</code></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 04 · ICONOGRAPHIE ===== -->
+  <section id="icons" style="padding:56px 72px">
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:6px">
+      <span style="font-family:ui-monospace,Menlo,monospace;font-size:13px;font-weight:600;color:#C9A227">04</span>
+      <h2 style="font-family:'Playfair Display',serif;font-weight:600;font-size:34px;margin:0;letter-spacing:-.01em">Iconographie</h2>
+    </div>
+    <p style="font-size:15px;color:#6B6259;margin:0 0 32px;max-width:620px">Style ligne (façon Lucide) : trait 1.75, extrémités arrondies, grille 24. Léger et lisible sur Android d'entrée de gamme.</p>
+    <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:28px 32px;display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px;border-radius:10px" style-hover="background:#FAF7F2"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><span style="font-size:11px;color:#6B6259">recherche</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px;border-radius:10px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><span style="font-size:11px;color:#6B6259">panier</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px;border-radius:10px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 11-8 11s-8-5-8-11a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><span style="font-size:11px;color:#6B6259">livraison</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px;border-radius:10px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16"/><path d="M3 21h18"/><path d="M9 7h6M9 11h6M9 15h6"/></svg><span style="font-size:11px;color:#6B6259">boutique</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px;border-radius:10px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span style="font-size:11px;color:#6B6259">compte</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px;border-radius:10px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 15 9l7 .5-5.5 4.5L18.5 21 12 17l-6.5 4 2-7L2 9.5 9 9Z"/></svg><span style="font-size:11px;color:#6B6259">favori</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px;border-radius:10px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg><span style="font-size:11px;color:#6B6259">menu</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px;border-radius:10px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span style="font-size:11px;color:#6B6259">tableau</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px;border-radius:10px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 3-3 3 3 5-6"/></svg><span style="font-size:11px;color:#6B6259">stats</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px;border-radius:10px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span style="font-size:11px;color:#6B6259">paiement</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px;border-radius:10px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12.2 3.3a2 2 0 0 0-.4 0l-7 3.9V17l7.2 4 7.2-4V7.2Z"/><path d="m4.5 7 7.5 4 7.5-4M12 21v-10"/></svg><span style="font-size:11px;color:#6B6259">stock</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px;border-radius:10px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H1a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 2.6 7a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 2.7-1.1V1a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H23a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/></svg><span style="font-size:11px;color:#6B6259">réglages</span></div>
+    </div>
+  </section>
+
+  <!-- ===== 05 · BOUTONS, LIENS, BADGES ===== -->
+  <section id="buttons" style="padding:56px 72px;background:#FAF7F2;border-top:1px solid rgba(30,27,24,.08);border-bottom:1px solid rgba(30,27,24,.08)">
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:6px">
+      <span style="font-family:ui-monospace,Menlo,monospace;font-size:13px;font-weight:600;color:#C9A227">05</span>
+      <h2 style="font-family:'Playfair Display',serif;font-weight:600;font-size:34px;margin:0;letter-spacing:-.01em">Boutons · Liens · Badges</h2>
+    </div>
+    <p style="font-size:15px;color:#6B6259;margin:0 0 32px;max-width:620px">Rayon 10 px, hauteur ≥ 44 px (zone tactile). Chaque variante décline ses états : normal, survol, focus, désactivé, chargement.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px">
+      <!-- primaire -->
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:22px 24px">
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#6B6259;margin-bottom:16px">Primaire · Indigo</div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+          <button style="height:44px;padding:0 20px;border:none;border-radius:10px;background:#26326B;color:#fff;font:600 15px Inter,sans-serif;cursor:pointer">Ajouter au panier</button>
+          <button style="height:44px;padding:0 20px;border:none;border-radius:10px;background:#1c2652;color:#fff;font:600 15px Inter,sans-serif;cursor:pointer;box-shadow:0 2px 8px rgba(38,50,107,.3)">survol</button>
+          <button style="height:44px;padding:0 20px;border:none;border-radius:10px;background:#26326B;color:#fff;font:600 15px Inter,sans-serif;cursor:pointer;outline:3px solid rgba(38,50,107,.35);outline-offset:2px">focus</button>
+          <button disabled style="height:44px;padding:0 20px;border:none;border-radius:10px;background:#C7C1B6;color:#fff;font:600 15px Inter,sans-serif;cursor:not-allowed">désactivé</button>
+          <button style="height:44px;padding:0 20px;border:none;border-radius:10px;background:#26326B;color:#fff;font:600 15px Inter,sans-serif;display:inline-flex;align-items:center;gap:9px"><span style="width:15px;height:15px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:999px;display:inline-block;animation:ft-spin .7s linear infinite"></span>chargement</button>
+        </div>
+      </div>
+      <!-- secondaire -->
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:22px 24px">
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#6B6259;margin-bottom:16px">Secondaire · Contour</div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+          <button style="height:44px;padding:0 20px;border:1.5px solid #26326B;border-radius:10px;background:#fff;color:#26326B;font:600 15px Inter,sans-serif;cursor:pointer">Continuer mes achats</button>
+          <button style="height:44px;padding:0 20px;border:1.5px solid #26326B;border-radius:10px;background:#EEF0F7;color:#26326B;font:600 15px Inter,sans-serif;cursor:pointer">survol</button>
+          <button style="height:44px;padding:0 20px;border:1.5px solid #26326B;border-radius:10px;background:#fff;color:#26326B;font:600 15px Inter,sans-serif;outline:3px solid rgba(38,50,107,.35);outline-offset:2px">focus</button>
+          <button disabled style="height:44px;padding:0 20px;border:1.5px solid #DAD3C7;border-radius:10px;background:#fff;color:#B6AEA1;font:600 15px Inter,sans-serif;cursor:not-allowed">désactivé</button>
+        </div>
+      </div>
+      <!-- ghost + accent -->
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:22px 24px">
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#6B6259;margin-bottom:16px">Ghost · CTA vitrine (Accent)</div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+          <button style="height:44px;padding:0 16px;border:none;border-radius:10px;background:transparent;color:#26326B;font:600 15px Inter,sans-serif;cursor:pointer">Ghost</button>
+          <button style="height:44px;padding:0 16px;border:none;border-radius:10px;background:rgba(38,50,107,.08);color:#26326B;font:600 15px Inter,sans-serif;cursor:pointer">survol</button>
+          <button style="height:44px;padding:0 22px;border:none;border-radius:10px;background:#D07A34;color:#fff;font:700 15px Inter,sans-serif;cursor:pointer">Commander maintenant</button>
+          <button style="height:44px;padding:0 22px;border:none;border-radius:10px;background:#bd6b28;color:#fff;font:700 15px Inter,sans-serif;cursor:pointer;box-shadow:0 2px 8px rgba(208,122,52,.35)">survol</button>
+        </div>
+      </div>
+      <!-- danger -->
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:22px 24px">
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#6B6259;margin-bottom:16px">Danger</div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+          <button style="height:44px;padding:0 20px;border:none;border-radius:10px;background:#C4453B;color:#fff;font:600 15px Inter,sans-serif;cursor:pointer">Annuler la commande</button>
+          <button style="height:44px;padding:0 20px;border:none;border-radius:10px;background:#a83a31;color:#fff;font:600 15px Inter,sans-serif;cursor:pointer">survol</button>
+          <button style="height:44px;padding:0 20px;border:1.5px solid #C4453B;border-radius:10px;background:#fff;color:#C4453B;font:600 15px Inter,sans-serif;cursor:pointer">Contour danger</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- links + badges -->
+    <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:20px;margin-top:20px">
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:22px 24px">
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#6B6259;margin-bottom:16px">Liens</div>
+        <div style="display:flex;flex-direction:column;gap:12px;font-size:15px">
+          <span><a href="#buttons" style="color:#26326B;font-weight:500">Lien par défaut (indigo)</a></span>
+          <span><a href="#buttons" style="color:#D07A34;font-weight:500;text-decoration:underline;text-underline-offset:3px">Survol / actif (terracotta)</a></span>
+          <span><a href="#buttons" style="color:#26326B;font-weight:500;outline:3px solid rgba(38,50,107,.35);outline-offset:3px;border-radius:3px">Focus visible</a></span>
+          <span style="color:#B6AEA1;font-weight:500">Lien désactivé</span>
+        </div>
+      </div>
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:22px 24px">
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#6B6259;margin-bottom:16px">Badges & étiquettes de statut</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <span style="display:inline-flex;align-items:center;gap:6px;font:600 12px Inter;padding:5px 11px;border-radius:999px;background:#E6F4EE;color:#0b6e4d"><span style="width:6px;height:6px;border-radius:999px;background:#0E9F6E"></span>Succès</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font:600 12px Inter;padding:5px 11px;border-radius:999px;background:#FBF1D8;color:#8a6500"><span style="width:6px;height:6px;border-radius:999px;background:#E0A400"></span>Alerte</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font:600 12px Inter;padding:5px 11px;border-radius:999px;background:#F8E5E3;color:#9c352d"><span style="width:6px;height:6px;border-radius:999px;background:#C4453B"></span>Danger</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font:600 12px Inter;padding:5px 11px;border-radius:999px;background:#EEF0F7;color:#26326B"><span style="width:6px;height:6px;border-radius:999px;background:#26326B"></span>Info</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font:600 12px Inter;padding:5px 11px;border-radius:999px;background:#1E1B18;color:#C9A227;border:1px solid #C9A227">★ VIP</span>
+          <span style="display:inline-flex;align-items:center;font:600 12px Inter;padding:5px 11px;border-radius:999px;background:#E7DECF;color:#6B6259">Neutre</span>
+          <span style="display:inline-flex;align-items:center;font:700 11px Inter;padding:4px 8px;border-radius:6px;background:#D07A34;color:#fff;letter-spacing:.03em">-20%</span>
+          <span style="display:inline-flex;align-items:center;font:700 11px Inter;padding:4px 8px;border-radius:6px;background:#26326B;color:#fff">Nouveau</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 06 · CHAMPS DE FORMULAIRE ===== -->
+  <section id="fields" style="padding:56px 72px">
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:6px">
+      <span style="font-family:ui-monospace,Menlo,monospace;font-size:13px;font-weight:600;color:#C9A227">06</span>
+      <h2 style="font-family:'Playfair Display',serif;font-weight:600;font-size:34px;margin:0;letter-spacing:-.01em">Champs de formulaire</h2>
+    </div>
+    <p style="font-size:15px;color:#6B6259;margin:0 0 32px;max-width:620px">Rayon 10 px, hauteur 44 px, label au-dessus, aide et erreur explicites. Focus indigo visible partout.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:22px 28px;background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:30px 34px">
+      <!-- texte default -->
+      <div>
+        <label style="display:block;font:600 13px Inter;margin-bottom:7px">Nom complet</label>
+        <input value="Awa Diallo" style="width:100%;height:44px;padding:0 14px;border:1.5px solid #DAD3C7;border-radius:10px;background:#fff;font:400 15px Inter;color:#1E1B18">
+        <p style="font:400 12.5px Inter;color:#6B6259;margin:7px 0 0">Tel qu'il apparaîtra sur la facture.</p>
+      </div>
+      <!-- texte focus -->
+      <div>
+        <label style="display:block;font:600 13px Inter;margin-bottom:7px">Téléphone</label>
+        <div style="display:flex;align-items:center;height:44px;padding:0 14px;border:1.5px solid #26326B;border-radius:10px;background:#fff;outline:3px solid rgba(38,50,107,.25)"><span style="color:#6B6259;font-size:15px;margin-right:8px">+221</span><input value="77 123 45 67" style="flex:1;border:none;outline:none;font:400 15px Inter;color:#1E1B18"></div>
+        <p style="font:500 12.5px Inter;color:#26326B;margin:7px 0 0">Focus actif</p>
+      </div>
+      <!-- texte erreur -->
+      <div>
+        <label style="display:block;font:600 13px Inter;margin-bottom:7px">E-mail</label>
+        <input value="awa.diallo@" style="width:100%;height:44px;padding:0 14px;border:1.5px solid #C4453B;border-radius:10px;background:#FCF3F2;font:400 15px Inter;color:#1E1B18">
+        <p style="font:500 12.5px Inter;color:#9c352d;margin:7px 0 0;display:flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C4453B" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>Adresse e-mail incomplète.</p>
+      </div>
+      <!-- select -->
+      <div>
+        <label style="display:block;font:600 13px Inter;margin-bottom:7px">Région de livraison</label>
+        <div style="position:relative"><select style="width:100%;height:44px;padding:0 40px 0 14px;border:1.5px solid #DAD3C7;border-radius:10px;background:#fff;font:400 15px Inter;color:#1E1B18;appearance:none;cursor:pointer"><option>Dakar</option><option>Thiès</option><option>Saint-Louis</option></select><svg style="position:absolute;right:14px;top:50%;transform:translateY(-50%);pointer-events:none" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B6259" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+        <p style="font:400 12.5px Inter;color:#6B6259;margin:7px 0 0">Frais calculés à l'étape suivante.</p>
+      </div>
+      <!-- number stepper -->
+      <div>
+        <label style="display:block;font:600 13px Inter;margin-bottom:7px">Quantité</label>
+        <div style="display:inline-flex;align-items:center;height:44px;border:1.5px solid #DAD3C7;border-radius:10px;overflow:hidden">
+          <button style="width:44px;height:100%;border:none;background:#FAF7F2;font-size:20px;color:#26326B;cursor:pointer">−</button>
+          <span style="width:52px;text-align:center;font:600 15px Inter">2</span>
+          <button style="width:44px;height:100%;border:none;background:#FAF7F2;font-size:20px;color:#26326B;cursor:pointer">+</button>
+        </div>
+      </div>
+      <!-- search -->
+      <div>
+        <label style="display:block;font:600 13px Inter;margin-bottom:7px">Recherche</label>
+        <div style="display:flex;align-items:center;height:44px;padding:0 14px;border:1.5px solid #DAD3C7;border-radius:10px;background:#fff;gap:10px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B6259" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Rechercher un foulard, une cliente…" style="flex:1;border:none;outline:none;font:400 15px Inter;color:#1E1B18"></div>
+      </div>
+      <!-- toggles + disabled -->
+      <div>
+        <label style="display:block;font:600 13px Inter;margin-bottom:12px">Options</label>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <label style="display:flex;align-items:center;gap:12px;cursor:pointer"><span style="width:44px;height:26px;border-radius:999px;background:#0E9F6E;position:relative;flex:none"><span style="position:absolute;top:3px;left:21px;width:20px;height:20px;border-radius:999px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2)"></span></span><span style="font-size:14px">Notifier par SMS <span style="color:#0E9F6E;font-weight:600">activé</span></span></label>
+          <label style="display:flex;align-items:center;gap:12px;cursor:pointer"><span style="width:44px;height:26px;border-radius:999px;background:#DAD3C7;position:relative;flex:none"><span style="position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:999px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2)"></span></span><span style="font-size:14px;color:#6B6259">Livraison express</span></label>
+        </div>
+      </div>
+      <!-- disabled input -->
+      <div>
+        <label style="display:block;font:600 13px Inter;margin-bottom:7px;color:#B6AEA1">N° de commande</label>
+        <input value="TER-2026-0481" disabled style="width:100%;height:44px;padding:0 14px;border:1.5px solid #EAE4D9;border-radius:10px;background:#F4F0E9;font:400 15px Inter;color:#B6AEA1;cursor:not-allowed">
+        <p style="font:400 12.5px Inter;color:#B6AEA1;margin:7px 0 0">Généré automatiquement.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 07 · CARTES, LISTES, TABLEAUX ===== -->
+  <section id="cards" style="padding:56px 72px;background:#FAF7F2;border-top:1px solid rgba(30,27,24,.08);border-bottom:1px solid rgba(30,27,24,.08)">
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:6px">
+      <span style="font-family:ui-monospace,Menlo,monospace;font-size:13px;font-weight:600;color:#C9A227">07</span>
+      <h2 style="font-family:'Playfair Display',serif;font-weight:600;font-size:34px;margin:0;letter-spacing:-.01em">Cartes · Listes · Tableaux</h2>
+    </div>
+    <p style="font-size:15px;color:#6B6259;margin:0 0 32px;max-width:620px">Cartes produit (vitrine, confortable), cartes KPI et de commande (admin, compact), listes et tableau data-dense trié & paginé.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:20px;margin-bottom:20px">
+      <!-- product card -->
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(60,40,20,.10)">
+        <div style="position:relative;aspect-ratio:4/5;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 9px,#efe8dc 9px,#efe8dc 18px);display:flex;align-items:center;justify-content:center"><span style="font-family:ui-monospace,monospace;font-size:11px;color:#9a8f7d">foulard 4:5</span><span style="position:absolute;top:10px;left:10px;font:700 11px Inter;padding:4px 8px;border-radius:6px;background:#D07A34;color:#fff">Nouveau</span><button style="position:absolute;top:8px;right:8px;width:34px;height:34px;border:none;border-radius:999px;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 15 9l7 .5-5.5 4.5L18.5 21 12 17l-6.5 4 2-7L2 9.5 9 9Z"/></svg></button></div>
+        <div style="padding:14px 16px 16px">
+          <div style="font-family:'Playfair Display',serif;font-weight:600;font-size:18px;line-height:1.2;margin-bottom:4px">Foulard Wax Sénégal</div>
+          <div style="font-size:13px;color:#6B6259;margin-bottom:10px">Coton wax · 90 × 90 cm</div>
+          <div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:17px;font-weight:700;color:#26326B">12 500 FCFA</span><span style="font-size:13px;color:#9a8f7d;text-decoration:line-through">15 000</span></div>
+        </div>
+      </div>
+      <!-- product card sold out -->
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(60,40,20,.10)">
+        <div style="position:relative;aspect-ratio:4/5;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 9px,#efe8dc 9px,#efe8dc 18px);display:flex;align-items:center;justify-content:center"><span style="font-family:ui-monospace,monospace;font-size:11px;color:#9a8f7d">foulard 4:5</span><div style="position:absolute;inset:0;background:rgba(250,247,242,.55);display:flex;align-items:center;justify-content:center"><span style="font:600 12px Inter;padding:6px 12px;border-radius:999px;background:#1E1B18;color:#fff">Épuisé</span></div></div>
+        <div style="padding:14px 16px 16px">
+          <div style="font-family:'Playfair Display',serif;font-weight:600;font-size:18px;line-height:1.2;margin-bottom:4px">Turban Bazin Or</div>
+          <div style="font-size:13px;color:#6B6259;margin-bottom:10px">Bazin riche · brodé main</div>
+          <div style="font-size:17px;font-weight:700;color:#26326B">18 000 FCFA</div>
+        </div>
+      </div>
+      <!-- KPI card -->
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:20px 22px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><span style="font-size:13px;font-weight:600;color:#6B6259">Ventes du jour</span><span style="width:32px;height:32px;border-radius:8px;background:#EEF0F7;display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#26326B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 3-3 3 3 5-6"/></svg></span></div>
+        <div style="font-size:30px;font-weight:700;letter-spacing:-.01em;margin-bottom:6px">248 000 <span style="font-size:15px;font-weight:600;color:#6B6259">FCFA</span></div>
+        <div style="display:inline-flex;align-items:center;gap:5px;font:600 12.5px Inter;color:#0b6e4d;background:#E6F4EE;padding:3px 8px;border-radius:999px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0E9F6E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>+18% vs hier</div>
+      </div>
+      <!-- order card -->
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:18px 20px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px"><div><div style="font:600 14px Inter">#TER-0481</div><div style="font-size:12.5px;color:#6B6259">Awa Diallo · Dakar</div></div><span style="display:inline-flex;align-items:center;gap:6px;font:600 11.5px Inter;padding:4px 9px;border-radius:999px;background:#FBF1D8;color:#8a6500"><span style="width:6px;height:6px;border-radius:999px;background:#E0A400"></span>En préparation</span></div>
+        <div style="height:1px;background:#EAE4D9;margin:10px 0"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12.5px;color:#6B6259">3 articles · il y a 2 h</span><span style="font-size:16px;font-weight:700;color:#26326B">37 500 FCFA</span></div>
+      </div>
+    </div>
+
+    <!-- data-dense table -->
+    <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;overflow:hidden">
+      <div style="padding:14px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #EAE4D9"><div style="font:600 15px Inter">Commandes récentes</div><span style="font-size:12.5px;color:#6B6259">142 résultats</span></div>
+      <table style="width:100%;border-collapse:collapse;font-size:13.5px">
+        <thead><tr style="background:#FAF7F2;color:#6B6259;text-align:left">
+          <th style="padding:10px 18px;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em">Commande <span style="color:#26326B">▲</span></th>
+          <th style="padding:10px 12px;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em">Cliente</th>
+          <th style="padding:10px 12px;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em">Statut</th>
+          <th style="padding:10px 12px;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em">Canal</th>
+          <th style="padding:10px 18px;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em;text-align:right">Total</th>
+        </tr></thead>
+        <tbody>
+          <tr style="border-top:1px solid #EFEAE0"><td style="padding:11px 18px;font-weight:600">#TER-0481</td><td style="padding:11px 12px">Awa Diallo</td><td style="padding:11px 12px"><span style="display:inline-flex;align-items:center;gap:5px;font:600 11.5px Inter;padding:3px 8px;border-radius:999px;background:#FBF1D8;color:#8a6500"><span style="width:5px;height:5px;border-radius:999px;background:#E0A400"></span>En préparation</span></td><td style="padding:11px 12px;color:#6B6259">Boutique</td><td style="padding:11px 18px;text-align:right;font-weight:600">37 500</td></tr>
+          <tr style="border-top:1px solid #EFEAE0;background:#FDFCFA"><td style="padding:11px 18px;font-weight:600">#TER-0480</td><td style="padding:11px 12px">Fatou Ndiaye</td><td style="padding:11px 12px"><span style="display:inline-flex;align-items:center;gap:5px;font:600 11.5px Inter;padding:3px 8px;border-radius:999px;background:#E6F4EE;color:#0b6e4d"><span style="width:5px;height:5px;border-radius:999px;background:#0E9F6E"></span>Livrée</span></td><td style="padding:11px 12px;color:#6B6259">Web</td><td style="padding:11px 18px;text-align:right;font-weight:600">21 000</td></tr>
+          <tr style="border-top:1px solid #EFEAE0"><td style="padding:11px 18px;font-weight:600">#TER-0479</td><td style="padding:11px 12px">Mariama Sow</td><td style="padding:11px 12px"><span style="display:inline-flex;align-items:center;gap:5px;font:600 11.5px Inter;padding:3px 8px;border-radius:999px;background:#EEF0F7;color:#26326B"><span style="width:5px;height:5px;border-radius:999px;background:#26326B"></span>Confirmée</span></td><td style="padding:11px 12px;color:#6B6259">WhatsApp</td><td style="padding:11px 18px;text-align:right;font-weight:600">54 000</td></tr>
+          <tr style="border-top:1px solid #EFEAE0;background:#FDFCFA"><td style="padding:11px 18px;font-weight:600">#TER-0478</td><td style="padding:11px 12px">Coumba Fall</td><td style="padding:11px 12px"><span style="display:inline-flex;align-items:center;gap:5px;font:600 11.5px Inter;padding:3px 8px;border-radius:999px;background:#F8E5E3;color:#9c352d"><span style="width:5px;height:5px;border-radius:999px;background:#C4453B"></span>Refusée</span></td><td style="padding:11px 12px;color:#6B6259">Web</td><td style="padding:11px 18px;text-align:right;font-weight:600">12 500</td></tr>
+        </tbody>
+      </table>
+      <div style="padding:12px 18px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #EAE4D9"><span style="font-size:12.5px;color:#6B6259">Page 1 sur 36</span><div style="display:flex;gap:6px"><button style="height:34px;min-width:34px;padding:0 10px;border:1px solid #DAD3C7;border-radius:8px;background:#fff;color:#B6AEA1;font:600 13px Inter">‹</button><button style="height:34px;min-width:34px;border:1px solid #26326B;border-radius:8px;background:#26326B;color:#fff;font:600 13px Inter">1</button><button style="height:34px;min-width:34px;border:1px solid #DAD3C7;border-radius:8px;background:#fff;font:600 13px Inter">2</button><button style="height:34px;min-width:34px;border:1px solid #DAD3C7;border-radius:8px;background:#fff;font:600 13px Inter">3</button><button style="height:34px;min-width:34px;padding:0 10px;border:1px solid #DAD3C7;border-radius:8px;background:#fff;font:600 13px Inter">›</button></div></div>
+    </div>
+  </section>
+
+  <!-- ===== 08 · NAVIGATION ===== -->
+  <section id="nav" style="padding:56px 72px">
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:6px">
+      <span style="font-family:ui-monospace,Menlo,monospace;font-size:13px;font-weight:600;color:#C9A227">08</span>
+      <h2 style="font-family:'Playfair Display',serif;font-weight:600;font-size:34px;margin:0;letter-spacing:-.01em">Navigation</h2>
+    </div>
+    <p style="font-size:15px;color:#6B6259;margin:0 0 32px;max-width:620px">Sidebar admin (desktop), bottom-tab (mobile, cibles ≥ 44 px), top bar vitrine et fil d'ariane.</p>
+
+    <div style="display:grid;grid-template-columns:240px 1fr;gap:20px;align-items:start">
+      <!-- sidebar -->
+      <div style="background:#1E1B18;border-radius:14px;padding:18px 14px;color:#fff">
+        <div style="display:flex;align-items:center;gap:10px;padding:0 8px 16px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:12px"><span style="width:30px;height:30px;border-radius:8px;background:#D07A34"></span><span style="font-family:'Playfair Display',serif;font-weight:600;font-size:17px">Teranga</span></div>
+        <div style="display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:10px;background:#26326B;font:600 14px Inter;margin-bottom:3px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Tableau de bord</div>
+        <div style="display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:10px;color:#C9BEB0;font:500 14px Inter;margin-bottom:3px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9BEB0" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>Commandes<span style="margin-left:auto;font:700 11px Inter;background:#D07A34;color:#fff;padding:1px 7px;border-radius:999px">7</span></div>
+        <div style="display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:10px;color:#C9BEB0;font:500 14px Inter;margin-bottom:3px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9BEB0" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12.2 3.3a2 2 0 0 0-.4 0l-7 3.9V17l7.2 4 7.2-4V7.2Z"/><path d="m4.5 7 7.5 4 7.5-4M12 21v-10"/></svg>Produits & stock</div>
+        <div style="display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:10px;color:#C9BEB0;font:500 14px Inter;margin-bottom:3px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9BEB0" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M3 20a6 6 0 0 1 12 0M16 5.5a3.5 3.5 0 0 1 0 6M21 20a6 6 0 0 0-4-5.6"/></svg>Clientes</div>
+        <div style="display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:10px;color:#C9BEB0;font:500 14px Inter"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9BEB0" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Point de vente</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <!-- topbar -->
+        <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;overflow:hidden">
+          <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#6B6259;padding:12px 20px 0">Top bar vitrine</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px">
+            <span style="font-family:'Playfair Display',serif;font-weight:600;font-size:22px">Foulard Teranga</span>
+            <div style="display:flex;gap:26px;font:500 14.5px Inter">
+              <a href="#nav">Nouveautés</a><a href="#nav" style="color:#1E1B18">Foulards</a><a href="#nav" style="color:#1E1B18">Turbans</a><a href="#nav" style="color:#1E1B18">Accessoires</a>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+              <span style="position:relative"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><span style="position:absolute;top:-6px;right:-7px;font:700 10px Inter;background:#D07A34;color:#fff;min-width:16px;height:16px;border-radius:999px;display:flex;align-items:center;justify-content:center;padding:0 4px">2</span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- breadcrumb -->
+        <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:16px 20px">
+          <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#6B6259;margin-bottom:12px">Fil d'ariane</div>
+          <div style="display:flex;align-items:center;gap:9px;font-size:14px;color:#6B6259">
+            <a href="#nav">Accueil</a><span style="color:#C7BFB2">/</span><a href="#nav">Foulards</a><span style="color:#C7BFB2">/</span><span style="color:#1E1B18;font-weight:600">Foulard Wax Sénégal</span>
+          </div>
+        </div>
+
+        <!-- bottom tab -->
+        <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:16px 20px">
+          <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#6B6259;margin-bottom:12px">Bottom-tab mobile</div>
+          <div style="max-width:360px;margin:0 auto;display:flex;justify-content:space-around;background:#fff;border:1px solid #EAE4D9;border-radius:16px;padding:6px;box-shadow:0 4px 16px rgba(60,40,20,.08)">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:56px;height:52px;justify-content:center;border-radius:12px;color:#26326B"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#26326B" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg><span style="font:600 10.5px Inter">Accueil</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:56px;height:52px;justify-content:center;color:#8a8177"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8a8177" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><span style="font:500 10.5px Inter">Chercher</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:56px;height:52px;justify-content:center;color:#8a8177"><span style="position:relative"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8a8177" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><span style="position:absolute;top:-5px;right:-6px;font:700 9px Inter;background:#D07A34;color:#fff;min-width:15px;height:15px;border-radius:999px;display:flex;align-items:center;justify-content:center">2</span></span><span style="font:500 10.5px Inter">Panier</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:56px;height:52px;justify-content:center;color:#8a8177"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8a8177" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span style="font:500 10.5px Inter">Compte</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 09 · OVERLAYS ===== -->
+  <section id="overlays" style="padding:56px 72px;background:#FAF7F2;border-top:1px solid rgba(30,27,24,.08);border-bottom:1px solid rgba(30,27,24,.08)">
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:6px">
+      <span style="font-family:ui-monospace,Menlo,monospace;font-size:13px;font-weight:600;color:#C9A227">09</span>
+      <h2 style="font-family:'Playfair Display',serif;font-weight:600;font-size:34px;margin:0;letter-spacing:-.01em">Overlays</h2>
+    </div>
+    <p style="font-size:15px;color:#6B6259;margin:0 0 32px;max-width:620px">Modal de confirmation, drawer latéral de réglages, toast/notification et tooltip. Ombre lg, fond assombri léger.</p>
+
+    <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:20px;align-items:start">
+      <!-- modal -->
+      <div style="position:relative;background:#EDE7DC;border:1px solid rgba(30,27,24,.08);border-radius:14px;height:320px;overflow:hidden;display:flex;align-items:center;justify-content:center">
+        <div style="position:absolute;inset:0;background:rgba(30,27,24,.35)"></div>
+        <div style="position:relative;width:340px;background:#fff;border-radius:14px;box-shadow:0 8px 24px rgba(60,40,20,.18);padding:24px 26px">
+          <div style="width:44px;height:44px;border-radius:999px;background:#F8E5E3;display:flex;align-items:center;justify-content:center;margin-bottom:16px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C4453B" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m10.3 3.9-8 13.9A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3.2l-8-13.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg></div>
+          <h3 style="font-family:'Playfair Display',serif;font-weight:600;font-size:21px;margin:0 0 8px">Annuler la commande ?</h3>
+          <p style="font-size:14px;color:#6B6259;line-height:1.5;margin:0 0 22px">La commande #TER-0481 sera annulée et la cliente notifiée par SMS. Action irréversible.</p>
+          <div style="display:flex;gap:10px;justify-content:flex-end"><button style="height:44px;padding:0 18px;border:1.5px solid #DAD3C7;border-radius:10px;background:#fff;font:600 14px Inter">Retour</button><button style="height:44px;padding:0 18px;border:none;border-radius:10px;background:#C4453B;color:#fff;font:600 14px Inter">Confirmer l'annulation</button></div>
+        </div>
+      </div>
+
+      <!-- drawer -->
+      <div style="position:relative;background:#EDE7DC;border:1px solid rgba(30,27,24,.08);border-radius:14px;height:320px;overflow:hidden">
+        <div style="position:absolute;inset:0;background:rgba(30,27,24,.25)"></div>
+        <div style="position:absolute;top:0;right:0;bottom:0;width:260px;background:#fff;box-shadow:-8px 0 24px rgba(60,40,20,.15);padding:22px 22px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h3 style="font:600 17px Inter;margin:0">Réglages</h3><button style="width:32px;height:32px;border:none;border-radius:8px;background:#FAF7F2;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#6B6259;margin-bottom:10px">Devise</div>
+          <div style="height:44px;border:1.5px solid #26326B;border-radius:10px;display:flex;align-items:center;padding:0 14px;font:600 14px Inter;color:#26326B;margin-bottom:18px">FCFA (XOF)</div>
+          <label style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><span style="font-size:14px">Mode hors-ligne</span><span style="width:44px;height:26px;border-radius:999px;background:#0E9F6E;position:relative;flex:none"><span style="position:absolute;top:3px;left:21px;width:20px;height:20px;border-radius:999px;background:#fff"></span></span></label>
+          <label style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:14px">Impression tickets</span><span style="width:44px;height:26px;border-radius:999px;background:#DAD3C7;position:relative;flex:none"><span style="position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:999px;background:#fff"></span></span></label>
+        </div>
+      </div>
+
+      <!-- toasts -->
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #EAE4D9;border-left:4px solid #0E9F6E;border-radius:12px;padding:14px 16px;box-shadow:0 4px 16px rgba(60,40,20,.08)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0E9F6E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg><div style="flex:1"><div style="font:600 14px Inter">Commande confirmée</div><div style="font-size:12.5px;color:#6B6259">#TER-0482 · SMS envoyé à la cliente</div></div><button style="border:none;background:none;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9a8f7d" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+        <div style="display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #EAE4D9;border-left:4px solid #C4453B;border-radius:12px;padding:14px 16px;box-shadow:0 4px 16px rgba(60,40,20,.08)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C4453B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><div style="flex:1"><div style="font:600 14px Inter">Paiement échoué</div><div style="font-size:12.5px;color:#6B6259">Réessayez ou changez de moyen.</div></div></div>
+        <!-- tooltip -->
+        <div style="background:#fff;border:1px solid #EAE4D9;border-radius:12px;padding:22px 18px;display:flex;justify-content:center;align-items:center">
+          <div style="position:relative">
+            <span style="display:inline-flex;align-items:center;gap:6px;font:500 13px Inter;color:#26326B;border-bottom:1px dashed #26326B;padding-bottom:2px">Stock sous-traitance</span>
+            <div style="position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);white-space:nowrap;background:#1E1B18;color:#fff;font:500 12px Inter;padding:7px 11px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.2)">Réappro sous 5–7 jours<span style="position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#1E1B18"></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 10 · ÉTATS TRANSVERSES ===== -->
+  <section id="states" style="padding:56px 72px">
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:6px">
+      <span style="font-family:ui-monospace,Menlo,monospace;font-size:13px;font-weight:600;color:#C9A227">10</span>
+      <h2 style="font-family:'Playfair Display',serif;font-weight:600;font-size:34px;margin:0;letter-spacing:-.01em">États transverses</h2>
+    </div>
+    <p style="font-size:15px;color:#6B6259;margin:0 0 32px;max-width:620px">Prévus systématiquement : chargement (squelette), page vide, erreur, hors-ligne et confirmation de succès.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px">
+      <!-- skeleton -->
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:18px">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#6B6259;margin-bottom:14px">Chargement · squelette</div>
+        <div style="aspect-ratio:4/3;border-radius:10px;background:#EDE7DC;animation:ft-pulse 1.4s ease-in-out infinite;margin-bottom:12px"></div>
+        <div style="height:12px;width:70%;border-radius:6px;background:#EDE7DC;animation:ft-pulse 1.4s ease-in-out infinite;margin-bottom:8px"></div>
+        <div style="height:12px;width:45%;border-radius:6px;background:#EDE7DC;animation:ft-pulse 1.4s ease-in-out infinite"></div>
+      </div>
+      <!-- empty -->
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:18px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#6B6259;margin-bottom:14px;align-self:flex-start">Page vide</div>
+        <div style="width:56px;height:56px;border-radius:999px;background:#F4F0E9;display:flex;align-items:center;justify-content:center;margin:8px 0 14px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#B6AEA1" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></div>
+        <div style="font:600 15px Inter;margin-bottom:5px">Panier vide</div>
+        <p style="font-size:13px;color:#6B6259;margin:0 0 16px;line-height:1.45">Découvrez nos nouveautés et ajoutez vos coups de cœur.</p>
+        <button style="height:44px;padding:0 20px;border:none;border-radius:10px;background:#26326B;color:#fff;font:600 14px Inter">Voir la boutique</button>
+      </div>
+      <!-- error -->
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:18px;text-align:center;display:flex;flex-direction:column;align-items:center">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#6B6259;margin-bottom:14px;align-self:flex-start">Erreur</div>
+        <div style="width:56px;height:56px;border-radius:999px;background:#F8E5E3;display:flex;align-items:center;justify-content:center;margin:8px 0 14px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C4453B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg></div>
+        <div style="font:600 15px Inter;margin-bottom:5px">Une erreur est survenue</div>
+        <p style="font-size:13px;color:#6B6259;margin:0 0 16px;line-height:1.45">Impossible de charger les commandes. Vérifiez votre connexion.</p>
+        <button style="height:44px;padding:0 20px;border:1.5px solid #26326B;border-radius:10px;background:#fff;color:#26326B;font:600 14px Inter">Réessayer</button>
+      </div>
+      <!-- offline banner + success -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:18px">
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#6B6259;margin-bottom:12px">Bannière hors-ligne</div>
+          <div style="display:flex;align-items:center;gap:11px;background:#1E1B18;color:#fff;border-radius:10px;padding:12px 14px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A227" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2 22 22"/><path d="M8.5 16.5a5 5 0 0 1 7 0M5 12.8a10 10 0 0 1 4-2.4M2 8.8a15 15 0 0 1 4.2-2.6M19 12.8a10 10 0 0 0-3-2M22 8.8a15 15 0 0 0-6-3.5"/><path d="M12 20h.01"/></svg><div style="flex:1"><div style="font:600 13.5px Inter">Hors-ligne</div><div style="font-size:12px;color:#C9BEB0">Ventes enregistrées, synchro au retour du réseau.</div></div></div>
+        </div>
+        <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:18px;text-align:center;display:flex;flex-direction:column;align-items:center;flex:1;justify-content:center">
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#6B6259;margin-bottom:12px;align-self:flex-start">Succès</div>
+          <div style="width:52px;height:52px;border-radius:999px;background:#E6F4EE;display:flex;align-items:center;justify-content:center;margin-bottom:12px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0E9F6E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5 5L20 6"/></svg></div>
+          <div style="font:600 15px Inter;margin-bottom:4px">Paiement réussi</div>
+          <p style="font-size:13px;color:#6B6259;margin:0">Merci ! Reçu envoyé par SMS.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 11 · COMPOSANTS MÉTIER ===== -->
+  <section id="business" style="padding:56px 72px;background:#FAF7F2;border-top:1px solid rgba(30,27,24,.08);border-bottom:1px solid rgba(30,27,24,.08)">
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:6px">
+      <span style="font-family:ui-monospace,Menlo,monospace;font-size:13px;font-weight:600;color:#C9A227">11</span>
+      <h2 style="font-family:'Playfair Display',serif;font-weight:600;font-size:34px;margin:0;letter-spacing:-.01em">Composants métier</h2>
+    </div>
+    <p style="font-size:15px;color:#6B6259;margin:0 0 32px;max-width:640px">Blocs propres à Teranga : ligne de panier, carte produit à variantes, pastilles de stock, fidélité et chips de statut de commande.</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+      <!-- cart line -->
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:20px">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#6B6259;margin-bottom:14px">Ligne de panier</div>
+        <div style="display:flex;gap:14px;align-items:center">
+          <div style="width:72px;height:88px;border-radius:10px;flex:none;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 7px,#efe8dc 7px,#efe8dc 14px)"></div>
+          <div style="flex:1;min-width:0">
+            <div style="font-family:'Playfair Display',serif;font-weight:600;font-size:16px">Foulard Wax Sénégal</div>
+            <div style="font-size:12.5px;color:#6B6259;margin:3px 0 8px">Motif Indigo · 90 × 90 cm</div>
+            <div style="display:inline-flex;align-items:center;height:36px;border:1.5px solid #DAD3C7;border-radius:8px;overflow:hidden"><button style="width:36px;height:100%;border:none;background:#FAF7F2;font-size:17px;color:#26326B;cursor:pointer">−</button><span style="width:40px;text-align:center;font:600 14px Inter">2</span><button style="width:36px;height:100%;border:none;background:#FAF7F2;font-size:17px;color:#26326B;cursor:pointer">+</button></div>
+          </div>
+          <div style="text-align:right"><div style="font:700 16px Inter;color:#26326B">25 000</div><div style="font-size:11.5px;color:#9a8f7d">FCFA</div><button style="border:none;background:none;color:#C4453B;font:500 12px Inter;cursor:pointer;margin-top:6px">Retirer</button></div>
+        </div>
+      </div>
+
+      <!-- product with variants -->
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:20px">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#6B6259;margin-bottom:14px">Carte produit · variantes</div>
+        <div style="font-family:'Playfair Display',serif;font-weight:600;font-size:18px;margin-bottom:12px">Turban Bazin</div>
+        <div style="font-size:12px;font-weight:600;color:#6B6259;margin-bottom:8px">Couleur</div>
+        <div style="display:flex;gap:10px;margin-bottom:16px">
+          <span style="width:30px;height:30px;border-radius:999px;background:#26326B;outline:2px solid #26326B;outline-offset:2px;cursor:pointer"></span>
+          <span style="width:30px;height:30px;border-radius:999px;background:#D07A34;cursor:pointer"></span>
+          <span style="width:30px;height:30px;border-radius:999px;background:#C9A227;cursor:pointer"></span>
+          <span style="width:30px;height:30px;border-radius:999px;background:#0E9F6E;cursor:pointer"></span>
+        </div>
+        <div style="font-size:12px;font-weight:600;color:#6B6259;margin-bottom:8px">Taille</div>
+        <div style="display:flex;gap:8px">
+          <span style="height:38px;padding:0 16px;display:inline-flex;align-items:center;border-radius:8px;border:1.5px solid #26326B;background:#26326B;color:#fff;font:600 13px Inter;cursor:pointer">M</span>
+          <span style="height:38px;padding:0 16px;display:inline-flex;align-items:center;border-radius:8px;border:1.5px solid #DAD3C7;font:600 13px Inter;cursor:pointer">L</span>
+          <span style="height:38px;padding:0 16px;display:inline-flex;align-items:center;border-radius:8px;border:1.5px solid #EAE4D9;color:#B6AEA1;font:600 13px Inter;text-decoration:line-through">XL</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- chips row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px;align-items:start">
+      <!-- stock -->
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:20px">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#6B6259;margin-bottom:14px">Pastilles de stock</div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px">
+          <span style="display:inline-flex;align-items:center;gap:7px;font:600 12.5px Inter;padding:6px 12px;border-radius:999px;background:#E6F4EE;color:#0b6e4d"><span style="width:7px;height:7px;border-radius:999px;background:#0E9F6E"></span>Interne · 14 en stock</span>
+          <span style="display:inline-flex;align-items:center;gap:7px;font:600 12.5px Inter;padding:6px 12px;border-radius:999px;background:#EEF0F7;color:#26326B"><span style="width:7px;height:7px;border-radius:999px;background:#26326B"></span>Sous-traitance · 5–7 j</span>
+          <span style="display:inline-flex;align-items:center;gap:7px;font:600 12.5px Inter;padding:6px 12px;border-radius:999px;background:#FBF1D8;color:#8a6500"><span style="width:7px;height:7px;border-radius:999px;background:#E0A400"></span>Matériel · à commander</span>
+          <span style="display:inline-flex;align-items:center;gap:7px;font:600 12.5px Inter;padding:6px 12px;border-radius:999px;background:#F8E5E3;color:#9c352d"><span style="width:7px;height:7px;border-radius:999px;background:#C4453B"></span>Rupture</span>
+        </div>
+      </div>
+      <!-- loyalty -->
+      <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:20px">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#6B6259;margin-bottom:14px">Fidélité · points Teranga</div>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <span style="display:inline-flex;align-items:center;gap:7px;font:600 12.5px Inter;padding:6px 12px;border-radius:999px;background:#1E1B18;color:#C9A227;border:1px solid #C9A227"><svg width="13" height="13" viewBox="0 0 24 24" fill="#C9A227" stroke="none"><path d="M12 2 15 9l7 .5-5.5 4.5L18.5 21 12 17l-6.5 4 2-7L2 9.5 9 9Z"/></svg>+25 points</span>
+          <div style="flex:1;min-width:180px;display:flex;align-items:center;gap:12px;background:#FAF7F2;border:1px solid #EAE4D9;border-radius:12px;padding:12px 14px">
+            <div style="width:38px;height:38px;border-radius:999px;background:#1E1B18;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="#C9A227" stroke="none"><path d="M12 2 15 9l7 .5-5.5 4.5L18.5 21 12 17l-6.5 4 2-7L2 9.5 9 9Z"/></svg></div>
+            <div><div style="font:700 18px Inter">340 pts</div><div style="font-size:11.5px;color:#6B6259">Awa Diallo · palier Or</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- order status chips -->
+    <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:20px;margin-top:20px">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#6B6259;margin-bottom:14px">Chips de statut de commande</div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px">
+        <span style="display:inline-flex;align-items:center;gap:6px;font:600 12.5px Inter;padding:6px 12px;border-radius:999px;background:#FBF1D8;color:#8a6500"><span style="width:6px;height:6px;border-radius:999px;background:#E0A400"></span>En attente</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;font:600 12.5px Inter;padding:6px 12px;border-radius:999px;background:#EEF0F7;color:#26326B"><span style="width:6px;height:6px;border-radius:999px;background:#26326B"></span>Confirmée</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;font:600 12.5px Inter;padding:6px 12px;border-radius:999px;background:#F4EDE1;color:#8a6a3a"><span style="width:6px;height:6px;border-radius:999px;background:#D07A34"></span>En préparation</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;font:600 12.5px Inter;padding:6px 12px;border-radius:999px;background:#E6F4EE;color:#0b6e4d"><span style="width:6px;height:6px;border-radius:999px;background:#0E9F6E"></span>Livrée</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;font:600 12.5px Inter;padding:6px 12px;border-radius:999px;background:#F8E5E3;color:#9c352d"><span style="width:6px;height:6px;border-radius:999px;background:#C4453B"></span>Refusée</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ÉCRANS — INTRO ===== -->
+  <section id="screens" style="padding:64px 72px 40px">
+    <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:8px">
+      <span style="font-family:ui-monospace,Menlo,monospace;font-size:13px;font-weight:600;color:#C9A227">12</span>
+      <h2 style="font-family:'Playfair Display',serif;font-weight:600;font-size:38px;margin:0;letter-spacing:-.01em">Écrans clés</h2>
+    </div>
+    <p style="font-size:16px;color:#6B6259;margin:0;max-width:680px">Chaque écran est décliné en <strong style="color:#1E1B18">mobile 390 px</strong> et <strong style="color:#1E1B18">desktop 1440 px</strong>, à partir des mêmes tokens. Vitrine = confortable ; admin & POS = compact.</p>
+  </section>
+
+  <!-- ===== VITRINE · ACCUEIL ===== -->
+  <section style="padding:8px 72px 56px">
+    <div style="display:inline-flex;align-items:center;gap:9px;margin-bottom:20px;padding:6px 14px;background:#26326B;color:#fff;border-radius:999px;font:600 12.5px Inter"><span style="width:6px;height:6px;border-radius:999px;background:#D07A34"></span>Vitrine · Accueil boutique</div>
+    <div style="display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap">
+
+      <!-- MOBILE 390 -->
+      <div style="flex:none">
+        <div style="font-family:ui-monospace,monospace;font-size:11px;color:#6B6259;margin-bottom:8px">mobile · 390</div>
+        <div style="width:390px;background:#FAF7F2;border:1px solid rgba(30,27,24,.12);border-radius:34px;overflow:hidden;box-shadow:0 12px 40px rgba(60,40,20,.14)">
+          <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;font:600 13px Inter"><span>9:41</span><span style="letter-spacing:2px">● ▂▃▅ ⌁</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 18px 14px">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+            <span style="font-family:'Playfair Display',serif;font-weight:600;font-size:20px">Teranga</span>
+            <span style="position:relative"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><span style="position:absolute;top:-5px;right:-6px;font:700 10px Inter;background:#D07A34;color:#fff;min-width:16px;height:16px;border-radius:999px;display:flex;align-items:center;justify-content:center">2</span></span>
+          </div>
+          <!-- hero -->
+          <div style="position:relative;margin:0 14px;border-radius:16px;overflow:hidden;aspect-ratio:3/4;background:repeating-linear-gradient(45deg,#d8ccb8,#d8ccb8 10px,#e2d7c4 10px,#e2d7c4 20px);display:flex;align-items:flex-end">
+            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(30,27,24,.55),transparent 55%)"></div>
+            <div style="position:relative;padding:20px 20px 22px;color:#fff">
+              <div style="font-family:'Playfair Display',serif;font-weight:600;font-size:28px;line-height:1.08;margin-bottom:6px">La collection<br>Teranga</div>
+              <p style="font-size:13px;opacity:.9;margin:0 0 14px">Foulards & turbans tissés main</p>
+              <button style="height:44px;padding:0 22px;border:none;border-radius:10px;background:#D07A34;color:#fff;font:700 14px Inter">Découvrir</button>
+            </div>
+          </div>
+          <!-- category chips -->
+          <div style="display:flex;gap:8px;padding:16px 14px 4px;overflow:hidden">
+            <span style="flex:none;height:36px;padding:0 16px;display:inline-flex;align-items:center;border-radius:999px;background:#26326B;color:#fff;font:600 13px Inter">Tous</span>
+            <span style="flex:none;height:36px;padding:0 16px;display:inline-flex;align-items:center;border-radius:999px;background:#fff;border:1px solid #EAE4D9;font:500 13px Inter">Foulards</span>
+            <span style="flex:none;height:36px;padding:0 16px;display:inline-flex;align-items:center;border-radius:999px;background:#fff;border:1px solid #EAE4D9;font:500 13px Inter">Turbans</span>
+            <span style="flex:none;height:36px;padding:0 16px;display:inline-flex;align-items:center;border-radius:999px;background:#fff;border:1px solid #EAE4D9;font:500 13px Inter">Sacs</span>
+          </div>
+          <!-- product grid -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px">
+            <div style="background:#fff;border:1px solid rgba(30,27,24,.07);border-radius:14px;overflow:hidden"><div style="aspect-ratio:4/5;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 8px,#efe8dc 8px,#efe8dc 16px)"></div><div style="padding:10px 12px 12px"><div style="font-family:'Playfair Display',serif;font-weight:600;font-size:14px;line-height:1.15">Foulard Wax</div><div style="font:700 14px Inter;color:#26326B;margin-top:4px">12 500 FCFA</div></div></div>
+            <div style="background:#fff;border:1px solid rgba(30,27,24,.07);border-radius:14px;overflow:hidden"><div style="aspect-ratio:4/5;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 8px,#efe8dc 8px,#efe8dc 16px)"></div><div style="padding:10px 12px 12px"><div style="font-family:'Playfair Display',serif;font-weight:600;font-size:14px;line-height:1.15">Turban Bazin</div><div style="font:700 14px Inter;color:#26326B;margin-top:4px">18 000 FCFA</div></div></div>
+          </div>
+          <!-- bottom tab -->
+          <div style="display:flex;justify-content:space-around;border-top:1px solid #EAE4D9;background:#fff;padding:8px 0 14px">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:#26326B"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#26326B" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg><span style="font:600 10px Inter">Accueil</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:#8a8177"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8a8177" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><span style="font:500 10px Inter">Chercher</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:#8a8177"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8a8177" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><span style="font:500 10px Inter">Panier</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:#8a8177"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8a8177" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span style="font:500 10px Inter">Compte</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DESKTOP 1440 -->
+      <div style="flex:none">
+        <div style="font-family:ui-monospace,monospace;font-size:11px;color:#6B6259;margin-bottom:8px">desktop · 1440</div>
+        <div style="width:1000px;background:#FAF7F2;border:1px solid rgba(30,27,24,.12);border-radius:16px;overflow:hidden;box-shadow:0 12px 40px rgba(60,40,20,.14)">
+          <div style="height:36px;background:#EDE7DC;display:flex;align-items:center;gap:7px;padding:0 16px"><span style="width:11px;height:11px;border-radius:999px;background:#d6664e"></span><span style="width:11px;height:11px;border-radius:999px;background:#e0a400"></span><span style="width:11px;height:11px;border-radius:999px;background:#0E9F6E"></span><span style="margin-left:14px;font:500 11px Inter;color:#6B6259">foulard-teranga.sn</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 40px;background:#fff;border-bottom:1px solid #EFEAE0">
+            <span style="font-family:'Playfair Display',serif;font-weight:600;font-size:24px">Foulard Teranga</span>
+            <div style="display:flex;gap:28px;font:500 14px Inter"><a href="#screens" style="color:#26326B">Nouveautés</a><a href="#screens" style="color:#1E1B18">Foulards</a><a href="#screens" style="color:#1E1B18">Turbans</a><a href="#screens" style="color:#1E1B18">Accessoires</a></div>
+            <div style="display:flex;gap:18px;align-items:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span style="position:relative"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><span style="position:absolute;top:-6px;right:-7px;font:700 9px Inter;background:#D07A34;color:#fff;min-width:15px;height:15px;border-radius:999px;display:flex;align-items:center;justify-content:center">2</span></span></div>
+          </div>
+          <!-- hero -->
+          <div style="position:relative;height:340px;background:repeating-linear-gradient(45deg,#d8ccb8,#d8ccb8 12px,#e2d7c4 12px,#e2d7c4 24px);display:flex;align-items:center">
+            <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(30,27,24,.5),transparent 60%)"></div>
+            <div style="position:relative;padding:0 60px;color:#fff;max-width:520px">
+              <div style="display:inline-block;font:600 12px Inter;letter-spacing:.1em;text-transform:uppercase;color:#C9A227;margin-bottom:14px">Nouvelle collection</div>
+              <div style="font-family:'Playfair Display',serif;font-weight:600;font-size:52px;line-height:1.02;margin-bottom:14px">L'élégance<br>tissée main</div>
+              <p style="font-size:17px;opacity:.92;margin:0 0 24px;max-width:400px">Foulards, turbans et accessoires africains pour la femme moderne.</p>
+              <div style="display:flex;gap:12px"><button style="height:48px;padding:0 26px;border:none;border-radius:10px;background:#D07A34;color:#fff;font:700 15px Inter">Découvrir la collection</button><button style="height:48px;padding:0 24px;border:1.5px solid rgba(255,255,255,.7);border-radius:10px;background:transparent;color:#fff;font:600 15px Inter">Nos best-sellers</button></div>
+            </div>
+          </div>
+          <!-- category chips -->
+          <div style="display:flex;gap:10px;padding:22px 40px 6px">
+            <span style="height:38px;padding:0 18px;display:inline-flex;align-items:center;border-radius:999px;background:#26326B;color:#fff;font:600 13.5px Inter">Tous</span>
+            <span style="height:38px;padding:0 18px;display:inline-flex;align-items:center;border-radius:999px;background:#fff;border:1px solid #EAE4D9;font:500 13.5px Inter">Foulards</span>
+            <span style="height:38px;padding:0 18px;display:inline-flex;align-items:center;border-radius:999px;background:#fff;border:1px solid #EAE4D9;font:500 13.5px Inter">Turbans</span>
+            <span style="height:38px;padding:0 18px;display:inline-flex;align-items:center;border-radius:999px;background:#fff;border:1px solid #EAE4D9;font:500 13.5px Inter">Sacs & pochettes</span>
+            <span style="height:38px;padding:0 18px;display:inline-flex;align-items:center;border-radius:999px;background:#fff;border:1px solid #EAE4D9;font:500 13.5px Inter">Bijoux</span>
+          </div>
+          <!-- product grid 4 -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px;padding:16px 40px 40px">
+            <div style="background:#fff;border:1px solid rgba(30,27,24,.07);border-radius:14px;overflow:hidden"><div style="position:relative;aspect-ratio:4/5;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 9px,#efe8dc 9px,#efe8dc 18px)"><span style="position:absolute;top:10px;left:10px;font:700 10px Inter;padding:3px 7px;border-radius:6px;background:#D07A34;color:#fff">Nouveau</span></div><div style="padding:12px 14px 14px"><div style="font-family:'Playfair Display',serif;font-weight:600;font-size:15px">Foulard Wax Sénégal</div><div style="font-size:12px;color:#6B6259;margin:2px 0 8px">Coton wax · 90×90</div><div style="font:700 15px Inter;color:#26326B">12 500 FCFA</div></div></div>
+            <div style="background:#fff;border:1px solid rgba(30,27,24,.07);border-radius:14px;overflow:hidden"><div style="aspect-ratio:4/5;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 9px,#efe8dc 9px,#efe8dc 18px)"></div><div style="padding:12px 14px 14px"><div style="font-family:'Playfair Display',serif;font-weight:600;font-size:15px">Turban Bazin Or</div><div style="font-size:12px;color:#6B6259;margin:2px 0 8px">Bazin riche brodé</div><div style="font:700 15px Inter;color:#26326B">18 000 FCFA</div></div></div>
+            <div style="background:#fff;border:1px solid rgba(30,27,24,.07);border-radius:14px;overflow:hidden"><div style="aspect-ratio:4/5;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 9px,#efe8dc 9px,#efe8dc 18px)"></div><div style="padding:12px 14px 14px"><div style="font-family:'Playfair Display',serif;font-weight:600;font-size:15px">Pochette Kente</div><div style="font-size:12px;color:#6B6259;margin:2px 0 8px">Tissu kente</div><div style="font:700 15px Inter;color:#26326B">9 000 FCFA</div></div></div>
+            <div style="background:#fff;border:1px solid rgba(30,27,24,.07);border-radius:14px;overflow:hidden"><div style="position:relative;aspect-ratio:4/5;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 9px,#efe8dc 9px,#efe8dc 18px)"><span style="position:absolute;top:10px;left:10px;font:700 10px Inter;padding:3px 7px;border-radius:6px;background:#1E1B18;color:#C9A227">VIP</span></div><div style="padding:12px 14px 14px"><div style="font-family:'Playfair Display',serif;font-weight:600;font-size:15px">Foulard soie Teranga</div><div style="font-size:12px;color:#6B6259;margin:2px 0 8px">Soie · édition limitée</div><div style="font:700 15px Inter;color:#26326B">28 000 FCFA</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== VITRINE · PAGE PRODUIT ===== -->
+  <section style="padding:8px 72px 56px">
+    <div style="display:inline-flex;align-items:center;gap:9px;margin-bottom:20px;padding:6px 14px;background:#26326B;color:#fff;border-radius:999px;font:600 12.5px Inter"><span style="width:6px;height:6px;border-radius:999px;background:#D07A34"></span>Vitrine · Page produit (variantes)</div>
+    <div style="display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap">
+
+      <!-- MOBILE -->
+      <div style="flex:none">
+        <div style="font-family:ui-monospace,monospace;font-size:11px;color:#6B6259;margin-bottom:8px">mobile · 390</div>
+        <div style="width:390px;background:#FAF7F2;border:1px solid rgba(30,27,24,.12);border-radius:34px;overflow:hidden;box-shadow:0 12px 40px rgba(60,40,20,.14)">
+          <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;font:600 13px Inter"><span>9:41</span><span style="letter-spacing:2px">● ▂▃▅ ⌁</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 18px 12px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg><span style="font-size:13px;color:#6B6259">Foulards</span><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 15 9l7 .5-5.5 4.5L18.5 21 12 17l-6.5 4 2-7L2 9.5 9 9Z"/></svg></div>
+          <div style="aspect-ratio:1/1;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 11px,#efe8dc 11px,#efe8dc 22px);display:flex;align-items:center;justify-content:center"><span style="font-family:ui-monospace,monospace;font-size:12px;color:#9a8f7d">galerie produit 1:1</span></div>
+          <div style="display:flex;gap:8px;justify-content:center;padding:12px"><span style="width:8px;height:8px;border-radius:999px;background:#26326B"></span><span style="width:8px;height:8px;border-radius:999px;background:#D9D1C4"></span><span style="width:8px;height:8px;border-radius:999px;background:#D9D1C4"></span></div>
+          <div style="padding:4px 20px 20px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><h1 style="font-family:'Playfair Display',serif;font-weight:600;font-size:24px;line-height:1.1;margin:0">Foulard Wax Sénégal</h1></div>
+            <div style="display:flex;align-items:center;gap:10px;margin:10px 0 14px"><span style="font-size:22px;font-weight:700;color:#26326B">12 500 FCFA</span><span style="font-size:14px;color:#9a8f7d;text-decoration:line-through">15 000</span><span style="display:inline-flex;align-items:center;gap:6px;font:600 11.5px Inter;padding:4px 9px;border-radius:999px;background:#E6F4EE;color:#0b6e4d"><span style="width:6px;height:6px;border-radius:999px;background:#0E9F6E"></span>En stock</span></div>
+            <div style="font-size:12px;font-weight:600;color:#6B6259;margin-bottom:8px">Motif</div>
+            <div style="display:flex;gap:10px;margin-bottom:16px"><span style="width:32px;height:32px;border-radius:999px;background:#26326B;outline:2px solid #26326B;outline-offset:2px"></span><span style="width:32px;height:32px;border-radius:999px;background:#D07A34"></span><span style="width:32px;height:32px;border-radius:999px;background:#0E9F6E"></span></div>
+            <div style="font-size:12px;font-weight:600;color:#6B6259;margin-bottom:8px">Taille</div>
+            <div style="display:flex;gap:8px;margin-bottom:20px"><span style="height:40px;padding:0 18px;display:inline-flex;align-items:center;border-radius:8px;border:1.5px solid #26326B;background:#26326B;color:#fff;font:600 14px Inter">90×90</span><span style="height:40px;padding:0 18px;display:inline-flex;align-items:center;border-radius:8px;border:1.5px solid #DAD3C7;font:600 14px Inter">70×70</span></div>
+            <button style="width:100%;height:52px;border:none;border-radius:10px;background:#D07A34;color:#fff;font:700 16px Inter;margin-bottom:10px">Ajouter au panier · 12 500 FCFA</button>
+            <div style="display:flex;align-items:center;gap:7px;justify-content:center;font:500 12.5px Inter;color:#8a6a3a"><svg width="14" height="14" viewBox="0 0 24 24" fill="#C9A227" stroke="none"><path d="M12 2 15 9l7 .5-5.5 4.5L18.5 21 12 17l-6.5 4 2-7L2 9.5 9 9Z"/></svg>Gagnez 25 points fidélité</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DESKTOP -->
+      <div style="flex:none">
+        <div style="font-family:ui-monospace,monospace;font-size:11px;color:#6B6259;margin-bottom:8px">desktop · 1440</div>
+        <div style="width:1000px;background:#FAF7F2;border:1px solid rgba(30,27,24,.12);border-radius:16px;overflow:hidden;box-shadow:0 12px 40px rgba(60,40,20,.14)">
+          <div style="height:36px;background:#EDE7DC;display:flex;align-items:center;gap:7px;padding:0 16px"><span style="width:11px;height:11px;border-radius:999px;background:#d6664e"></span><span style="width:11px;height:11px;border-radius:999px;background:#e0a400"></span><span style="width:11px;height:11px;border-radius:999px;background:#0E9F6E"></span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 40px;background:#fff;border-bottom:1px solid #EFEAE0"><span style="font-family:'Playfair Display',serif;font-weight:600;font-size:22px">Foulard Teranga</span><div style="display:flex;gap:26px;font:500 14px Inter"><a href="#screens" style="color:#1E1B18">Foulards</a><a href="#screens" style="color:#1E1B18">Turbans</a><a href="#screens" style="color:#1E1B18">Accessoires</a></div></div>
+          <div style="padding:16px 40px 8px;display:flex;align-items:center;gap:9px;font-size:13px;color:#6B6259"><a href="#screens">Accueil</a><span style="color:#C7BFB2">/</span><a href="#screens">Foulards</a><span style="color:#C7BFB2">/</span><span style="color:#1E1B18;font-weight:600">Foulard Wax Sénégal</span></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:36px;padding:16px 40px 44px">
+            <div>
+              <div style="aspect-ratio:1/1;border-radius:14px;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 12px,#efe8dc 12px,#efe8dc 24px);display:flex;align-items:center;justify-content:center;margin-bottom:12px"><span style="font-family:ui-monospace,monospace;font-size:12px;color:#9a8f7d">galerie produit 1:1</span></div>
+              <div style="display:flex;gap:10px"><div style="width:70px;height:70px;border-radius:10px;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 7px,#efe8dc 7px,#efe8dc 14px);outline:2px solid #26326B;outline-offset:2px"></div><div style="width:70px;height:70px;border-radius:10px;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 7px,#efe8dc 7px,#efe8dc 14px)"></div><div style="width:70px;height:70px;border-radius:10px;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 7px,#efe8dc 7px,#efe8dc 14px)"></div></div>
+            </div>
+            <div>
+              <h1 style="font-family:'Playfair Display',serif;font-weight:600;font-size:34px;line-height:1.08;margin:0 0 12px">Foulard Wax Sénégal</h1>
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px"><span style="font-size:26px;font-weight:700;color:#26326B">12 500 FCFA</span><span style="font-size:16px;color:#9a8f7d;text-decoration:line-through">15 000</span><span style="display:inline-flex;align-items:center;gap:6px;font:600 12px Inter;padding:5px 11px;border-radius:999px;background:#E6F4EE;color:#0b6e4d"><span style="width:6px;height:6px;border-radius:999px;background:#0E9F6E"></span>En stock</span></div>
+              <p style="font-size:15px;color:#6B6259;line-height:1.6;margin:0 0 22px">Foulard en coton wax authentique, tissé et teint à la main à Dakar. Un accessoire vibrant qui sublime toutes les tenues.</p>
+              <div style="font-size:13px;font-weight:600;color:#6B6259;margin-bottom:10px">Motif</div>
+              <div style="display:flex;gap:12px;margin-bottom:20px"><span style="width:34px;height:34px;border-radius:999px;background:#26326B;outline:2px solid #26326B;outline-offset:2px"></span><span style="width:34px;height:34px;border-radius:999px;background:#D07A34"></span><span style="width:34px;height:34px;border-radius:999px;background:#0E9F6E"></span><span style="width:34px;height:34px;border-radius:999px;background:#C9A227"></span></div>
+              <div style="font-size:13px;font-weight:600;color:#6B6259;margin-bottom:10px">Taille</div>
+              <div style="display:flex;gap:10px;margin-bottom:26px"><span style="height:44px;padding:0 20px;display:inline-flex;align-items:center;border-radius:10px;border:1.5px solid #26326B;background:#26326B;color:#fff;font:600 14px Inter">90 × 90 cm</span><span style="height:44px;padding:0 20px;display:inline-flex;align-items:center;border-radius:10px;border:1.5px solid #DAD3C7;font:600 14px Inter">70 × 70 cm</span></div>
+              <div style="display:flex;gap:12px;align-items:center"><div style="display:inline-flex;align-items:center;height:52px;border:1.5px solid #DAD3C7;border-radius:10px;overflow:hidden"><button style="width:48px;height:100%;border:none;background:#FAF7F2;font-size:20px;color:#26326B;cursor:pointer">−</button><span style="width:48px;text-align:center;font:600 16px Inter">1</span><button style="width:48px;height:100%;border:none;background:#FAF7F2;font-size:20px;color:#26326B;cursor:pointer">+</button></div><button style="flex:1;height:52px;border:none;border-radius:10px;background:#D07A34;color:#fff;font:700 16px Inter">Ajouter au panier</button></div>
+              <div style="display:flex;align-items:center;gap:7px;margin-top:14px;font:500 13px Inter;color:#8a6a3a"><svg width="15" height="15" viewBox="0 0 24 24" fill="#C9A227" stroke="none"><path d="M12 2 15 9l7 .5-5.5 4.5L18.5 21 12 17l-6.5 4 2-7L2 9.5 9 9Z"/></svg>Gagnez 25 points fidélité Teranga sur cet achat</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== VITRINE · PANIER / CHECKOUT ===== -->
+  <section style="padding:8px 72px 56px">
+    <div style="display:inline-flex;align-items:center;gap:9px;margin-bottom:20px;padding:6px 14px;background:#26326B;color:#fff;border-radius:999px;font:600 12.5px Inter"><span style="width:6px;height:6px;border-radius:999px;background:#D07A34"></span>Vitrine · Panier / Checkout</div>
+    <div style="display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap">
+
+      <!-- MOBILE -->
+      <div style="flex:none">
+        <div style="font-family:ui-monospace,monospace;font-size:11px;color:#6B6259;margin-bottom:8px">mobile · 390 — panier</div>
+        <div style="width:390px;background:#FAF7F2;border:1px solid rgba(30,27,24,.12);border-radius:34px;overflow:hidden;box-shadow:0 12px 40px rgba(60,40,20,.14)">
+          <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;font:600 13px Inter"><span>9:41</span><span style="letter-spacing:2px">● ▂▃▅ ⌁</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 18px 14px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg><span style="font-family:'Playfair Display',serif;font-weight:600;font-size:19px">Mon panier</span><span style="width:24px"></span></div>
+          <div style="padding:0 16px">
+            <div style="background:#fff;border:1px solid rgba(30,27,24,.07);border-radius:14px;padding:14px;display:flex;gap:12px;align-items:center;margin-bottom:10px"><div style="width:60px;height:74px;border-radius:8px;flex:none;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 6px,#efe8dc 6px,#efe8dc 12px)"></div><div style="flex:1;min-width:0"><div style="font-family:'Playfair Display',serif;font-weight:600;font-size:14px">Foulard Wax Sénégal</div><div style="font-size:11.5px;color:#6B6259;margin:2px 0 6px">Indigo · 90×90</div><div style="display:inline-flex;align-items:center;height:32px;border:1.5px solid #DAD3C7;border-radius:8px;overflow:hidden"><button style="width:32px;height:100%;border:none;background:#FAF7F2;font-size:15px;color:#26326B">−</button><span style="width:34px;text-align:center;font:600 13px Inter">2</span><button style="width:32px;height:100%;border:none;background:#FAF7F2;font-size:15px;color:#26326B">+</button></div></div><div style="text-align:right"><div style="font:700 14px Inter;color:#26326B">25 000</div></div></div>
+            <div style="background:#fff;border:1px solid rgba(30,27,24,.07);border-radius:14px;padding:14px;display:flex;gap:12px;align-items:center"><div style="width:60px;height:74px;border-radius:8px;flex:none;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 6px,#efe8dc 6px,#efe8dc 12px)"></div><div style="flex:1;min-width:0"><div style="font-family:'Playfair Display',serif;font-weight:600;font-size:14px">Turban Bazin Or</div><div style="font-size:11.5px;color:#6B6259;margin:2px 0 6px">Or · M</div><div style="display:inline-flex;align-items:center;height:32px;border:1.5px solid #DAD3C7;border-radius:8px;overflow:hidden"><button style="width:32px;height:100%;border:none;background:#FAF7F2;font-size:15px;color:#26326B">−</button><span style="width:34px;text-align:center;font:600 13px Inter">1</span><button style="width:32px;height:100%;border:none;background:#FAF7F2;font-size:15px;color:#26326B">+</button></div></div><div style="text-align:right"><div style="font:700 14px Inter;color:#26326B">18 000</div></div></div>
+          </div>
+          <div style="margin:16px;background:#fff;border:1px solid rgba(30,27,24,.07);border-radius:14px;padding:16px">
+            <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:8px"><span style="color:#6B6259">Sous-total</span><span style="font-weight:600">43 000 FCFA</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:8px"><span style="color:#6B6259">Livraison Dakar</span><span style="font-weight:600">2 000 FCFA</span></div>
+            <div style="height:1px;background:#EFEAE0;margin:10px 0"></div>
+            <div style="display:flex;justify-content:space-between;font-size:17px;font-weight:700"><span>Total</span><span style="color:#26326B">45 000 FCFA</span></div>
+            <button style="width:100%;height:52px;border:none;border-radius:10px;background:#D07A34;color:#fff;font:700 16px Inter;margin-top:14px">Passer commande</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- DESKTOP -->
+      <div style="flex:none">
+        <div style="font-family:ui-monospace,monospace;font-size:11px;color:#6B6259;margin-bottom:8px">desktop · 1440 — checkout</div>
+        <div style="width:1000px;background:#FAF7F2;border:1px solid rgba(30,27,24,.12);border-radius:16px;overflow:hidden;box-shadow:0 12px 40px rgba(60,40,20,.14)">
+          <div style="height:36px;background:#EDE7DC;display:flex;align-items:center;gap:7px;padding:0 16px"><span style="width:11px;height:11px;border-radius:999px;background:#d6664e"></span><span style="width:11px;height:11px;border-radius:999px;background:#e0a400"></span><span style="width:11px;height:11px;border-radius:999px;background:#0E9F6E"></span></div>
+          <div style="padding:20px 40px;background:#fff;border-bottom:1px solid #EFEAE0;text-align:center"><span style="font-family:'Playfair Display',serif;font-weight:600;font-size:22px">Foulard Teranga</span></div>
+          <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:32px;padding:32px 40px 44px">
+            <div>
+              <h2 style="font-family:'Playfair Display',serif;font-weight:600;font-size:24px;margin:0 0 18px">Livraison</h2>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+                <div><label style="display:block;font:600 13px Inter;margin-bottom:7px">Prénom</label><input value="Awa" style="width:100%;height:44px;padding:0 14px;border:1.5px solid #DAD3C7;border-radius:10px;font:400 15px Inter"></div>
+                <div><label style="display:block;font:600 13px Inter;margin-bottom:7px">Nom</label><input value="Diallo" style="width:100%;height:44px;padding:0 14px;border:1.5px solid #DAD3C7;border-radius:10px;font:400 15px Inter"></div>
+              </div>
+              <div style="margin-bottom:16px"><label style="display:block;font:600 13px Inter;margin-bottom:7px">Téléphone</label><div style="display:flex;align-items:center;height:44px;padding:0 14px;border:1.5px solid #DAD3C7;border-radius:10px"><span style="color:#6B6259;font-size:15px;margin-right:8px">+221</span><input value="77 123 45 67" style="flex:1;border:none;outline:none;font:400 15px Inter"></div></div>
+              <div style="margin-bottom:16px"><label style="display:block;font:600 13px Inter;margin-bottom:7px">Adresse</label><input value="Sacré-Cœur 3, Villa 218" style="width:100%;height:44px;padding:0 14px;border:1.5px solid #DAD3C7;border-radius:10px;font:400 15px Inter"></div>
+              <h2 style="font-family:'Playfair Display',serif;font-weight:600;font-size:24px;margin:26px 0 14px">Paiement</h2>
+              <div style="display:flex;gap:12px"><label style="flex:1;display:flex;align-items:center;gap:10px;height:52px;padding:0 16px;border:1.5px solid #26326B;border-radius:10px;background:#EEF0F7;font:600 14px Inter;cursor:pointer"><span style="width:18px;height:18px;border-radius:999px;border:5px solid #26326B"></span>Wave / Orange Money</label><label style="flex:1;display:flex;align-items:center;gap:10px;height:52px;padding:0 16px;border:1.5px solid #DAD3C7;border-radius:10px;font:600 14px Inter;cursor:pointer"><span style="width:18px;height:18px;border-radius:999px;border:1.5px solid #C7BFB2"></span>À la livraison</label></div>
+            </div>
+            <div>
+              <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:14px;padding:22px;position:sticky;top:20px">
+                <h3 style="font:600 16px Inter;margin:0 0 16px">Récapitulatif</h3>
+                <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px"><div style="width:48px;height:58px;border-radius:8px;flex:none;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 6px,#efe8dc 6px,#efe8dc 12px)"></div><div style="flex:1"><div style="font:600 13px Inter">Foulard Wax Sénégal ×2</div><div style="font-size:11.5px;color:#6B6259">Indigo · 90×90</div></div><div style="font:600 13px Inter">25 000</div></div>
+                <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px"><div style="width:48px;height:58px;border-radius:8px;flex:none;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 6px,#efe8dc 6px,#efe8dc 12px)"></div><div style="flex:1"><div style="font:600 13px Inter">Turban Bazin Or ×1</div><div style="font-size:11.5px;color:#6B6259">Or · M</div></div><div style="font:600 13px Inter">18 000</div></div>
+                <div style="height:1px;background:#EFEAE0;margin:12px 0"></div>
+                <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:8px"><span style="color:#6B6259">Sous-total</span><span style="font-weight:600">43 000 FCFA</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:8px"><span style="color:#6B6259">Livraison</span><span style="font-weight:600">2 000 FCFA</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:12px;color:#0b6e4d"><span>Points fidélité</span><span style="font-weight:600">+86 pts</span></div>
+                <div style="height:1px;background:#EFEAE0;margin:0 0 12px"></div>
+                <div style="display:flex;justify-content:space-between;font-size:19px;font-weight:700;margin-bottom:16px"><span>Total</span><span style="color:#26326B">45 000 FCFA</span></div>
+                <button style="width:100%;height:52px;border:none;border-radius:10px;background:#D07A34;color:#fff;font:700 16px Inter">Payer 45 000 FCFA</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ADMIN · DASHBOARD ===== -->
+  <section style="padding:8px 72px 56px">
+    <div style="display:inline-flex;align-items:center;gap:9px;margin-bottom:20px;padding:6px 14px;background:#1E1B18;color:#fff;border-radius:999px;font:600 12.5px Inter"><span style="width:6px;height:6px;border-radius:999px;background:#C9A227"></span>Admin · Tableau de bord</div>
+    <div style="display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap">
+
+      <!-- MOBILE -->
+      <div style="flex:none">
+        <div style="font-family:ui-monospace,monospace;font-size:11px;color:#6B6259;margin-bottom:8px">mobile · 390</div>
+        <div style="width:390px;background:#FAF7F2;border:1px solid rgba(30,27,24,.12);border-radius:34px;overflow:hidden;box-shadow:0 12px 40px rgba(60,40,20,.14)">
+          <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;font:600 13px Inter"><span>9:41</span><span style="letter-spacing:2px">● ▂▃▅ ⌁</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 18px 14px"><div><div style="font-size:12px;color:#6B6259">Bonjour, Awa</div><div style="font-family:'Playfair Display',serif;font-weight:600;font-size:18px">Tableau de bord</div></div><span style="width:36px;height:36px;border-radius:999px;background:#26326B;color:#fff;display:flex;align-items:center;justify-content:center;font:700 14px Inter">AD</span></div>
+          <div style="padding:0 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:12px;padding:14px"><div style="font-size:11.5px;color:#6B6259;margin-bottom:6px">Ventes du jour</div><div style="font-size:19px;font-weight:700">248 000</div><div style="font:600 11px Inter;color:#0b6e4d">+18%</div></div>
+            <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:12px;padding:14px"><div style="font-size:11.5px;color:#6B6259;margin-bottom:6px">Commandes</div><div style="font-size:19px;font-weight:700">17</div><div style="font:600 11px Inter;color:#8a6500">7 à traiter</div></div>
+            <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:12px;padding:14px"><div style="font-size:11.5px;color:#6B6259;margin-bottom:6px">Panier moyen</div><div style="font-size:19px;font-weight:700">14 600</div><div style="font:600 11px Inter;color:#0b6e4d">+4%</div></div>
+            <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:12px;padding:14px"><div style="font-size:11.5px;color:#6B6259;margin-bottom:6px">Stock faible</div><div style="font-size:19px;font-weight:700">3</div><div style="font:600 11px Inter;color:#9c352d">articles</div></div>
+          </div>
+          <div style="margin:12px 16px;background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:12px;padding:14px">
+            <div style="font:600 13px Inter;margin-bottom:12px">7 derniers jours</div>
+            <div style="display:flex;align-items:flex-end;gap:6px;height:80px">
+              <div style="flex:1;height:46%;background:#E7DECF;border-radius:4px"></div><div style="flex:1;height:60%;background:#E7DECF;border-radius:4px"></div><div style="flex:1;height:40%;background:#E7DECF;border-radius:4px"></div><div style="flex:1;height:72%;background:#E7DECF;border-radius:4px"></div><div style="flex:1;height:55%;background:#E7DECF;border-radius:4px"></div><div style="flex:1;height:85%;background:#26326B;border-radius:4px"></div><div style="flex:1;height:100%;background:#D07A34;border-radius:4px"></div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-around;border-top:1px solid #EAE4D9;background:#fff;padding:8px 0 14px">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:#26326B"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#26326B" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span style="font:600 10px Inter">Bord</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:#8a8177"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#8a8177" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><span style="font:500 10px Inter">Commandes</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:#8a8177"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#8a8177" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12.2 3.3a2 2 0 0 0-.4 0l-7 3.9V17l7.2 4 7.2-4V7.2Z"/><path d="m4.5 7 7.5 4 7.5-4M12 21v-10"/></svg><span style="font:500 10px Inter">Produits</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:#8a8177"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#8a8177" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span style="font:500 10px Inter">POS</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DESKTOP -->
+      <div style="flex:none">
+        <div style="font-family:ui-monospace,monospace;font-size:11px;color:#6B6259;margin-bottom:8px">desktop · 1440</div>
+        <div style="width:1080px;background:#FAF7F2;border:1px solid rgba(30,27,24,.12);border-radius:16px;overflow:hidden;box-shadow:0 12px 40px rgba(60,40,20,.14);display:flex">
+          <!-- sidebar -->
+          <div style="width:210px;background:#1E1B18;padding:18px 12px;color:#fff;flex:none">
+            <div style="display:flex;align-items:center;gap:9px;padding:0 8px 14px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:10px"><span style="width:26px;height:26px;border-radius:7px;background:#D07A34"></span><span style="font-family:'Playfair Display',serif;font-weight:600;font-size:16px">Teranga</span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;background:#26326B;font:600 13px Inter;margin-bottom:2px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Tableau de bord</div>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;color:#C9BEB0;font:500 13px Inter;margin-bottom:2px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9BEB0" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>Commandes<span style="margin-left:auto;font:700 10px Inter;background:#D07A34;padding:1px 6px;border-radius:999px">7</span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;color:#C9BEB0;font:500 13px Inter;margin-bottom:2px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9BEB0" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12.2 3.3a2 2 0 0 0-.4 0l-7 3.9V17l7.2 4 7.2-4V7.2Z"/><path d="m4.5 7 7.5 4 7.5-4M12 21v-10"/></svg>Produits & stock</div>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;color:#C9BEB0;font:500 13px Inter;margin-bottom:2px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9BEB0" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M3 20a6 6 0 0 1 12 0"/></svg>Clientes</div>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;color:#C9BEB0;font:500 13px Inter"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9BEB0" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Point de vente</div>
+          </div>
+          <!-- main -->
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:#fff;border-bottom:1px solid #EFEAE0">
+              <div><div style="font-family:'Playfair Display',serif;font-weight:600;font-size:20px">Tableau de bord</div><div style="font-size:12.5px;color:#6B6259">Mardi 7 juillet 2026</div></div>
+              <div style="display:flex;gap:10px;align-items:center"><div style="display:flex;align-items:center;height:38px;padding:0 12px;border:1px solid #DAD3C7;border-radius:9px;gap:8px;background:#fff"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6B6259" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><span style="font-size:13px;color:#9a8f7d">Rechercher…</span></div><span style="width:38px;height:38px;border-radius:999px;background:#26326B;color:#fff;display:flex;align-items:center;justify-content:center;font:700 13px Inter">AD</span></div>
+            </div>
+            <div style="padding:20px 24px">
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px">
+                <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:12px;padding:16px"><div style="font-size:12px;color:#6B6259;margin-bottom:8px">Ventes du jour</div><div style="font-size:22px;font-weight:700">248 000 <span style="font-size:12px;color:#6B6259">F</span></div><div style="display:inline-flex;align-items:center;gap:4px;font:600 11.5px Inter;color:#0b6e4d;background:#E6F4EE;padding:2px 7px;border-radius:999px;margin-top:6px">▲ 18%</div></div>
+                <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:12px;padding:16px"><div style="font-size:12px;color:#6B6259;margin-bottom:8px">Commandes</div><div style="font-size:22px;font-weight:700">17</div><div style="display:inline-flex;align-items:center;gap:4px;font:600 11.5px Inter;color:#8a6500;background:#FBF1D8;padding:2px 7px;border-radius:999px;margin-top:6px">7 à traiter</div></div>
+                <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:12px;padding:16px"><div style="font-size:12px;color:#6B6259;margin-bottom:8px">Panier moyen</div><div style="font-size:22px;font-weight:700">14 600 <span style="font-size:12px;color:#6B6259">F</span></div><div style="display:inline-flex;align-items:center;gap:4px;font:600 11.5px Inter;color:#0b6e4d;background:#E6F4EE;padding:2px 7px;border-radius:999px;margin-top:6px">▲ 4%</div></div>
+                <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:12px;padding:16px"><div style="font-size:12px;color:#6B6259;margin-bottom:8px">Stock faible</div><div style="font-size:22px;font-weight:700">3</div><div style="display:inline-flex;align-items:center;gap:4px;font:600 11.5px Inter;color:#9c352d;background:#F8E5E3;padding:2px 7px;border-radius:999px;margin-top:6px">à réappro</div></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:14px">
+                <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:12px;padding:18px"><div style="display:flex;justify-content:space-between;margin-bottom:16px"><span style="font:600 14px Inter">Chiffre d'affaires — 7 jours</span><span style="font-size:12px;color:#6B6259">1,24 M FCFA</span></div><div style="display:flex;align-items:flex-end;gap:10px;height:130px">
+                  <div style="flex:1;height:44%;background:#E7DECF;border-radius:5px"></div><div style="flex:1;height:58%;background:#E7DECF;border-radius:5px"></div><div style="flex:1;height:38%;background:#E7DECF;border-radius:5px"></div><div style="flex:1;height:70%;background:#E7DECF;border-radius:5px"></div><div style="flex:1;height:52%;background:#E7DECF;border-radius:5px"></div><div style="flex:1;height:82%;background:#26326B;border-radius:5px"></div><div style="flex:1;height:100%;background:#D07A34;border-radius:5px"></div>
+                </div></div>
+                <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:12px;padding:18px"><div style="font:600 14px Inter;margin-bottom:14px">À traiter</div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F1ECE3"><div><div style="font:600 13px Inter">#TER-0481</div><div style="font-size:11.5px;color:#6B6259">Awa Diallo</div></div><span style="font:600 11px Inter;padding:3px 8px;border-radius:999px;background:#FBF1D8;color:#8a6500">En attente</span></div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F1ECE3"><div><div style="font:600 13px Inter">#TER-0479</div><div style="font-size:11.5px;color:#6B6259">Mariama Sow</div></div><span style="font:600 11px Inter;padding:3px 8px;border-radius:999px;background:#EEF0F7;color:#26326B">Confirmée</span></div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0"><div><div style="font:600 13px Inter">#TER-0477</div><div style="font-size:11.5px;color:#6B6259">Coumba Fall</div></div><span style="font:600 11px Inter;padding:3px 8px;border-radius:999px;background:#F4EDE1;color:#8a6a3a">En préparation</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ADMIN · COMMANDES ===== -->
+  <section style="padding:8px 72px 56px">
+    <div style="display:inline-flex;align-items:center;gap:9px;margin-bottom:20px;padding:6px 14px;background:#1E1B18;color:#fff;border-radius:999px;font:600 12.5px Inter"><span style="width:6px;height:6px;border-radius:999px;background:#C9A227"></span>Admin · Liste des commandes</div>
+    <div style="display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap">
+
+      <!-- MOBILE -->
+      <div style="flex:none">
+        <div style="font-family:ui-monospace,monospace;font-size:11px;color:#6B6259;margin-bottom:8px">mobile · 390</div>
+        <div style="width:390px;background:#FAF7F2;border:1px solid rgba(30,27,24,.12);border-radius:34px;overflow:hidden;box-shadow:0 12px 40px rgba(60,40,20,.14)">
+          <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;font:600 13px Inter"><span>9:41</span><span style="letter-spacing:2px">● ▂▃▅ ⌁</span></div>
+          <div style="padding:6px 18px 12px"><div style="font-family:'Playfair Display',serif;font-weight:600;font-size:19px;margin-bottom:12px">Commandes</div><div style="display:flex;align-items:center;height:42px;padding:0 14px;border:1.5px solid #DAD3C7;border-radius:10px;background:#fff;gap:10px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6B6259" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><span style="font-size:13.5px;color:#9a8f7d">Rechercher une commande…</span></div></div>
+          <div style="display:flex;gap:8px;padding:0 14px 12px;overflow:hidden"><span style="flex:none;height:32px;padding:0 13px;display:inline-flex;align-items:center;border-radius:999px;background:#26326B;color:#fff;font:600 12px Inter">Toutes</span><span style="flex:none;height:32px;padding:0 13px;display:inline-flex;align-items:center;border-radius:999px;background:#fff;border:1px solid #EAE4D9;font:500 12px Inter">En attente</span><span style="flex:none;height:32px;padding:0 13px;display:inline-flex;align-items:center;border-radius:999px;background:#fff;border:1px solid #EAE4D9;font:500 12px Inter">En prépa</span></div>
+          <div style="padding:0 14px 16px;display:flex;flex-direction:column;gap:10px">
+            <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:12px;padding:14px"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font:600 14px Inter">#TER-0481</div><div style="font-size:12px;color:#6B6259">Awa Diallo · Dakar</div></div><span style="font:600 11px Inter;padding:3px 8px;border-radius:999px;background:#FBF1D8;color:#8a6500">En attente</span></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid #F1ECE3"><span style="font-size:12px;color:#6B6259">3 articles · Boutique</span><span style="font:700 14px Inter;color:#26326B">37 500 F</span></div></div>
+            <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:12px;padding:14px"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font:600 14px Inter">#TER-0480</div><div style="font-size:12px;color:#6B6259">Fatou Ndiaye · Web</div></div><span style="font:600 11px Inter;padding:3px 8px;border-radius:999px;background:#E6F4EE;color:#0b6e4d">Livrée</span></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid #F1ECE3"><span style="font-size:12px;color:#6B6259">1 article · Web</span><span style="font:700 14px Inter;color:#26326B">21 000 F</span></div></div>
+            <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:12px;padding:14px"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font:600 14px Inter">#TER-0479</div><div style="font-size:12px;color:#6B6259">Mariama Sow · WhatsApp</div></div><span style="font:600 11px Inter;padding:3px 8px;border-radius:999px;background:#EEF0F7;color:#26326B">Confirmée</span></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid #F1ECE3"><span style="font-size:12px;color:#6B6259">4 articles</span><span style="font:700 14px Inter;color:#26326B">54 000 F</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DESKTOP -->
+      <div style="flex:none">
+        <div style="font-family:ui-monospace,monospace;font-size:11px;color:#6B6259;margin-bottom:8px">desktop · 1440</div>
+        <div style="width:1080px;background:#FAF7F2;border:1px solid rgba(30,27,24,.12);border-radius:16px;overflow:hidden;box-shadow:0 12px 40px rgba(60,40,20,.14);display:flex">
+          <div style="width:210px;background:#1E1B18;padding:18px 12px;color:#fff;flex:none">
+            <div style="display:flex;align-items:center;gap:9px;padding:0 8px 14px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:10px"><span style="width:26px;height:26px;border-radius:7px;background:#D07A34"></span><span style="font-family:'Playfair Display',serif;font-weight:600;font-size:16px">Teranga</span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;color:#C9BEB0;font:500 13px Inter;margin-bottom:2px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9BEB0" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Tableau de bord</div>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;background:#26326B;font:600 13px Inter;margin-bottom:2px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>Commandes<span style="margin-left:auto;font:700 10px Inter;background:#D07A34;padding:1px 6px;border-radius:999px">7</span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;color:#C9BEB0;font:500 13px Inter;margin-bottom:2px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9BEB0" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12.2 3.3a2 2 0 0 0-.4 0l-7 3.9V17l7.2 4 7.2-4V7.2Z"/><path d="m4.5 7 7.5 4 7.5-4M12 21v-10"/></svg>Produits & stock</div>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;color:#C9BEB0;font:500 13px Inter"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9BEB0" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Point de vente</div>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:#fff;border-bottom:1px solid #EFEAE0">
+              <div style="font-family:'Playfair Display',serif;font-weight:600;font-size:20px">Commandes</div>
+              <div style="display:flex;gap:10px"><div style="display:flex;align-items:center;height:38px;padding:0 12px;border:1px solid #DAD3C7;border-radius:9px;gap:8px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6B6259" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><span style="font-size:13px;color:#9a8f7d">Rechercher…</span></div><button style="height:38px;padding:0 16px;border:none;border-radius:9px;background:#26326B;color:#fff;font:600 13px Inter">Nouvelle commande</button></div>
+            </div>
+            <div style="padding:16px 24px">
+              <div style="display:flex;gap:8px;margin-bottom:14px"><span style="height:32px;padding:0 14px;display:inline-flex;align-items:center;border-radius:999px;background:#26326B;color:#fff;font:600 12.5px Inter">Toutes (142)</span><span style="height:32px;padding:0 14px;display:inline-flex;align-items:center;border-radius:999px;background:#fff;border:1px solid #EAE4D9;font:500 12.5px Inter">En attente (7)</span><span style="height:32px;padding:0 14px;display:inline-flex;align-items:center;border-radius:999px;background:#fff;border:1px solid #EAE4D9;font:500 12.5px Inter">En préparation (4)</span><span style="height:32px;padding:0 14px;display:inline-flex;align-items:center;border-radius:999px;background:#fff;border:1px solid #EAE4D9;font:500 12.5px Inter">Livrées</span></div>
+              <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:12px;overflow:hidden">
+                <table style="width:100%;border-collapse:collapse;font-size:13px">
+                  <thead><tr style="background:#FAF7F2;color:#6B6259;text-align:left"><th style="padding:9px 16px;font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em">Commande <span style="color:#26326B">▼</span></th><th style="padding:9px 12px;font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em">Cliente</th><th style="padding:9px 12px;font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em">Date</th><th style="padding:9px 12px;font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em">Statut</th><th style="padding:9px 12px;font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em">Canal</th><th style="padding:9px 16px;font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;text-align:right">Total</th></tr></thead>
+                  <tbody>
+                    <tr style="border-top:1px solid #F1ECE3"><td style="padding:10px 16px;font-weight:600">#TER-0481</td><td style="padding:10px 12px">Awa Diallo</td><td style="padding:10px 12px;color:#6B6259">07/07 · 09:12</td><td style="padding:10px 12px"><span style="font:600 11px Inter;padding:3px 8px;border-radius:999px;background:#FBF1D8;color:#8a6500">En attente</span></td><td style="padding:10px 12px;color:#6B6259">Boutique</td><td style="padding:10px 16px;text-align:right;font-weight:600">37 500</td></tr>
+                    <tr style="border-top:1px solid #F1ECE3;background:#FDFCFA"><td style="padding:10px 16px;font-weight:600">#TER-0480</td><td style="padding:10px 12px">Fatou Ndiaye</td><td style="padding:10px 12px;color:#6B6259">07/07 · 08:40</td><td style="padding:10px 12px"><span style="font:600 11px Inter;padding:3px 8px;border-radius:999px;background:#E6F4EE;color:#0b6e4d">Livrée</span></td><td style="padding:10px 12px;color:#6B6259">Web</td><td style="padding:10px 16px;text-align:right;font-weight:600">21 000</td></tr>
+                    <tr style="border-top:1px solid #F1ECE3"><td style="padding:10px 16px;font-weight:600">#TER-0479</td><td style="padding:10px 12px">Mariama Sow</td><td style="padding:10px 12px;color:#6B6259">06/07 · 18:22</td><td style="padding:10px 12px"><span style="font:600 11px Inter;padding:3px 8px;border-radius:999px;background:#EEF0F7;color:#26326B">Confirmée</span></td><td style="padding:10px 12px;color:#6B6259">WhatsApp</td><td style="padding:10px 16px;text-align:right;font-weight:600">54 000</td></tr>
+                    <tr style="border-top:1px solid #F1ECE3;background:#FDFCFA"><td style="padding:10px 16px;font-weight:600">#TER-0478</td><td style="padding:10px 12px">Coumba Fall</td><td style="padding:10px 12px;color:#6B6259">06/07 · 15:03</td><td style="padding:10px 12px"><span style="font:600 11px Inter;padding:3px 8px;border-radius:999px;background:#F4EDE1;color:#8a6a3a">En préparation</span></td><td style="padding:10px 12px;color:#6B6259">Boutique</td><td style="padding:10px 16px;text-align:right;font-weight:600">12 500</td></tr>
+                    <tr style="border-top:1px solid #F1ECE3"><td style="padding:10px 16px;font-weight:600">#TER-0477</td><td style="padding:10px 12px">Aïssatou Ba</td><td style="padding:10px 12px;color:#6B6259">06/07 · 11:47</td><td style="padding:10px 12px"><span style="font:600 11px Inter;padding:3px 8px;border-radius:999px;background:#F8E5E3;color:#9c352d">Refusée</span></td><td style="padding:10px 12px;color:#6B6259">Web</td><td style="padding:10px 16px;text-align:right;font-weight:600">9 000</td></tr>
+                  </tbody>
+                </table>
+                <div style="padding:11px 16px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #EFEAE0"><span style="font-size:12px;color:#6B6259">1–5 sur 142</span><div style="display:flex;gap:6px"><button style="height:32px;min-width:32px;border:1px solid #DAD3C7;border-radius:8px;background:#fff;color:#B6AEA1;font:600 12px Inter">‹</button><button style="height:32px;min-width:32px;border:1px solid #26326B;border-radius:8px;background:#26326B;color:#fff;font:600 12px Inter">1</button><button style="height:32px;min-width:32px;border:1px solid #DAD3C7;border-radius:8px;background:#fff;font:600 12px Inter">2</button><button style="height:32px;min-width:32px;border:1px solid #DAD3C7;border-radius:8px;background:#fff;font:600 12px Inter">3</button><button style="height:32px;min-width:32px;border:1px solid #DAD3C7;border-radius:8px;background:#fff;font:600 12px Inter">›</button></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ADMIN · FICHE PRODUIT / STOCK ===== -->
+  <section style="padding:8px 72px 56px">
+    <div style="display:inline-flex;align-items:center;gap:9px;margin-bottom:20px;padding:6px 14px;background:#1E1B18;color:#fff;border-radius:999px;font:600 12.5px Inter"><span style="width:6px;height:6px;border-radius:999px;background:#C9A227"></span>Admin · Fiche produit & stock</div>
+    <div style="display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap">
+
+      <!-- MOBILE -->
+      <div style="flex:none">
+        <div style="font-family:ui-monospace,monospace;font-size:11px;color:#6B6259;margin-bottom:8px">mobile · 390</div>
+        <div style="width:390px;background:#FAF7F2;border:1px solid rgba(30,27,24,.12);border-radius:34px;overflow:hidden;box-shadow:0 12px 40px rgba(60,40,20,.14)">
+          <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;font:600 13px Inter"><span>9:41</span><span style="letter-spacing:2px">● ▂▃▅ ⌁</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 18px 14px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1E1B18" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg><span style="font-family:'Playfair Display',serif;font-weight:600;font-size:17px">Fiche produit</span><span style="font:600 13px Inter;color:#26326B">Enregistrer</span></div>
+          <div style="padding:0 16px 16px">
+            <div style="display:flex;gap:12px;margin-bottom:16px"><div style="width:88px;height:104px;border-radius:10px;flex:none;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 8px,#efe8dc 8px,#efe8dc 16px)"></div><div style="flex:1"><div style="font-family:'Playfair Display',serif;font-weight:600;font-size:17px;line-height:1.15">Foulard Wax Sénégal</div><div style="font-size:12px;color:#6B6259;margin:3px 0 8px">Réf. FWS-090-IND</div><span style="display:inline-flex;align-items:center;gap:6px;font:600 11.5px Inter;padding:4px 9px;border-radius:999px;background:#E6F4EE;color:#0b6e4d"><span style="width:6px;height:6px;border-radius:999px;background:#0E9F6E"></span>Publié</span></div></div>
+            <div style="margin-bottom:12px"><label style="display:block;font:600 12px Inter;margin-bottom:6px">Prix de vente</label><div style="display:flex;align-items:center;height:44px;padding:0 14px;border:1.5px solid #DAD3C7;border-radius:10px"><input value="12 500" style="flex:1;border:none;outline:none;font:600 15px Inter"><span style="color:#6B6259;font-size:14px">FCFA</span></div></div>
+            <label style="display:block;font:600 12px Inter;margin-bottom:8px">Sources de stock</label>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid #EAE4D9;border-radius:10px;padding:12px 14px"><span style="display:inline-flex;align-items:center;gap:7px;font:600 12.5px Inter;color:#0b6e4d"><span style="width:7px;height:7px;border-radius:999px;background:#0E9F6E"></span>Interne (atelier)</span><span style="font:700 15px Inter">14</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid #EAE4D9;border-radius:10px;padding:12px 14px"><span style="display:inline-flex;align-items:center;gap:7px;font:600 12.5px Inter;color:#26326B"><span style="width:7px;height:7px;border-radius:999px;background:#26326B"></span>Sous-traitance</span><span style="font:600 12.5px Inter;color:#6B6259">Délai 5–7 j</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid #EAE4D9;border-radius:10px;padding:12px 14px"><span style="display:inline-flex;align-items:center;gap:7px;font:600 12.5px Inter;color:#8a6500"><span style="width:7px;height:7px;border-radius:999px;background:#E0A400"></span>Matériel (tissu)</span><span style="font:600 12.5px Inter;color:#6B6259">À commander</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DESKTOP -->
+      <div style="flex:none">
+        <div style="font-family:ui-monospace,monospace;font-size:11px;color:#6B6259;margin-bottom:8px">desktop · 1440</div>
+        <div style="width:1080px;background:#FAF7F2;border:1px solid rgba(30,27,24,.12);border-radius:16px;overflow:hidden;box-shadow:0 12px 40px rgba(60,40,20,.14);display:flex">
+          <div style="width:210px;background:#1E1B18;padding:18px 12px;color:#fff;flex:none">
+            <div style="display:flex;align-items:center;gap:9px;padding:0 8px 14px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:10px"><span style="width:26px;height:26px;border-radius:7px;background:#D07A34"></span><span style="font-family:'Playfair Display',serif;font-weight:600;font-size:16px">Teranga</span></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;color:#C9BEB0;font:500 13px Inter;margin-bottom:2px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9BEB0" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Tableau de bord</div>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;color:#C9BEB0;font:500 13px Inter;margin-bottom:2px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9BEB0" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>Commandes</div>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;background:#26326B;font:600 13px Inter;margin-bottom:2px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12.2 3.3a2 2 0 0 0-.4 0l-7 3.9V17l7.2 4 7.2-4V7.2Z"/><path d="m4.5 7 7.5 4 7.5-4M12 21v-10"/></svg>Produits & stock</div>
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;color:#C9BEB0;font:500 13px Inter"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9BEB0" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Point de vente</div>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:#fff;border-bottom:1px solid #EFEAE0"><div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#6B6259"><a href="#screens">Produits</a><span style="color:#C7BFB2">/</span><span style="color:#1E1B18;font-weight:600">Foulard Wax Sénégal</span></div><div style="display:flex;gap:10px"><button style="height:38px;padding:0 16px;border:1.5px solid #DAD3C7;border-radius:9px;background:#fff;font:600 13px Inter">Aperçu</button><button style="height:38px;padding:0 16px;border:none;border-radius:9px;background:#26326B;color:#fff;font:600 13px Inter">Enregistrer</button></div></div>
+            <div style="padding:20px 24px;display:grid;grid-template-columns:1.5fr 1fr;gap:18px">
+              <div style="display:flex;flex-direction:column;gap:16px">
+                <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:12px;padding:18px">
+                  <div style="font:600 14px Inter;margin-bottom:14px">Informations</div>
+                  <label style="display:block;font:600 12px Inter;margin-bottom:6px">Nom du produit</label><input value="Foulard Wax Sénégal" style="width:100%;height:42px;padding:0 13px;border:1.5px solid #DAD3C7;border-radius:9px;font:400 14px Inter;margin-bottom:14px">
+                  <label style="display:block;font:600 12px Inter;margin-bottom:6px">Description</label><textarea style="width:100%;height:70px;padding:10px 13px;border:1.5px solid #DAD3C7;border-radius:9px;font:400 14px Inter;resize:none">Foulard en coton wax authentique, tissé et teint à la main à Dakar.</textarea>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px"><div><label style="display:block;font:600 12px Inter;margin-bottom:6px">Prix</label><div style="display:flex;align-items:center;height:42px;padding:0 13px;border:1.5px solid #DAD3C7;border-radius:9px"><input value="12 500" style="flex:1;border:none;outline:none;font:600 14px Inter"><span style="color:#6B6259;font-size:13px">F</span></div></div><div><label style="display:block;font:600 12px Inter;margin-bottom:6px">Catégorie</label><div style="position:relative"><select style="width:100%;height:42px;padding:0 34px 0 13px;border:1.5px solid #DAD3C7;border-radius:9px;font:400 14px Inter;appearance:none"><option>Foulards</option></select><svg style="position:absolute;right:12px;top:50%;transform:translateY(-50%)" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B6259" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div></div></div>
+                </div>
+                <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:12px;padding:18px">
+                  <div style="font:600 14px Inter;margin-bottom:6px">Sources de stock</div>
+                  <p style="font-size:12.5px;color:#6B6259;margin:0 0 14px">Trois provenances suivies séparément pour cette référence.</p>
+                  <table style="width:100%;border-collapse:collapse;font-size:13px">
+                    <tbody>
+                      <tr style="border-bottom:1px solid #F1ECE3"><td style="padding:10px 0"><span style="display:inline-flex;align-items:center;gap:7px;font:600 12.5px Inter;color:#0b6e4d"><span style="width:7px;height:7px;border-radius:999px;background:#0E9F6E"></span>Interne · atelier Dakar</span></td><td style="padding:10px 0;text-align:right;font-weight:600">14 unités</td><td style="padding:10px 0;text-align:right;color:#6B6259">disponible</td></tr>
+                      <tr style="border-bottom:1px solid #F1ECE3"><td style="padding:10px 0"><span style="display:inline-flex;align-items:center;gap:7px;font:600 12.5px Inter;color:#26326B"><span style="width:7px;height:7px;border-radius:999px;background:#26326B"></span>Sous-traitance · Thiès</span></td><td style="padding:10px 0;text-align:right;font-weight:600">∞</td><td style="padding:10px 0;text-align:right;color:#6B6259">délai 5–7 j</td></tr>
+                      <tr><td style="padding:10px 0"><span style="display:inline-flex;align-items:center;gap:7px;font:600 12.5px Inter;color:#8a6500"><span style="width:7px;height:7px;border-radius:999px;background:#E0A400"></span>Matériel · tissu wax</span></td><td style="padding:10px 0;text-align:right;font-weight:600">2 rouleaux</td><td style="padding:10px 0;text-align:right;color:#9c352d">à commander</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:16px">
+                <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:12px;padding:18px"><div style="font:600 14px Inter;margin-bottom:12px">Visuels</div><div style="aspect-ratio:4/5;border-radius:10px;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 10px,#efe8dc 10px,#efe8dc 20px);margin-bottom:8px"></div><div style="display:flex;gap:8px"><div style="width:56px;height:56px;border-radius:8px;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 6px,#efe8dc 6px,#efe8dc 12px)"></div><div style="width:56px;height:56px;border-radius:8px;border:1.5px dashed #CBC2B4;display:flex;align-items:center;justify-content:center;color:#B6AEA1;font-size:22px">+</div></div></div>
+                <div style="background:#fff;border:1px solid rgba(30,27,24,.08);border-radius:12px;padding:18px"><div style="font:600 14px Inter;margin-bottom:12px">Statut</div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><span style="font-size:13px">Publié en vitrine</span><span style="width:44px;height:26px;border-radius:999px;background:#0E9F6E;position:relative"><span style="position:absolute;top:3px;left:21px;width:20px;height:20px;border-radius:999px;background:#fff"></span></span></div><div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:13px">Mise en avant</span><span style="width:44px;height:26px;border-radius:999px;background:#DAD3C7;position:relative"><span style="position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:999px;background:#fff"></span></span></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== POS · ENCAISSEMENT ===== -->
+  <section style="padding:8px 72px 72px">
+    <div style="display:inline-flex;align-items:center;gap:9px;margin-bottom:20px;padding:6px 14px;background:#1E1B18;color:#fff;border-radius:999px;font:600 12.5px Inter"><span style="width:6px;height:6px;border-radius:999px;background:#C9A227"></span>POS · Encaissement en boutique</div>
+    <div style="display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap">
+
+      <!-- MOBILE -->
+      <div style="flex:none">
+        <div style="font-family:ui-monospace,monospace;font-size:11px;color:#6B6259;margin-bottom:8px">mobile · 390 — hors-ligne</div>
+        <div style="width:390px;background:#FAF7F2;border:1px solid rgba(30,27,24,.12);border-radius:34px;overflow:hidden;box-shadow:0 12px 40px rgba(60,40,20,.14)">
+          <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;font:600 13px Inter"><span>9:41</span><span style="letter-spacing:2px">● ▂▃▅ ⌁</span></div>
+          <div style="display:flex;align-items:center;gap:9px;background:#1E1B18;color:#fff;padding:8px 16px;font:600 12px Inter"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A227" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2 22 22"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M12 20h.01"/></svg>Hors-ligne · ventes synchronisées plus tard</div>
+          <div style="padding:12px 16px 8px"><div style="display:flex;align-items:center;height:42px;padding:0 14px;border:1.5px solid #DAD3C7;border-radius:10px;background:#fff;gap:10px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6B6259" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><span style="font-size:13.5px;color:#9a8f7d">Scanner ou chercher…</span></div></div>
+          <div style="padding:8px 16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+            <div style="background:#fff;border:1px solid #EAE4D9;border-radius:10px;overflow:hidden"><div style="aspect-ratio:1/1;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 6px,#efe8dc 6px,#efe8dc 12px)"></div><div style="padding:6px 8px"><div style="font:600 10.5px Inter;line-height:1.1">Foulard Wax</div><div style="font:700 11px Inter;color:#26326B;margin-top:2px">12 500</div></div></div>
+            <div style="background:#fff;border:1px solid #EAE4D9;border-radius:10px;overflow:hidden"><div style="aspect-ratio:1/1;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 6px,#efe8dc 6px,#efe8dc 12px)"></div><div style="padding:6px 8px"><div style="font:600 10.5px Inter;line-height:1.1">Turban Bazin</div><div style="font:700 11px Inter;color:#26326B;margin-top:2px">18 000</div></div></div>
+            <div style="background:#fff;border:1px solid #EAE4D9;border-radius:10px;overflow:hidden"><div style="aspect-ratio:1/1;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 6px,#efe8dc 6px,#efe8dc 12px)"></div><div style="padding:6px 8px"><div style="font:600 10.5px Inter;line-height:1.1">Pochette Kente</div><div style="font:700 11px Inter;color:#26326B;margin-top:2px">9 000</div></div></div>
+          </div>
+          <div style="margin:8px 16px 16px;background:#fff;border:1px solid #EAE4D9;border-radius:14px;padding:14px">
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span>Foulard Wax ×1</span><span style="font-weight:600">12 500</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:10px"><span>Turban Bazin ×1</span><span style="font-weight:600">18 000</span></div>
+            <div style="height:1px;background:#EFEAE0;margin-bottom:10px"></div>
+            <div style="display:flex;justify-content:space-between;font-size:18px;font-weight:700"><span>Total</span><span style="color:#26326B">30 500 F</span></div>
+            <button style="width:100%;height:52px;border:none;border-radius:10px;background:#0E9F6E;color:#fff;font:700 16px Inter;margin-top:12px">Encaisser</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- DESKTOP -->
+      <div style="flex:none">
+        <div style="font-family:ui-monospace,monospace;font-size:11px;color:#6B6259;margin-bottom:8px">desktop · 1440</div>
+        <div style="width:1080px;background:#FAF7F2;border:1px solid rgba(30,27,24,.12);border-radius:16px;overflow:hidden;box-shadow:0 12px 40px rgba(60,40,20,.14);display:flex;height:620px">
+          <!-- catalogue -->
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:#fff;border-bottom:1px solid #EFEAE0"><div style="font-family:'Playfair Display',serif;font-weight:600;font-size:20px">Point de vente</div><div style="display:flex;align-items:center;height:38px;padding:0 14px;border:1px solid #DAD3C7;border-radius:9px;gap:8px;width:300px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6B6259" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><span style="font-size:13px;color:#9a8f7d">Scanner code-barres ou chercher…</span></div></div>
+            <div style="padding:14px 24px;display:flex;gap:8px"><span style="height:32px;padding:0 14px;display:inline-flex;align-items:center;border-radius:999px;background:#26326B;color:#fff;font:600 12.5px Inter">Tous</span><span style="height:32px;padding:0 14px;display:inline-flex;align-items:center;border-radius:999px;background:#fff;border:1px solid #EAE4D9;font:500 12.5px Inter">Foulards</span><span style="height:32px;padding:0 14px;display:inline-flex;align-items:center;border-radius:999px;background:#fff;border:1px solid #EAE4D9;font:500 12.5px Inter">Turbans</span><span style="height:32px;padding:0 14px;display:inline-flex;align-items:center;border-radius:999px;background:#fff;border:1px solid #EAE4D9;font:500 12.5px Inter">Accessoires</span></div>
+            <div style="flex:1;overflow:hidden;padding:0 24px 20px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-content:start">
+              <div style="background:#fff;border:1px solid #EAE4D9;border-radius:12px;overflow:hidden;cursor:pointer"><div style="aspect-ratio:1/1;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 8px,#efe8dc 8px,#efe8dc 16px)"></div><div style="padding:8px 10px 10px"><div style="font:600 12px Inter;line-height:1.1">Foulard Wax</div><div style="font:700 13px Inter;color:#26326B;margin-top:3px">12 500 F</div></div></div>
+              <div style="background:#fff;border:1px solid #EAE4D9;border-radius:12px;overflow:hidden;cursor:pointer"><div style="aspect-ratio:1/1;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 8px,#efe8dc 8px,#efe8dc 16px)"></div><div style="padding:8px 10px 10px"><div style="font:600 12px Inter;line-height:1.1">Turban Bazin</div><div style="font:700 13px Inter;color:#26326B;margin-top:3px">18 000 F</div></div></div>
+              <div style="background:#fff;border:1px solid #EAE4D9;border-radius:12px;overflow:hidden;cursor:pointer"><div style="aspect-ratio:1/1;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 8px,#efe8dc 8px,#efe8dc 16px)"></div><div style="padding:8px 10px 10px"><div style="font:600 12px Inter;line-height:1.1">Pochette Kente</div><div style="font:700 13px Inter;color:#26326B;margin-top:3px">9 000 F</div></div></div>
+              <div style="background:#fff;border:1px solid #EAE4D9;border-radius:12px;overflow:hidden;cursor:pointer"><div style="aspect-ratio:1/1;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 8px,#efe8dc 8px,#efe8dc 16px)"></div><div style="padding:8px 10px 10px"><div style="font:600 12px Inter;line-height:1.1">Foulard soie</div><div style="font:700 13px Inter;color:#26326B;margin-top:3px">28 000 F</div></div></div>
+              <div style="background:#fff;border:1px solid #EAE4D9;border-radius:12px;overflow:hidden;cursor:pointer"><div style="aspect-ratio:1/1;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 8px,#efe8dc 8px,#efe8dc 16px)"></div><div style="padding:8px 10px 10px"><div style="font:600 12px Inter;line-height:1.1">Écharpe coton</div><div style="font:700 13px Inter;color:#26326B;margin-top:3px">7 500 F</div></div></div>
+              <div style="background:#fff;border:1px solid #EAE4D9;border-radius:12px;overflow:hidden;cursor:pointer"><div style="aspect-ratio:1/1;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 8px,#efe8dc 8px,#efe8dc 16px)"></div><div style="padding:8px 10px 10px"><div style="font:600 12px Inter;line-height:1.1">Sac raphia</div><div style="font:700 13px Inter;color:#26326B;margin-top:3px">15 000 F</div></div></div>
+              <div style="background:#fff;border:1px solid #EAE4D9;border-radius:12px;overflow:hidden;cursor:pointer"><div style="aspect-ratio:1/1;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 8px,#efe8dc 8px,#efe8dc 16px)"></div><div style="padding:8px 10px 10px"><div style="font:600 12px Inter;line-height:1.1">Boucles perles</div><div style="font:700 13px Inter;color:#26326B;margin-top:3px">5 000 F</div></div></div>
+              <div style="background:#fff;border:1px solid #EAE4D9;border-radius:12px;overflow:hidden;cursor:pointer"><div style="aspect-ratio:1/1;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 8px,#efe8dc 8px,#efe8dc 16px)"></div><div style="padding:8px 10px 10px"><div style="font:600 12px Inter;line-height:1.1">Turban satin</div><div style="font:700 13px Inter;color:#26326B;margin-top:3px">11 000 F</div></div></div>
+            </div>
+          </div>
+          <!-- ticket -->
+          <div style="width:320px;flex:none;background:#fff;border-left:1px solid #EFEAE0;display:flex;flex-direction:column">
+            <div style="padding:16px 20px;border-bottom:1px solid #EFEAE0;display:flex;justify-content:space-between;align-items:center"><span style="font:600 15px Inter">Ticket</span><span style="display:inline-flex;align-items:center;gap:6px;font:600 11.5px Inter;padding:4px 9px;border-radius:999px;background:#EEF0F7;color:#26326B"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#26326B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Awa Diallo</span></div>
+            <div style="flex:1;overflow:hidden;padding:14px 20px;display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;gap:10px;align-items:center"><div style="width:40px;height:40px;border-radius:8px;flex:none;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 5px,#efe8dc 5px,#efe8dc 10px)"></div><div style="flex:1;min-width:0"><div style="font:600 12.5px Inter">Foulard Wax</div><div style="font-size:11px;color:#6B6259">12 500 F</div></div><div style="display:inline-flex;align-items:center;height:28px;border:1px solid #DAD3C7;border-radius:7px;overflow:hidden"><button style="width:26px;height:100%;border:none;background:#FAF7F2;font-size:13px;color:#26326B">−</button><span style="width:26px;text-align:center;font:600 12px Inter">1</span><button style="width:26px;height:100%;border:none;background:#FAF7F2;font-size:13px;color:#26326B">+</button></div></div>
+              <div style="display:flex;gap:10px;align-items:center"><div style="width:40px;height:40px;border-radius:8px;flex:none;background:repeating-linear-gradient(45deg,#E7DECF,#E7DECF 5px,#efe8dc 5px,#efe8dc 10px)"></div><div style="flex:1;min-width:0"><div style="font:600 12.5px Inter">Turban Bazin</div><div style="font-size:11px;color:#6B6259">18 000 F</div></div><div style="display:inline-flex;align-items:center;height:28px;border:1px solid #DAD3C7;border-radius:7px;overflow:hidden"><button style="width:26px;height:100%;border:none;background:#FAF7F2;font-size:13px;color:#26326B">−</button><span style="width:26px;text-align:center;font:600 12px Inter">1</span><button style="width:26px;height:100%;border:none;background:#FAF7F2;font-size:13px;color:#26326B">+</button></div></div>
+            </div>
+            <div style="padding:16px 20px;border-top:1px solid #EFEAE0">
+              <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span style="color:#6B6259">Sous-total</span><span style="font-weight:600">30 500 F</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:10px;color:#0b6e4d"><span>Points gagnés</span><span style="font-weight:600">+61 pts</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:19px;font-weight:700;margin-bottom:14px"><span>Total</span><span style="color:#26326B">30 500 F</span></div>
+              <div style="display:flex;gap:10px"><button style="flex:1;height:48px;border:1.5px solid #26326B;border-radius:10px;background:#fff;color:#26326B;font:600 14px Inter">Espèces</button><button style="flex:1;height:48px;border:none;border-radius:10px;background:#0E9F6E;color:#fff;font:700 14px Inter">Encaisser</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,175 @@
+import { create } from "zustand";
+import type { Customer, OrderStatus, Product } from "@/lib/data/types";
+import { clients } from "@/lib/data/clients";
+import { money } from "@/lib/format";
+
+export interface CartLine {
+  id: string;
+  name: string;
+  variant: string;
+  price: number;
+  qty: number;
+  /** Remise unitaire en FCFA (0 = aucune). */
+  discount: number;
+}
+
+export type ToastType = "success" | "warning" | "error";
+
+export interface Ticket {
+  items: number;
+  pay: string;
+  total: string;
+}
+
+interface BackofficeState {
+  // POS
+  cart: CartLine[];
+  client: Customer | null;
+  pay: "espece" | "mm" | "mixte";
+  cartOpen: boolean;
+  // Global UI
+  offline: boolean;
+  queued: number;
+  notifOpen: boolean;
+  notifCount: number;
+  moreOpen: boolean;
+  toast: { msg: string; type: ToastType } | null;
+  ticket: Ticket | null;
+  // Commandes — surcharges de statut (persistées entre écrans)
+  orderStatus: Record<string, OrderStatus>;
+  autoValidate: boolean;
+
+  // Actions
+  addToCart: (p: Product) => void;
+  incLine: (id: string, delta: number) => void;
+  rmLine: (id: string) => void;
+  toggleDiscount: (id: string) => void;
+  clearCart: () => void;
+  setPay: (pay: BackofficeState["pay"]) => void;
+  attachClient: () => void;
+  detachClient: () => void;
+  encaisser: () => void;
+  openCart: () => void;
+  closeCart: () => void;
+
+  toggleOffline: () => void;
+  toggleNotif: () => void;
+  closeNotif: () => void;
+  openMore: () => void;
+  closeMore: () => void;
+  showToast: (msg: string, type?: ToastType) => void;
+  closeTicket: () => void;
+
+  setOrderStatus: (id: string, status: OrderStatus) => void;
+  toggleAuto: () => void;
+}
+
+let toastTimer: ReturnType<typeof setTimeout> | null = null;
+
+export const useBackoffice = create<BackofficeState>((set, get) => ({
+  cart: [],
+  client: null,
+  pay: "espece",
+  cartOpen: false,
+  offline: false,
+  queued: 0,
+  notifOpen: false,
+  notifCount: 3,
+  moreOpen: false,
+  toast: null,
+  ticket: null,
+  orderStatus: {},
+  autoValidate: false,
+
+  addToCart: (p) =>
+    set((s) => {
+      const cart = s.cart.map((l) => ({ ...l }));
+      const ex = cart.find((l) => l.id === p.id);
+      if (ex) {
+        ex.qty += 1;
+      } else {
+        cart.push({ id: p.id, name: p.name, variant: p.variant, price: p.price, qty: 1, discount: 0 });
+      }
+      return { cart };
+    }),
+
+  incLine: (id, delta) =>
+    set((s) => {
+      const cart = s.cart
+        .map((l) => (l.id === id ? { ...l, qty: l.qty + delta } : l))
+        .filter((l) => l.qty > 0);
+      return { cart };
+    }),
+
+  rmLine: (id) => set((s) => ({ cart: s.cart.filter((l) => l.id !== id) })),
+
+  toggleDiscount: (id) =>
+    set((s) => ({
+      cart: s.cart.map((l) =>
+        l.id === id
+          ? { ...l, discount: l.discount > 0 ? 0 : Math.round(l.price * 0.1) }
+          : l
+      ),
+    })),
+
+  clearCart: () => set({ cart: [], client: null }),
+
+  setPay: (pay) => set({ pay }),
+
+  attachClient: () => set({ client: clients[0] }),
+  detachClient: () => set({ client: null }),
+
+  encaisser: () => {
+    const s = get();
+    if (!s.cart.length) return;
+    const sub = s.cart.reduce((a, l) => a + l.price * l.qty, 0);
+    const disc = s.cart.reduce((a, l) => a + l.discount * l.qty, 0);
+    const items = s.cart.reduce((a, l) => a + l.qty, 0);
+    const payLabels: Record<BackofficeState["pay"], string> = {
+      espece: "Espèces",
+      mm: "Mobile Money",
+      mixte: "Mixte",
+    };
+    if (s.offline) {
+      set({ queued: s.queued + 1, cart: [], client: null, cartOpen: false });
+      get().showToast("Vente mise en file — à resynchroniser", "warning");
+      return;
+    }
+    set({
+      ticket: { items, pay: payLabels[s.pay], total: money(sub - disc) },
+      cart: [],
+      client: null,
+      cartOpen: false,
+    });
+  },
+
+  openCart: () => set({ cartOpen: true }),
+  closeCart: () => set({ cartOpen: false }),
+
+  toggleOffline: () =>
+    set((s) => {
+      const next = !s.offline;
+      get().showToast(
+        next ? "Mode hors-ligne activé" : "De retour en ligne — resynchronisation…",
+        next ? "warning" : "success"
+      );
+      return { offline: next };
+    }),
+
+  toggleNotif: () => set((s) => ({ notifOpen: !s.notifOpen })),
+  closeNotif: () => set({ notifOpen: false }),
+  openMore: () => set({ moreOpen: true }),
+  closeMore: () => set({ moreOpen: false }),
+
+  showToast: (msg, type = "success") => {
+    set({ toast: { msg, type } });
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => set({ toast: null }), 2600);
+  },
+
+  closeTicket: () => set({ ticket: null }),
+
+  setOrderStatus: (id, status) =>
+    set((s) => ({ orderStatus: { ...s.orderStatus, [id]: status } })),
+  toggleAuto: () => set((s) => ({ autoValidate: !s.autoValidate })),
+}));
