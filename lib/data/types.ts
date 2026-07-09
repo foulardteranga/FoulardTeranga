@@ -1,4 +1,4 @@
-export type ProductCategory = "Foulards" | "Tissus" | "Accessoires";
+export type ProductCategory = "Foulards" | "Turbans" | "Tissus" | "Accessoires";
 
 export interface Product {
   id: string;
@@ -9,6 +9,20 @@ export interface Product {
   stock: number;
   /** Motif de fond servant de vignette produit (mock, sans image). */
   swatch: string;
+  /** Couleurs disponibles (hex) ; la première sert de teinte principale pour le dégradé vignette. */
+  colors: string[];
+  /** Motif textile (Wax, Bazin, Uni, Kente…) — utilisé par les filtres vitrine. */
+  motif: string;
+  /** Longueurs/tailles disponibles (ex. ["90 × 90 cm", "Sur-mesure"] ou ["Taille unique"]). */
+  lengths: string[];
+  /** Description longue affichée sur la fiche produit. */
+  description: string;
+  /** Prix barré éventuel (ex. article en promotion). */
+  oldPrice?: number;
+  /** Étiquette courte affichée sur la vignette ("Nouveau", "★ VIP"…). */
+  badge?: string;
+  /** Marque ce produit comme le "produit vedette" de la Home. Un seul produit devrait le porter. */
+  featured?: boolean;
 }
 
 export type CustomerSegment = "VIP" | "Fidèle" | "Nouvelle";
@@ -38,6 +52,8 @@ export interface OrderLine {
   qty: number;
   price: string;
   total: string;
+  /** Référence catalogue de l'article — nécessaire pour déduire le stock à la validation. */
+  productId: string;
 }
 
 export type OrderChannel = "Web" | "WhatsApp" | "Boutique";
