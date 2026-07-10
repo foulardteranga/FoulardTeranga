@@ -1,0 +1,39 @@
+import { fonts, colors } from "@/lib/theme/tokens";
+import { stripe } from "@/lib/theme/storefront";
+import { BlockFrame } from "./BlockFrame";
+
+const LOOKS = [
+  { label: "look 01 · 3:4", hex: "#26326B" },
+  { label: "look 02 · 3:4", hex: "#D07A34" },
+  { label: "look 03 · 3:4", hex: "#C9A227" },
+  { label: "look 04 · 3:4", hex: "#0E9F6E" },
+];
+
+export function LookbookBlock() {
+  return (
+    <BlockFrame id="look">
+      <section className="ft-store-section">
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 22 }}>
+            <div style={{ font: `600 12px ${fonts.ui}`, letterSpacing: ".1em", color: colors.gold, textTransform: "uppercase", marginBottom: 6 }}>
+              Lookbook
+            </div>
+            <h2 className="ft-store-h2" style={{ fontFamily: fonts.display, fontWeight: 600, margin: 0, letterSpacing: "-.01em" }}>
+              Portées avec style
+            </h2>
+          </div>
+          <div className="ft-store-look-grid" style={{ display: "grid", gap: 12 }}>
+            {LOOKS.map((look) => (
+              <div
+                key={look.label}
+                style={{ borderRadius: 14, overflow: "hidden", aspectRatio: "3 / 4", background: stripe(look.hex), display: "flex", alignItems: "flex-end", padding: 12 }}
+              >
+                <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 10.5, color: "#9a8f7d" }}>{look.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </BlockFrame>
+  );
+}

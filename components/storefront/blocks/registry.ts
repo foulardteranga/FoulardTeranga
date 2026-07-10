@@ -4,6 +4,11 @@ import { HeroBlock } from "./HeroBlock";
 import { CategoryTilesBlock } from "./CategoryTilesBlock";
 import { ProductGridBlock } from "./ProductGridBlock";
 import { LoyaltyBannerBlock } from "./LoyaltyBannerBlock";
+import { FeaturedProductBlock } from "./FeaturedProductBlock";
+import { StoryBlock } from "./StoryBlock";
+import { LookbookBlock } from "./LookbookBlock";
+import { NewsletterBlock } from "./NewsletterBlock";
+import { ContactBlock } from "./ContactBlock";
 
 /**
  * type → composant de rendu. Chaque bloc ajouté ici devient immédiatement
@@ -15,4 +20,9 @@ export const blockRegistry: Partial<Record<BlockId, ComponentType>> = {
   cats: CategoryTilesBlock,
   grid: ProductGridBlock,
   loyalty: LoyaltyBannerBlock,
+  featured: FeaturedProductBlock,
+  story: StoryBlock,
+  look: LookbookBlock,
+  news: NewsletterBlock,
+  contact: ContactBlock,
 };
