@@ -8,7 +8,7 @@
 Le travail est découpé en **deux plans d'implémentation séquentiels** (Plan 1 doit être fini avant le Plan 2, car le Plan 2 s'appuie sur ses interfaces) :
 
 - **Plan 1 — Fondations** : `docs/superpowers/plans/2026-07-09-storefront-foundations.md` (14 tâches) — **TERMINÉ**
-- **Plan 2 — UI Vitrine** : `docs/superpowers/plans/2026-07-09-storefront-ui.md` (11 tâches) — en cours
+- **Plan 2 — UI Vitrine** : `docs/superpowers/plans/2026-07-09-storefront-ui.md` (11 tâches) — **10/11 terminées ; parcours manuel de la Tâche 11 en attente (voir ci-dessous)**
 - **Spécification** : `docs/superpowers/specs/2026-07-09-vitrine-storefront-design.md`
 
 Méthode d'exécution : **subagent-driven** (un sous-agent implémente chaque tâche, un sous-agent la relit — conformité au spec + qualité — puis correctifs si besoin).
@@ -52,13 +52,42 @@ Revue finale de la branche entière (modèle le plus capable) : **prête à merg
   1. `nextOrderRef` dans `useShop.ts` utilisait un compteur en mémoire qui repart de zéro après un rechargement de page, alors que `orders` est persisté en localStorage → risque de collision d'id de commande. Corrigé : dérivé du tableau `orders` persisté (max existant + 1).
   2. `setOrderStatus` pouvait positionner le statut `"confirmee"` **sans déduire le stock**, contournant l'invariant central (stock déduit uniquement via `confirmOrder`). Corrigé : `setOrderStatus` ignore désormais toute tentative de statut `"confirmee"`.
 
-## Ce qui reste à faire
+## Plan 2 : où on en est
 
-### Plan 2 — UI Vitrine (11 tâches, en cours)
+**10/11 tâches terminées, testées, revues (toutes Approved).**
 
-Habillage (header/menu/bottom-tab/toast/offline), les 9 blocs de la page d'accueil + aperçu-éditeur, et les pages Catalogue, Produit, Panier, Commander (KYC), Confirmation, Compte. Dernière tâche = parcours d'acceptation bout-en-bout (panier → commande → validation gérante → déduction stock visible).
+| # | Tâche | Commits | Résultat |
+|---|-------|---------|----------|
+| 1 | Chrome (header/menu/bottom-tab/toast/offline) | `5ad3b6c..a8257a4` | revue OK, vérifié en navigateur |
+| 2 | Infra blocs + Hero/CategoryTiles + Home réelle | `a8257a4..534b029` | revue OK, vérifié en navigateur |
+| 3 | ProductCard + ProductGridBlock + LoyaltyBanner | `534b029..7cc32da` | revue OK **après correctif proactif** |
+| 4 | 5 derniers blocs Home (Featured/Story/Look/News/Contact) | `7cc32da..a59807d` | revue OK **après correctif proactif** |
+| 5 | Page Catalogue (recherche/filtres/tri) | `a59807d..d8bb57e` | revue OK **après correctif proactif** |
+| 6 | Page Produit (variantes/dispo/associés) | `d8bb57e..509622d` | revue OK **après correctif proactif** |
+| 7 | Page Panier | `509622d..5f3d147` | revue OK |
+| 8 | Page Commander/KYC (boucle commande) | `5f3d147..77d311c` | revue OK (Opus) **après correctif sécurité/vie privée** |
+| 9 | Page Confirmation | `77d311c..78def7e` | revue OK **après correctif symétrique à la Tâche 8** |
+| 10 | Page Compte | `78def7e..74f7305` | revue OK, verbatim |
+| 11 | Parcours d'acceptation bout-en-bout | — | **partiel — voir ci-dessous** |
 
-Base de départ : commit `5ad3b6c` (fin du Plan 1 + correctifs de revue finale).
+### Correctifs appliqués pendant le Plan 2
+
+- **Tâches 3, 4, 5, 6 — même bug de réactivité Zustand que la Tâche 13 du Plan 1**, présent 4 fois dans le code du plan lui-même (`ProductGridBlock`, `FeaturedProductBlock`, `CatalogView`, `ProductView` sélectionnaient tous `useShop((s) => s.effectiveStock)`, une référence d'action stable). Corrigé **avant dispatch**, à chaque fois, en sélectionnant l'état brut `stockDeductions` + `computeEffectiveStock(id, deductions)`.
+- **Tâche 8 — fuite de donnée personnelle dans l'URL** : le code du plan mettait le nom du client dans `/confirmation?ref=...&name=...`. Violation directe de CLAUDE.md §9 (« jamais en query string » pour les données KYC). Corrigé : seul `ref` (id opaque de commande) passe par l'URL.
+- **Tâche 9 — correctif symétrique** : `ConfirmView` relit le nom du client via `useShop.orders.find(o => o.id === ref)` au lieu d'un paramètre `name`. Le reviewer a vérifié que le format d'id concorde réellement de bout en bout (pas d'échec silencieux).
+
+### Tâche 11 — état d'avancement
+
+**Partie automatisée : faite et verte.**
+```bash
+npm run test                # 75/75
+npm run typecheck           # propre
+npx next build --webpack    # réussit, liste toutes les routes vitrine + back-office
+```
+
+**Partie manuelle (le parcours de bout en bout réel — panier → commande → validation gérante → déduction stock) : non exécutée.** Les outils navigateur (mode sandboxé et extension Claude in Chrome) sont restés indisponibles après une dizaine de tentatives sur toute la session. L'utilisateur a choisi de faire ce test lui-même plus tard, avec la liste d'étapes déjà rédigée à la section « Task 11 » de `docs/superpowers/plans/2026-07-09-storefront-ui.md` (Step 2) comme guide.
+
+**⚠️ Important pour la reprise** : ce parcours n'a jamais été cliqué réellement par personne (agent ou humain) à ce stade. Le Plan 2 est fonctionnellement complet et chaque tâche a été doublement revue, mais l'intégration réelle storefront ↔ back-office (la boucle centrale du produit selon CLAUDE.md §4) reste à valider en conditions réelles avant de considérer le projet prêt.
 
 ## Problèmes connus & notes de reprise
 
@@ -81,6 +110,6 @@ npm run typecheck    # doit être propre
 npm run dev          # serveur de dev Turbopack (cassé, voir note 1) — préférer npx next dev --webpack
 ```
 
-Pour continuer l'implémentation : le Plan 1 est terminé. Poursuivre avec la méthode subagent-driven sur le **Plan 2** (`docs/superpowers/plans/2026-07-09-storefront-ui.md`), en partant du commit `5ad3b6c`.
+Plan 1 et 10/11 du Plan 2 sont terminés. HEAD actuel : `74f7305`. Il ne reste que le parcours manuel de la Tâche 11 (voir section dédiée ci-dessus) à exécuter — par l'utilisateur ou par un futur agent avec des outils navigateur fonctionnels — puis, si des correctifs sont nécessaires, les appliquer et committer per l'étape 3 de la Tâche 11.
 
 Le journal de progression détaillé vit dans `.superpowers/sdd/progress.md` (non versionné — scratch), mais ce document en reprend l'essentiel.
