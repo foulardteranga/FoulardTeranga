@@ -6,6 +6,7 @@ import { Icon, ICONS } from "@/components/ui/Icon";
 import { catalog } from "@/lib/data/catalog";
 import { money } from "@/lib/format";
 import type { Product } from "@/lib/data/types";
+import { useShop } from "@/lib/store/useShop";
 
 function lvlDot(v: number, seuil: number): string {
   if (v <= Math.round(seuil * 0.5)) return colors.danger;
@@ -22,6 +23,7 @@ const HISTORY = [
 export function InventoryScreen() {
   const [query, setQuery] = useState("");
   const [drawerId, setDrawerId] = useState<string | null>(null);
+  const effectiveStock = useShop((s) => s.effectiveStock);
 
   const q = query.trim().toLowerCase();
   const rows = useMemo(
@@ -100,7 +102,7 @@ export function InventoryScreen() {
             </thead>
             <tbody>
               {rows.map((p, i) => {
-                const s1 = p.stock;
+                const s1 = effectiveStock(p.id);
                 const s2 = Math.max(0, Math.round(p.stock * 0.4));
                 const s3 = Math.round(p.stock * 0.25) + 2;
                 return (
@@ -230,7 +232,8 @@ function PageBtn({ children, active, disabled }: { children: React.ReactNode; ac
 }
 
 function EditDrawer({ product: p, onClose }: { product: Product; onClose: () => void }) {
-  const s1 = p.stock;
+  const effectiveStock = useShop((s) => s.effectiveStock);
+  const s1 = effectiveStock(p.id);
   const s2 = Math.round(p.stock * 0.4);
   const s3 = Math.round(p.stock * 0.25) + 2;
   const stocks = [
