@@ -1,0 +1,86 @@
+# État d'exécution — Vitrine Foulard Teranga
+
+> Point de reprise du travail. Dernière mise à jour : 2026-07-10.
+> Branche de travail : `feature/storefront-foundations`.
+
+## Vue d'ensemble
+
+Le travail est découpé en **deux plans d'implémentation séquentiels** (Plan 1 doit être fini avant le Plan 2, car le Plan 2 s'appuie sur ses interfaces) :
+
+- **Plan 1 — Fondations** : `docs/superpowers/plans/2026-07-09-storefront-foundations.md` (14 tâches) — **TERMINÉ**
+- **Plan 2 — UI Vitrine** : `docs/superpowers/plans/2026-07-09-storefront-ui.md` (11 tâches) — en cours
+- **Spécification** : `docs/superpowers/specs/2026-07-09-vitrine-storefront-design.md`
+
+Méthode d'exécution : **subagent-driven** (un sous-agent implémente chaque tâche, un sous-agent la relit — conformité au spec + qualité — puis correctifs si besoin).
+
+## Où on en est
+
+**Plan 1 : 14/14 tâches terminées, testées, revues, et la revue finale (branche entière) faite.**
+
+- Suite de tests : **75/75 vertes**, sortie propre.
+- `npm run typecheck` : **propre**.
+- HEAD de fin de Plan 1 : commit `5ad3b6c`.
+- Plan 2 démarre à partir de `5ad3b6c`.
+
+### Tâches terminées (Plan 1)
+
+| # | Tâche | Commits | Résultat |
+|---|-------|---------|----------|
+| 1 | Outillage Vitest + dépendance Zod | `1717248..8098287` | 5/5, revue OK |
+| 2 | Extension des types Product/OrderLine | `8098287..6716bd3` | revue OK |
+| 3 | Catalogue enrichi + sélecteurs + orders productId | `6716bd3..9e3ef91` | 20/20, revue OK |
+| 4 | Validation KYC (Zod, téléphone international libre) | `9e3ef91..679a77f` | 27/27, revue OK |
+| 5 | Registre tenant + résolution par hôte | `aae6e3e..3b1c78b` | 32/32, revue OK |
+| 6 | Garde auth placeholder (zones/session) | `3b1c78b..ede30fa` | 35/35, revue OK |
+| 7 | Résolution de zones (hôte/chemin) | `ede30fa..fae5c68` | 47/47, revue OK |
+| 8 | `proxy.ts` (middleware Next 16) | `fae5c68..f1030ff` | revue OK **après 1 correctif** |
+| 9 | Moteur commande/stock partagé (`useShop`) | `f1030ff..8da385c` | 66/66, revue OK **après 1 correctif** |
+| 10 | Store vitrine (`useStorefront`) + logique panier pure | `8da385c..a049a2e` | 75/75, revue OK |
+| 11 | Bootstrap d'hydratation SSR-safe (`HydrateStores`) | `a049a2e..b29fa55` | revue OK, vérifié en navigateur (aucun warning d'hydratation) |
+| 12 | Migration statut/validation commandes → `useShop` | `b29fa55..2166eaf` | revue OK, vérifié en navigateur (Valider/Refuser) |
+| 13 | Stock effectif affiché dans l'Inventaire | `4c8fde6..99d68ad..42f7b82` | revue OK **après 1 correctif** (bug de réactivité Zustand, voir ci-dessous) |
+| 14 | Placeholder vitrine racine + page admin zone | `42f7b82..adb4eaa` | revue OK, vérifié en navigateur (matrice de zones complète) |
+
+Revue finale de la branche entière (modèle le plus capable) : **prête à merger avec correctifs** — deux points Important trouvés et corrigés (commit `5ad3b6c`, voir ci-dessous). Aucun point Critique.
+
+### Correctifs appliqués pendant les revues
+
+- **Tâche 8** — boucle de redirection infinie : sur un sous-domaine privé de prod, la racine `/` n'avait pas de repli vers la page d'accueil de la zone → redirection en boucle. Corrigé dans `lib/proxy/zones.ts` (commit `f1030ff`), vérifié en live (`admin.localhost/` → 200, 0 redirection).
+- **Tâche 9** — double déduction de stock : `confirmOrder` ne se gardait que sur le statut courant ; un retour à `nouvelle` via `setOrderStatus` puis un nouveau `confirmOrder` déduisait deux fois. Corrigé par une déduction **idempotente par id de commande** (`applyConfirmOnce` + `deductedOrderIds`, commit `8da385c`).
+- **Tâche 13** — bug de réactivité Zustand : le code du plan lui-même (`useShop((s) => s.effectiveStock)`) sélectionnait une **action du store** (référence stable, jamais recréée par `set()`), donc l'écran Inventaire ne se re-rendait jamais quand `stockDeductions` changeait réellement — la déduction de stock restait invisible même après validation d'une commande. Détecté par vérification live en navigateur (pas par les tests). Corrigé en sélectionnant l'état brut `stockDeductions` + la fonction pure `computeEffectiveStock` (commit `42f7b82`). **Ce pattern (sélectionner une action liée plutôt qu'un état/valeur dérivée) est à éviter dans le Plan 2** — voir `.superpowers/sdd/progress.md` pour le pattern correct.
+- **Revue finale de branche** — deux points Important, corrigés commit `5ad3b6c` avant de démarrer le Plan 2 :
+  1. `nextOrderRef` dans `useShop.ts` utilisait un compteur en mémoire qui repart de zéro après un rechargement de page, alors que `orders` est persisté en localStorage → risque de collision d'id de commande. Corrigé : dérivé du tableau `orders` persisté (max existant + 1).
+  2. `setOrderStatus` pouvait positionner le statut `"confirmee"` **sans déduire le stock**, contournant l'invariant central (stock déduit uniquement via `confirmOrder`). Corrigé : `setOrderStatus` ignore désormais toute tentative de statut `"confirmee"`.
+
+## Ce qui reste à faire
+
+### Plan 2 — UI Vitrine (11 tâches, en cours)
+
+Habillage (header/menu/bottom-tab/toast/offline), les 9 blocs de la page d'accueil + aperçu-éditeur, et les pages Catalogue, Produit, Panier, Commander (KYC), Confirmation, Compte. Dernière tâche = parcours d'acceptation bout-en-bout (panier → commande → validation gérante → déduction stock visible).
+
+Base de départ : commit `5ad3b6c` (fin du Plan 1 + correctifs de revue finale).
+
+## Problèmes connus & notes de reprise
+
+1. **Build Turbopack cassé par le nom du dossier** — `npm run build` (Turbopack par défaut) **panique** car le dossier parent « Vibe codé » contient un « é » décomposé (NFD, U+0301) que le code Rust de Turbopack découpe à une frontière non-caractère (`ident.rs:354`). C'est **indépendant de notre code**. Confirmé pendant le Plan 1 que ça touche aussi `npm run dev` (Turbopack) dès qu'un fichier vient d'être modifié et doit être ré-écrit par Turbopack (pas seulement `next build`).
+   - **Contournement** : `next dev --webpack` / `next build --webpack` fonctionnent ; `npm run typecheck` et `npm run test` fonctionnent tous les deux normalement (n'utilisent pas Turbopack). `.claude/launch.json` du projet est déjà configuré sur `npx next dev --webpack` pour la prévisualisation navigateur.
+   - **Correction définitive recommandée** : renommer le dossier du projet avec un « é » précomposé (NFC), ou déplacer le projet vers un chemin sans accent combinant, pour rétablir le build/déploiement Turbopack par défaut.
+
+2. **Bruit de mode de fichier pré-existant dans git** — l'ensemble du dépôt porte des changements de mode (644→755) sur les fichiers suivis, sans changement de contenu (0 insertion/deletion partout, vérifié). Cause probablement un `chmod` ou un outil de checkout, indépendant de ce travail. Pour merger une branche de sous-agent proprement : `git stash` (sans `-u`, laisse les fichiers non suivis intacts) avant `git merge --ff-only`, puis `git stash pop` après. Ne **pas** faire `git config core.fileMode false`.
+
+3. **Suivi (auth réelle future)** — dans `proxy.ts`, la redirection en cas de refus d'auth cible `/` sur le **même** hôte ; sur un sous-domaine privé de prod, un utilisateur refusé re-rentre dans la même zone refusée → boucle. **Dormant en v1** (le stub owner est autorisé sur la zone dashboard ; seule la zone admin refuse, et le build/déploiement prod est de toute façon bloqué). À traiter quand l'auth réelle + une page de login/redirection vers l'hôte public existeront.
+
+4. **Nettoyage de code mort à faire (non bloquant)** — `effStatus` (`lib/data/orderStatus.ts`) et l'action `effectiveStock` du store (`lib/store/useShop.ts`) n'ont plus aucun appelant après les migrations des Tâches 12/13. À supprimer, ou à garder `effectiveStock` uniquement si le Plan 2 compte l'utiliser via le pattern sûr (`useShop((s) => s.effectiveStock(productId))`, appelé *à l'intérieur* du sélecteur).
+
+## Comment reprendre
+
+```bash
+npm install          # dépendances (Node ≥ 22 ; testé sur Node 25)
+npm run test         # doit afficher 75/75 vertes
+npm run typecheck    # doit être propre
+npm run dev          # serveur de dev Turbopack (cassé, voir note 1) — préférer npx next dev --webpack
+```
+
+Pour continuer l'implémentation : le Plan 1 est terminé. Poursuivre avec la méthode subagent-driven sur le **Plan 2** (`docs/superpowers/plans/2026-07-09-storefront-ui.md`), en partant du commit `5ad3b6c`.
+
+Le journal de progression détaillé vit dans `.superpowers/sdd/progress.md` (non versionné — scratch), mais ce document en reprend l'essentiel.
