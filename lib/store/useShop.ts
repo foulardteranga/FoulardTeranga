@@ -35,10 +35,17 @@ interface ShopState {
   toggleAuto: () => void;
 }
 
-let refCounter = 2700;
-function nextOrderRef(): string {
-  refCounter += 1;
-  return `#TER-${refCounter}`;
+// Dérive la prochaine référence à partir des commandes persistées plutôt que
+// d'un compteur en mémoire : ce dernier repartirait de zéro après un rechargement
+// alors que le tableau `orders` (localStorage) conserve les commandes déjà émises,
+// ce qui provoquerait des ids en double (clés React, recherches par id, etc.).
+function nextOrderRef(orders: Order[]): string {
+  const nums = orders
+    .map((o) => /^#TER-(\d+)$/.exec(o.id)?.[1])
+    .filter((n): n is string => n !== undefined)
+    .map(Number);
+  const next = (nums.length > 0 ? Math.max(...nums) : 2700) + 1;
+  return `#TER-${next}`;
 }
 
 export const useShop = create<ShopState>()(
@@ -61,7 +68,7 @@ export const useShop = create<ShopState>()(
       pendingCount: () => countPending(get().orders, get().statusOverrides),
 
       submitWebOrder: (kyc, cartLines) => {
-        const order = buildWebOrder(kyc, cartLines, nextOrderRef());
+        const order = buildWebOrder(kyc, cartLines, nextOrderRef(get().orders));
         set((s) => ({ orders: [order, ...s.orders] }));
         return order;
       },
@@ -90,6 +97,11 @@ export const useShop = create<ShopState>()(
       },
 
       setOrderStatus: (orderId, status) => {
+        // "confirmee" ne doit JAMAIS être atteint ici : seule confirmOrder() déduit
+        // le stock. setOrderStatus ne gère que les transitions post-confirmation
+        // (préparation, livrée, etc.) — on ignore silencieusement toute tentative
+        // de contourner la validation par ce chemin.
+        if (status === "confirmee") return;
         set((s) => ({ statusOverrides: { ...s.statusOverrides, [orderId]: status } }));
       },
 
