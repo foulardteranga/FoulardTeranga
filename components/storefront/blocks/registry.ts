@@ -2,6 +2,8 @@ import type { ComponentType } from "react";
 import type { BlockId } from "@/lib/store/useStorefront";
 import { HeroBlock } from "./HeroBlock";
 import { CategoryTilesBlock } from "./CategoryTilesBlock";
+import { ProductGridBlock } from "./ProductGridBlock";
+import { LoyaltyBannerBlock } from "./LoyaltyBannerBlock";
 
 /**
  * type → composant de rendu. Chaque bloc ajouté ici devient immédiatement
@@ -11,4 +13,6 @@ import { CategoryTilesBlock } from "./CategoryTilesBlock";
 export const blockRegistry: Partial<Record<BlockId, ComponentType>> = {
   hero: HeroBlock,
   cats: CategoryTilesBlock,
+  grid: ProductGridBlock,
+  loyalty: LoyaltyBannerBlock,
 };

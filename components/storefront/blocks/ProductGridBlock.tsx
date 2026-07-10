@@ -1,0 +1,52 @@
+"use client";
+
+import Link from "next/link";
+import { fonts, colors } from "@/lib/theme/tokens";
+import { newestProducts } from "@/lib/data/catalog";
+import { useShop } from "@/lib/store/useShop";
+import { useStorefront } from "@/lib/store/useStorefront";
+import { computeEffectiveStock } from "@/lib/store/shopLogic";
+import { ProductCard } from "@/components/storefront/ProductCard";
+import { BlockFrame } from "./BlockFrame";
+
+export function ProductGridBlock() {
+  const stockDeductions = useShop((s) => s.stockDeductions);
+  const addToCart = useStorefront((s) => s.addToCart);
+  const showToast = useStorefront((s) => s.showToast);
+  const products = newestProducts(4);
+
+  return (
+    <BlockFrame id="grid">
+      <section className="ft-store-section">
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 20, gap: 16 }}>
+            <div>
+              <div style={{ font: `600 12px ${fonts.ui}`, letterSpacing: ".1em", color: colors.gold, textTransform: "uppercase", marginBottom: 6 }}>
+                À la une
+              </div>
+              <h2 className="ft-store-h2" style={{ fontFamily: fonts.display, fontWeight: 600, margin: 0, letterSpacing: "-.01em" }}>
+                Nouveautés &amp; best-sellers
+              </h2>
+            </div>
+            <Link href="/catalogue" style={{ font: `600 14px ${fonts.ui}`, color: colors.primary, whiteSpace: "nowrap" }}>
+              Tout voir →
+            </Link>
+          </div>
+          <div className="ft-store-home-grid" style={{ display: "grid" }}>
+            {products.map((p) => (
+              <ProductCard
+                key={p.id}
+                product={p}
+                stock={computeEffectiveStock(p.id, stockDeductions)}
+                onAdd={() => {
+                  addToCart({ productId: p.id, name: p.name, variant: p.lengths[0], colorHex: p.colors[0], price: p.price });
+                  showToast("Ajouté au panier", "success");
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+    </BlockFrame>
+  );
+}
