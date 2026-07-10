@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Customer, OrderStatus, Product } from "@/lib/data/types";
+import type { Customer, Product } from "@/lib/data/types";
 import { clients } from "@/lib/data/clients";
 import { money } from "@/lib/format";
 
@@ -35,9 +35,6 @@ interface BackofficeState {
   moreOpen: boolean;
   toast: { msg: string; type: ToastType } | null;
   ticket: Ticket | null;
-  // Commandes — surcharges de statut (persistées entre écrans)
-  orderStatus: Record<string, OrderStatus>;
-  autoValidate: boolean;
 
   // Actions
   addToCart: (p: Product) => void;
@@ -59,9 +56,6 @@ interface BackofficeState {
   closeMore: () => void;
   showToast: (msg: string, type?: ToastType) => void;
   closeTicket: () => void;
-
-  setOrderStatus: (id: string, status: OrderStatus) => void;
-  toggleAuto: () => void;
 }
 
 let toastTimer: ReturnType<typeof setTimeout> | null = null;
@@ -78,8 +72,6 @@ export const useBackoffice = create<BackofficeState>((set, get) => ({
   moreOpen: false,
   toast: null,
   ticket: null,
-  orderStatus: {},
-  autoValidate: false,
 
   addToCart: (p) =>
     set((s) => {
@@ -168,8 +160,4 @@ export const useBackoffice = create<BackofficeState>((set, get) => ({
   },
 
   closeTicket: () => set({ ticket: null }),
-
-  setOrderStatus: (id, status) =>
-    set((s) => ({ orderStatus: { ...s.orderStatus, [id]: status } })),
-  toggleAuto: () => set((s) => ({ autoValidate: !s.autoValidate })),
 }));

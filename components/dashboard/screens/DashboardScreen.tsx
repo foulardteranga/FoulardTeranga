@@ -5,11 +5,10 @@ import { useRouter } from "next/navigation";
 import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { catalog } from "@/lib/data/catalog";
-import { orders } from "@/lib/data/orders";
-import { effStatus } from "@/lib/data/orderStatus";
+import { computeEffectiveStatus } from "@/lib/store/shopLogic";
 import { money } from "@/lib/format";
 import { initials } from "@/lib/format";
-import { useBackoffice } from "@/lib/store/useBackoffice";
+import { useShop } from "@/lib/store/useShop";
 
 const KPIS = [
   { label: "CA du jour", value: "248 000", unit: "FCFA", delta: "+18%", sub: "vs hier", up: true, icon: ICONS.trendUp },
@@ -28,7 +27,8 @@ export function DashboardScreen() {
   const router = useRouter();
   const [booting, setBooting] = useState(true);
   const [range, setRange] = useState<"7" | "30">("7");
-  const overrides = useBackoffice((s) => s.orderStatus);
+  const orders = useShop((s) => s.orders);
+  const overrides = useShop((s) => s.statusOverrides);
 
   useEffect(() => {
     const t = setTimeout(() => setBooting(false), 750);
@@ -47,7 +47,7 @@ export function DashboardScreen() {
 
   const lowStock = catalog.filter((p) => p.stock <= 9).slice(0, 4);
   const lowStockCount = catalog.filter((p) => p.stock <= 9).length;
-  const nouvelles = orders.filter((o) => effStatus(o, overrides) === "nouvelle");
+  const nouvelles = orders.filter((o) => computeEffectiveStatus(o, overrides) === "nouvelle");
   const toValidate = nouvelles.slice(0, 3);
 
   if (booting) {

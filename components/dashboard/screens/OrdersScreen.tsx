@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
-import { orders } from "@/lib/data/orders";
-import { effStatus, statusMeta } from "@/lib/data/orderStatus";
+import { statusMeta } from "@/lib/data/orderStatus";
+import { computeEffectiveStatus } from "@/lib/store/shopLogic";
 import { initials } from "@/lib/format";
 import { useBackoffice } from "@/lib/store/useBackoffice";
+import { useShop } from "@/lib/store/useShop";
 import type { Order, OrderStatus } from "@/lib/data/types";
 
 const FILTERS: Array<[string, string, OrderStatus | null]> = [
@@ -22,20 +23,22 @@ export function OrdersScreen({ initialSel }: { initialSel?: string }) {
   const [filter, setFilter] = useState<string>("toValidate");
   const [selId, setSelId] = useState<string | null>(initialSel ?? null);
 
-  const overrides = useBackoffice((s) => s.orderStatus);
-  const autoValidate = useBackoffice((s) => s.autoValidate);
-  const toggleAuto = useBackoffice((s) => s.toggleAuto);
-  const setOrderStatus = useBackoffice((s) => s.setOrderStatus);
+  const orders = useShop((s) => s.orders);
+  const overrides = useShop((s) => s.statusOverrides);
+  const autoValidate = useShop((s) => s.autoValidate);
+  const toggleAuto = useShop((s) => s.toggleAuto);
+  const confirmOrder = useShop((s) => s.confirmOrder);
+  const rejectOrder = useShop((s) => s.rejectOrder);
   const showToast = useBackoffice((s) => s.showToast);
 
   const cur = FILTERS.find((f) => f[0] === filter)!;
-  const list = orders.filter((o) => (filter === "all" ? true : effStatus(o, overrides) === cur[2]));
+  const list = orders.filter((o) => (filter === "all" ? true : computeEffectiveStatus(o, overrides) === cur[2]));
 
   const selected: Order | undefined =
     orders.find((o) => o.id === selId) ?? list[0] ?? orders[0];
 
   const count = (st: OrderStatus | null) =>
-    st === null ? orders.length : orders.filter((o) => effStatus(o, overrides) === st).length;
+    st === null ? orders.length : orders.filter((o) => computeEffectiveStatus(o, overrides) === st).length;
 
   return (
     <div className="ft-pad">
@@ -165,7 +168,7 @@ export function OrdersScreen({ initialSel }: { initialSel?: string }) {
             </div>
           ) : (
             list.map((o) => {
-              const st = statusMeta[effStatus(o, overrides)];
+              const st = statusMeta[computeEffectiveStatus(o, overrides)];
               return (
                 <div
                   key={o.id}
@@ -217,13 +220,13 @@ export function OrdersScreen({ initialSel }: { initialSel?: string }) {
           >
             <OrderDetail
               order={selected}
-              status={effStatus(selected, overrides)}
+              status={computeEffectiveStatus(selected, overrides)}
               onValidate={() => {
-                setOrderStatus(selected.id, "confirmee");
+                confirmOrder(selected.id);
                 showToast("Commande validée — stock déduit", "success");
               }}
               onRefuse={() => {
-                setOrderStatus(selected.id, "refusee");
+                rejectOrder(selected.id);
                 showToast("Commande refusée", "error");
               }}
               onEdit={() => showToast("Édition de la commande…", "success")}
