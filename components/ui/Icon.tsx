@@ -10,12 +10,14 @@ export function Icon({
   size = 18,
   stroke = "currentColor",
   strokeWidth = 1.75,
+  fill = "none",
   style,
 }: {
   path: string;
   size?: number;
   stroke?: string;
   strokeWidth?: number;
+  fill?: string;
   style?: CSSProperties;
 }) {
   return (
@@ -23,7 +25,7 @@ export function Icon({
       width={size}
       height={size}
       viewBox="0 0 24 24"
-      fill="none"
+      fill={fill}
       stroke={stroke}
       strokeWidth={strokeWidth}
       strokeLinecap="round"
@@ -58,6 +60,7 @@ export const ICONS = {
   alertTriangle: '<path d="M10.3 3.9 2 18a2 2 0 0 0 1.7 3h16.6A2 2 0 0 0 22 18L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/>',
   clipboardCheck: '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
   cart: '<circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.5 12.5a2 2 0 0 0 2 1.6h8a2 2 0 0 0 2-1.6L22 7H6"/>',
+  heart: '<path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 5.5 5.5 5.5 0 0 1 21.5 12c-2.5 4.5-9.5 9-9.5 9Z"/>',
   personPlus: '<circle cx="9" cy="8" r="3.5"/><path d="M3 20a6 6 0 0 1 12 0M19 8v6M22 11h-6"/>',
   info: '<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/>',
   infoAlt: '<path d="M12 8v5M12 16h.01"/><circle cx="12" cy="12" r="9"/>',
