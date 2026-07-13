@@ -226,7 +226,7 @@ export function DashboardScreen() {
             </div>
           ))}
           <div style={{ padding: "11px 18px" }}>
-            <button onClick={() => router.push("/inventaire")} style={linkBtn}>
+            <button onClick={() => router.push("/admin/inventaire")} style={linkBtn}>
               Voir l&apos;inventaire →
             </button>
           </div>
@@ -242,7 +242,7 @@ export function DashboardScreen() {
           {toValidate.map((o) => (
             <div
               key={o.id}
-              onClick={() => router.push(`/commandes?sel=${encodeURIComponent(o.id)}`)}
+              onClick={() => router.push(`/admin/commandes?sel=${encodeURIComponent(o.id)}`)}
               className="ft-hover-surface"
               style={{ ...rowStyle, cursor: "pointer" }}
             >
@@ -259,7 +259,7 @@ export function DashboardScreen() {
             </div>
           ))}
           <div style={{ padding: "11px 18px" }}>
-            <button onClick={() => router.push("/commandes")} style={linkBtn}>
+            <button onClick={() => router.push("/admin/commandes")} style={linkBtn}>
               Traiter les commandes →
             </button>
           </div>

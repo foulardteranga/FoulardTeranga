@@ -34,3 +34,10 @@ yarn-error.log*
 # editor
 .idea
 .vscode
+
+# claude code (user-local)
+.claude/settings.local.json
+.claude/worktrees/
+
+# macos
+* alias
