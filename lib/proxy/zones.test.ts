@@ -82,4 +82,8 @@ describe("isPathAllowedForZone", () => {
   it("allows admin paths in the admin zone", () => {
     expect(isPathAllowedForZone("admin", "/boutiques")).toBe(true);
   });
+
+  it("allows the login path in the dashboard zone", () => {
+    expect(isPathAllowedForZone("dashboard", "/connexion")).toBe(true);
+  });
 });

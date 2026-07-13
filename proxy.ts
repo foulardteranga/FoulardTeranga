@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { resolveZone, isPathAllowedForZone } from "@/lib/proxy/zones";
 import { resolveTenantFromHost } from "@/lib/tenant/registry";
-import { requireZone } from "@/lib/auth";
+import { resolveSession, isRoleAllowedForZone } from "@/lib/auth";
+import { createMiddlewareClient } from "@/lib/supabase/middleware";
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const hostname = request.headers.get("host") ?? "localhost";
   const { zone, rewrittenPathname } = resolveZone(hostname, request.nextUrl.pathname);
 
@@ -12,8 +13,25 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  if (zone !== "storefront" && !requireZone(zone).allowed) {
-    return NextResponse.redirect(new URL("/", request.url));
+  // Réponse "brouillon" utilisée par le client Supabase pour écrire les cookies
+  // de rafraîchissement de session ; recopiée sur la réponse finale plus bas,
+  // qu'il s'agisse d'une redirection ou d'un rewrite.
+  const authDraft = NextResponse.next();
+
+  if (zone !== "storefront" && rewrittenPathname !== "/connexion") {
+    const supabase = createMiddlewareClient(request, authDraft);
+    const session = await resolveSession(supabase);
+    if (!isRoleAllowedForZone(zone, session?.role ?? null)) {
+      // La zone admin (super_admin) n'a pas de page de connexion dédiée dans ce
+      // sous-projet (dormant en v1, aucun compte super_admin) — comportement
+      // inchangé : redirection vers la vitrine.
+      const target = zone === "dashboard" ? "/connexion" : "/";
+      const redirectUrl = new URL(target, request.url);
+      if (zone === "dashboard") redirectUrl.searchParams.set("next", rewrittenPathname);
+      const redirect = NextResponse.redirect(redirectUrl);
+      authDraft.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie));
+      return redirect;
+    }
   }
 
   const tenant = resolveTenantFromHost(hostname);
@@ -23,9 +41,11 @@ export function proxy(request: NextRequest) {
   const url = request.nextUrl.clone();
   url.pathname = rewrittenPathname;
 
-  return NextResponse.rewrite(url, {
+  const rewrite = NextResponse.rewrite(url, {
     request: { headers: requestHeaders },
   });
+  authDraft.cookies.getAll().forEach((cookie) => rewrite.cookies.set(cookie));
+  return rewrite;
 }
 
 export const config = {
