@@ -18,7 +18,10 @@ export async function signIn(_prevState: SignInState, formData: FormData): Promi
   if (error) return { ok: false, errors: {}, formError: "Email ou mot de passe incorrect." };
 
   const next = String(formData.get("next") ?? "/pos");
-  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/pos";
+  // N'accepte qu'un chemin relatif de même origine : un seul "/" en tête, ni
+  // "//" (URL protocole-relative) ni "/\" (certains navigateurs normalisent
+  // un backslash en "/", ce qui reproduit le même contournement).
+  const safeNext = /^\/(?!\/|\\)/.test(next) ? next : "/pos";
   redirect(safeNext);
 }
 
