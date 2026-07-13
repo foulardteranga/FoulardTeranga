@@ -4,12 +4,15 @@ import { MobileNav } from "@/components/dashboard/MobileNav";
 import { OfflineBanner } from "@/components/dashboard/OfflineBanner";
 import { Toast } from "@/components/dashboard/Toast";
 import { TicketModal } from "@/components/dashboard/TicketModal";
+import { getSession } from "@/lib/auth";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await getSession();
+
   return (
     <div
       style={{
@@ -19,7 +22,7 @@ export default function DashboardLayout({
         color: "var(--color-ink)",
       }}
     >
-      <Sidebar />
+      <Sidebar session={session} />
 
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         <OfflineBanner />

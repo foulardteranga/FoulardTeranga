@@ -7,8 +7,18 @@ import { NAV } from "@/lib/nav";
 import { Icon } from "@/components/ui/Icon";
 import { useBackoffice } from "@/lib/store/useBackoffice";
 import { useNewOrdersCount } from "@/lib/store/useNewOrdersCount";
+import { initials } from "@/lib/format";
+import { signOut } from "@/lib/auth/actions";
+import type { Session } from "@/lib/auth";
 
-export function Sidebar() {
+const ROLE_LABELS: Record<Session["role"], string> = {
+  owner: "Gérante",
+  staff: "Staff",
+  super_admin: "Super admin",
+  customer: "Cliente",
+};
+
+export function Sidebar({ session }: { session: Session | null }) {
   const pathname = usePathname();
   const offline = useBackoffice((s) => s.offline);
   const toggleOffline = useBackoffice((s) => s.toggleOffline);
@@ -172,7 +182,7 @@ export function Sidebar() {
               flex: "none",
             }}
           >
-            AK
+            {session ? initials(session.name) : "?"}
           </span>
           <div style={{ lineHeight: 1.2, minWidth: 0 }}>
             <div
@@ -184,11 +194,32 @@ export function Sidebar() {
                 textOverflow: "ellipsis",
               }}
             >
-              Aya Koffi
+              {session?.name ?? "Session expirée"}
             </div>
-            <div style={{ fontSize: 11, color: colors.navSub }}>Gérante</div>
+            <div style={{ fontSize: 11, color: colors.navSub }}>
+              {session ? ROLE_LABELS[session.role] : ""}
+            </div>
           </div>
         </div>
+        <form action={signOut} style={{ padding: "4px 10px 0" }}>
+          <button
+            type="submit"
+            style={{
+              width: "100%",
+              padding: "8px 10px",
+              borderRadius: 10,
+              border: "none",
+              background: "transparent",
+              color: colors.navIdle,
+              fontSize: 12.5,
+              fontWeight: 500,
+              textAlign: "left",
+              cursor: "pointer",
+            }}
+          >
+            Se déconnecter
+          </button>
+        </form>
       </div>
     </aside>
   );
