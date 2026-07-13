@@ -61,16 +61,19 @@ export function resolveZone(hostname: string, pathname: string): ZoneResolution 
 }
 
 /**
- * Chemin de connexion pour la zone dashboard, adapté à la même convention
- * dev/prod que resolveZone : préfixé par /admin en dev (résolution par
- * chemin), nu en prod (résolution par sous-domaine — le chemin nu est déjà
- * sur le bon hôte). Une redirection vers "/connexion" nu en dev retomberait
- * en zone storefront (aucun préfixe /admin), où /connexion est un chemin
- * dashboard interdit → nouvelle redirection vers "/", boucle silencieuse.
+ * Préfixe un chemin de la zone dashboard selon la même convention dev/prod
+ * que resolveZone : /admin en dev (résolution par chemin), nu en prod
+ * (résolution par sous-domaine — le chemin nu est déjà sur le bon hôte).
+ * Toute redirection vers un chemin dashboard nu (ex. "/pos", "/connexion")
+ * en dev retomberait en zone storefront (aucun préfixe /admin), où ce
+ * chemin est interdit → redirection silencieuse vers "/", contournant la
+ * garde d'auth. Utilisé par proxy.ts (NextRequest) et par les Server
+ * Actions de connexion/déconnexion (lib/auth/actions.ts, qui lisent l'hôte
+ * via next/headers faute d'objet NextRequest).
  */
-export function dashboardLoginPath(hostname: string): string {
+export function dashboardPath(hostname: string, path: string): string {
   const host = hostname.split(":")[0].toLowerCase();
-  return isLocalHost(host) ? "/admin/connexion" : "/connexion";
+  return isLocalHost(host) ? `/admin${path}` : path;
 }
 
 export function isPathAllowedForZone(zone: Zone, pathname: string): boolean {

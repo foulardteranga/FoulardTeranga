@@ -1,8 +1,10 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { validateLogin, type LoginFieldErrors } from "@/lib/validators/auth";
+import { dashboardPath } from "@/lib/proxy/zones";
 
 export type SignInState = { ok: false; errors: LoginFieldErrors; formError?: string } | null;
 
@@ -22,11 +24,13 @@ export async function signIn(_prevState: SignInState, formData: FormData): Promi
   // "//" (URL protocole-relative) ni "/\" (certains navigateurs normalisent
   // un backslash en "/", ce qui reproduit le même contournement).
   const safeNext = /^\/(?!\/|\\)/.test(next) ? next : "/pos";
-  redirect(safeNext);
+  const hostname = (await headers()).get("host") ?? "localhost";
+  redirect(dashboardPath(hostname, safeNext));
 }
 
 export async function signOut(): Promise<void> {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect("/connexion");
+  const hostname = (await headers()).get("host") ?? "localhost";
+  redirect(dashboardPath(hostname, "/connexion"));
 }

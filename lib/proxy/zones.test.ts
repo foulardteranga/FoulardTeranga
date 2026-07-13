@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveZone, isPathAllowedForZone, dashboardLoginPath } from "@/lib/proxy/zones";
+import { resolveZone, isPathAllowedForZone, dashboardPath } from "@/lib/proxy/zones";
 
 describe("resolveZone — dev (localhost, path-prefixed)", () => {
   it("treats the root as storefront", () => {
@@ -88,12 +88,16 @@ describe("isPathAllowedForZone", () => {
   });
 });
 
-describe("dashboardLoginPath", () => {
+describe("dashboardPath", () => {
   it("prefixes with /admin in dev (path-based zone resolution)", () => {
-    expect(dashboardLoginPath("localhost:3000")).toBe("/admin/connexion");
+    expect(dashboardPath("localhost:3000", "/connexion")).toBe("/admin/connexion");
   });
 
   it("stays unprefixed in prod (subdomain-based zone resolution)", () => {
-    expect(dashboardLoginPath("admin.foulard-teranga.com")).toBe("/connexion");
+    expect(dashboardPath("admin.foulard-teranga.com", "/connexion")).toBe("/connexion");
+  });
+
+  it("prefixes any dashboard path in dev, not just /connexion", () => {
+    expect(dashboardPath("localhost:3000", "/pos")).toBe("/admin/pos");
   });
 });

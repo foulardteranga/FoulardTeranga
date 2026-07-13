@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { resolveZone, isPathAllowedForZone, dashboardLoginPath } from "@/lib/proxy/zones";
+import { resolveZone, isPathAllowedForZone, dashboardPath } from "@/lib/proxy/zones";
 import { resolveTenantFromHost } from "@/lib/tenant/registry";
 import { resolveSession, isRoleAllowedForZone } from "@/lib/auth";
 import { createMiddlewareClient } from "@/lib/supabase/middleware";
@@ -25,7 +25,7 @@ export async function proxy(request: NextRequest) {
       // La zone admin (super_admin) n'a pas de page de connexion dédiée dans ce
       // sous-projet (dormant en v1, aucun compte super_admin) — comportement
       // inchangé : redirection vers la vitrine.
-      const target = zone === "dashboard" ? dashboardLoginPath(hostname) : "/";
+      const target = zone === "dashboard" ? dashboardPath(hostname, "/connexion") : "/";
       const redirectUrl = new URL(target, request.url);
       if (zone === "dashboard") redirectUrl.searchParams.set("next", rewrittenPathname);
       const redirect = NextResponse.redirect(redirectUrl);
