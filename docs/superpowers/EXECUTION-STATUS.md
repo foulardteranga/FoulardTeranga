@@ -113,3 +113,14 @@ npm run dev          # serveur de dev Turbopack (cassé, voir note 1) — préf�
 Plan 1 et 10/11 du Plan 2 sont terminés. HEAD actuel : `74f7305`. Il ne reste que le parcours manuel de la Tâche 11 (voir section dédiée ci-dessus) à exécuter — par l'utilisateur ou par un futur agent avec des outils navigateur fonctionnels — puis, si des correctifs sont nécessaires, les appliquer et committer per l'étape 3 de la Tâche 11.
 
 Le journal de progression détaillé vit dans `.superpowers/sdd/progress.md` (non versionné — scratch), mais ce document en reprend l'essentiel.
+
+## Migration mock → Supabase : sous-projet 1/5 (Fondation DB)
+
+**Terminé** (voir `docs/superpowers/plans/2026-07-13-supabase-db-foundation.md` et le spec associé `docs/superpowers/specs/2026-07-13-supabase-db-foundation-design.md`).
+
+- 6 tables (`Tenant`, `Profile`, `Product`, `Customer`, `Order`, `OrderLine`) + 5 enums + RLS active sur les 6, appliquées au projet Supabase `vqqwviknffequjvxmojo` via le MCP.
+- Seed complet : 1 tenant, 12 produits, 6 clientes, 7 commandes + 10 lignes — copie fidèle des mocks actuels (`lib/data/*.ts`), y compris deux incohérences total/lignes déjà présentes dans le mock (commandes `#TER-0491` et `#TER-0489`), volontairement non corrigées ici.
+- Deux findings résiduels acceptés par l'utilisateur (non corrigés) : (1) 4 advisories `get_advisors` sécurité sur `current_role()`/`current_tenant_id()` exposées en RPC PostgREST — non exploitables (données auto-scopées via `auth.uid()` non falsifiable), correctif réel = déplacer les fonctions hors du schéma `public`, à faire comme tâche dédiée si besoin. (2) Pas de test RLS automatisé — vérification faite via `get_advisors`/`pg_policies` en direct, ce que le plan approuvé définissait comme méthode de test pour ce sous-projet ; des tests role-switching automatisés nécessiteront `DATABASE_URL` + Prisma Client applicatif (sous-projets suivants).
+- Code applicatif (`app/`, `lib/data/`, `lib/store/`) **non touché** — l'UI tourne toujours sur les mocks. `npm run test` (75/75) et `npm run typecheck` inchangés.
+- Prochain sous-projet : **Auth réelle** (Supabase Auth pour la gérante/staff, RBAC dans `/lib/auth` et `proxy.ts`) — nécessite de créer les comptes Supabase Auth correspondants aux lignes `Profile` (aucune ligne `Profile` n'existe encore, la table est prête mais vide).
+- Le mot de passe Postgres réel (pour `DATABASE_URL`/`DIRECT_URL` dans `.env`) reste à récupérer sur le dashboard Supabase — nécessaire dès que du code applicatif instancie `PrismaClient` (sous-projet 3 ou 4).
