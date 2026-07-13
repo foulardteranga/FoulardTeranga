@@ -58,7 +58,7 @@ model Tenant {
 }
 
 model Profile {
-  id        String   @id
+  id        String   @id @db.Uuid
   tenantId  String
   role      Role
   name      String
@@ -98,7 +98,7 @@ model Product {
 model Customer {
   id        String          @id @default(cuid())
   tenantId  String
-  profileId String?         @unique
+  profileId String?         @unique @db.Uuid
   name      String
   initials  String
   phone     String
