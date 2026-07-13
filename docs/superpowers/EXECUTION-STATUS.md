@@ -124,3 +124,25 @@ Le journal de progression détaillé vit dans `.superpowers/sdd/progress.md` (no
 - Code applicatif (`app/`, `lib/data/`, `lib/store/`) **non touché** — l'UI tourne toujours sur les mocks. `npm run test` (75/75) et `npm run typecheck` inchangés.
 - Prochain sous-projet : **Auth réelle** (Supabase Auth pour la gérante/staff, RBAC dans `/lib/auth` et `proxy.ts`) — nécessite de créer les comptes Supabase Auth correspondants aux lignes `Profile` (aucune ligne `Profile` n'existe encore, la table est prête mais vide).
 - Le mot de passe Postgres réel (pour `DATABASE_URL`/`DIRECT_URL` dans `.env`) reste à récupérer sur le dashboard Supabase — nécessaire dès que du code applicatif instancie `PrismaClient` (sous-projet 3 ou 4).
+
+## Migration mock → Supabase : sous-projet 2/5 (Auth réelle)
+
+**Terminé** (voir `docs/superpowers/plans/2026-07-13-real-auth.md` et le spec associé `docs/superpowers/specs/2026-07-13-auth-design.md`).
+
+- `lib/auth/index.ts` réécrit : `getSession()`/`requireZone()` réels (async), basés sur `supabase.auth.getUser()` (vérifié serveur, jamais `getSession()`) + lecture `Profile` via RLS. Logique factorée en `isRoleAllowedForZone()` (pure) et `resolveSession(supabase)` (injectable), réutilisées à la fois par `lib/supabase/server.ts` (Server Components/Actions) et `lib/supabase/middleware.ts` (`proxy.ts`, Edge — ne peut pas utiliser `next/headers`).
+- `proxy.ts` : garde de zone réelle, redirection `/admin/connexion?next=...` (dashboard) en cas d'échec, `/` inchangé pour la zone admin (dormante, pas de compte super_admin).
+- Page de connexion (`app/(auth)/connexion`, route group séparé de `(dashboard)` — n'hérite pas du Sidebar/TopBar) + Server Actions `signIn`/`signOut` (`lib/auth/actions.ts`) + déconnexion câblée dans le Sidebar, qui affiche désormais le vrai nom/rôle de la session (remplace le "Aya Koffi" en dur qui traînait depuis le début du projet).
+- Compte owner provisionné : ligne `Profile` créée pour le compte Supabase Auth créé manuellement par l'utilisateur (voir `prisma/migrations/20260713210000_seed_owner_profile/`).
+- **87/87 tests, typecheck propre.**
+- **Correctifs de sécurité trouvés en revue et corrigés avant merge** : (1) open-redirect sur le paramètre `next` de `signIn` (acceptait n'importe quelle URL absolue ou protocole-relative) — corrigé, seuls les chemins relatifs de même origine sont acceptés. (2) Bug fonctionnel trouvé en pilotant réellement le flux dans un navigateur pendant la Tâche 8 (aucun test ni revue de code ne l'avait détecté, puisqu'il ne se manifeste qu'en suivant la chaîne de redirection réelle) : `proxy.ts` redirigeait vers `/connexion` nu, qui retombe en zone storefront en dev (résolution par préfixe de chemin) où c'est un chemin interdit → nouvelle redirection silencieuse vers `/`, neutralisant toute la garde d'auth en environnement de dev. Corrigé via `dashboardLoginPath(hostname)` dans `lib/proxy/zones.ts`.
+- **Vérifié en direct dans un navigateur réel pendant cette session** (contrairement aux sous-projets précédents, les outils navigateur étaient disponibles cette fois) : `/admin/pos` non authentifié → redirige bien vers `/admin/connexion?next=%2Fpos`, sans boucle ; la page de connexion s'affiche correctement (email/mot de passe/bouton) avec `next` correctement propagé dans le formulaire ; `/platform/boutiques` reste refusé (`/`) ; les routes vitrine (`/`, `/catalogue`) ne sont pas affectées. **Non vérifiable par l'agent** (implique d'entrer un vrai mot de passe, interdit par les garde-fous de sécurité) : connexion réussie avec le compte owner, affichage du nom réel dans le Sidebar, déconnexion, persistance de session après rechargement, message d'erreur sur mauvais mot de passe.
+- **Point de vigilance pour la suite** : un serveur de dev Next.js orphelin (lancé par les outils de preview mais résolu dans le mauvais répertoire — le checkout principal au lieu du worktree) a d'abord fait croire à un bypass d'auth complet ; le vrai bug (ci-dessus) n'a été trouvé qu'après avoir relancé le serveur manuellement avec le bon `cwd` et vérifié via `curl` en plus du navigateur. Si un futur test live semble montrer un comportement incohérent avec le code lu, vérifier `lsof -i :3000` et le `cwd` du processus avant de conclure à un bug applicatif.
+
+**Reste pour l'utilisateur** (parcours manuel, ne peut pas être fait par l'agent) :
+1. Se connecter sur `/admin/connexion` avec le compte owner provisionné → doit rediriger vers `/pos`, Sidebar affiche le vrai nom + « Gérante ».
+2. Naviguer dans les autres écrans dashboard → pas de redemande de connexion.
+3. Recharger la page → session toujours active.
+4. Cliquer « Se déconnecter » → retour à `/admin/connexion` ; un accès direct à `/admin/pos` redemande une connexion.
+5. Mauvais mot de passe → message d'erreur inline, pas de crash.
+
+- Prochain sous-projet : **Catalogue & stock** (`lib/data/catalog.ts` → lectures serveur Postgres).
