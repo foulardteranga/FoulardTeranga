@@ -6,3 +6,148 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum Role {
+  super_admin
+  owner
+  staff
+  customer
+}
+
+enum ProductCategory {
+  Foulards
+  Turbans
+  Tissus
+  Accessoires
+}
+
+enum CustomerSegment {
+  VIP
+  Fidele
+  Nouvelle
+}
+
+enum OrderStatus {
+  nouvelle
+  confirmee
+  preparation
+  livree
+  refusee
+}
+
+enum OrderChannel {
+  Web
+  WhatsApp
+  Boutique
+}
+
+model Tenant {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  name         String
+  primaryColor String
+  accentColor  String
+  logoText     String
+  domains      String[]
+  createdAt    DateTime @default(now())
+
+  profiles  Profile[]
+  products  Product[]
+  customers Customer[]
+  orders    Order[]
+}
+
+model Profile {
+  id        String   @id
+  tenantId  String
+  role      Role
+  name      String
+  createdAt DateTime @default(now())
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id])
+  customer Customer?
+
+  @@index([tenantId])
+}
+
+model Product {
+  id          String          @id @default(cuid())
+  tenantId    String
+  category    ProductCategory
+  name        String
+  variant     String
+  price       Int
+  stock       Int
+  swatch      String
+  colors      String[]
+  motif       String
+  lengths     String[]
+  description String
+  oldPrice    Int?
+  badge       String?
+  featured    Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  tenant     Tenant      @relation(fields: [tenantId], references: [id])
+  orderLines OrderLine[]
+
+  @@index([tenantId])
+}
+
+model Customer {
+  id        String          @id @default(cuid())
+  tenantId  String
+  profileId String?         @unique
+  name      String
+  initials  String
+  phone     String
+  place     String
+  points    Int             @default(0)
+  vip       Boolean         @default(false)
+  segment   CustomerSegment
+  createdAt DateTime        @default(now())
+
+  tenant  Tenant   @relation(fields: [tenantId], references: [id])
+  profile Profile? @relation(fields: [profileId], references: [id])
+  orders  Order[]
+
+  @@index([tenantId])
+}
+
+model Order {
+  id         String       @id @default(cuid())
+  tenantId   String
+  ref        String       @unique @default(dbgenerated("('#TER-' || nextval('orders_ref_seq'))"))
+  customerId String?
+  clientName String
+  place      String
+  phone      String
+  channel    OrderChannel
+  status     OrderStatus  @default(nouvelle)
+  vipAtOrder Boolean      @default(false)
+  total      Int
+  createdAt  DateTime     @default(now())
+
+  tenant   Tenant      @relation(fields: [tenantId], references: [id])
+  customer Customer?   @relation(fields: [customerId], references: [id])
+  lines    OrderLine[]
+
+  @@index([tenantId])
+}
+
+model OrderLine {
+  id          String @id @default(cuid())
+  orderId     String
+  productId   String
+  nameAtOrder String
+  qty         Int
+  unitPrice   Int
+  lineTotal   Int
+
+  order   Order   @relation(fields: [orderId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+}
