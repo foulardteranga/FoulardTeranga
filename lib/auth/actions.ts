@@ -18,7 +18,8 @@ export async function signIn(_prevState: SignInState, formData: FormData): Promi
   if (error) return { ok: false, errors: {}, formError: "Email ou mot de passe incorrect." };
 
   const next = String(formData.get("next") ?? "/pos");
-  redirect(next);
+  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/pos";
+  redirect(safeNext);
 }
 
 export async function signOut(): Promise<void> {
