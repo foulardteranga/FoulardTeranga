@@ -31,6 +31,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# prisma
+/lib/generated/prisma
+
 # editor
 .idea
 .vscode
