@@ -60,6 +60,19 @@ export function resolveZone(hostname: string, pathname: string): ZoneResolution 
   return { zone: "storefront", rewrittenPathname: pathname };
 }
 
+/**
+ * Chemin de connexion pour la zone dashboard, adapté à la même convention
+ * dev/prod que resolveZone : préfixé par /admin en dev (résolution par
+ * chemin), nu en prod (résolution par sous-domaine — le chemin nu est déjà
+ * sur le bon hôte). Une redirection vers "/connexion" nu en dev retomberait
+ * en zone storefront (aucun préfixe /admin), où /connexion est un chemin
+ * dashboard interdit → nouvelle redirection vers "/", boucle silencieuse.
+ */
+export function dashboardLoginPath(hostname: string): string {
+  const host = hostname.split(":")[0].toLowerCase();
+  return isLocalHost(host) ? "/admin/connexion" : "/connexion";
+}
+
 export function isPathAllowedForZone(zone: Zone, pathname: string): boolean {
   const isDashboardPath = DASHBOARD_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
   const isAdminPath = ADMIN_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));

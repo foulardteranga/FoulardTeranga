@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveZone, isPathAllowedForZone } from "@/lib/proxy/zones";
+import { resolveZone, isPathAllowedForZone, dashboardLoginPath } from "@/lib/proxy/zones";
 
 describe("resolveZone — dev (localhost, path-prefixed)", () => {
   it("treats the root as storefront", () => {
@@ -85,5 +85,15 @@ describe("isPathAllowedForZone", () => {
 
   it("allows the login path in the dashboard zone", () => {
     expect(isPathAllowedForZone("dashboard", "/connexion")).toBe(true);
+  });
+});
+
+describe("dashboardLoginPath", () => {
+  it("prefixes with /admin in dev (path-based zone resolution)", () => {
+    expect(dashboardLoginPath("localhost:3000")).toBe("/admin/connexion");
+  });
+
+  it("stays unprefixed in prod (subdomain-based zone resolution)", () => {
+    expect(dashboardLoginPath("admin.foulard-teranga.com")).toBe("/connexion");
   });
 });
