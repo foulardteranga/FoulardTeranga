@@ -17,7 +17,7 @@ insert into "Product" (id, "tenantId", category, name, variant, price, stock, sw
 
 insert into "Customer" (id, "tenantId", name, initials, phone, place, points, vip, segment) values
   ('c1', 'foulard-teranga', 'Aya Koffi', 'AK', '+225 07 12 45 67 89', 'Cocody, Abidjan', 186, true, 'VIP'),
-  ('c2', 'foulard-teranga', 'Adjoua N''Guessan', 'AN', '+225 05 33 21 09 44', 'Yopougon, Abidjan', 92, false, 'Fidele'),
+  ('c2', 'foulard-teranga', 'Adjoua N'Guessan', 'AN', '+225 05 33 21 09 44', 'Yopougon, Abidjan', 92, false, 'Fidele'),
   ('c3', 'foulard-teranga', 'Mariam Traoré', 'MT', '+225 01 88 76 54 32', 'Plateau, Abidjan', 154, true, 'VIP'),
   ('c4', 'foulard-teranga', 'Fatou Bamba', 'FB', '+225 07 45 09 87 11', 'Marcory, Abidjan', 47, false, 'Fidele'),
   ('c5', 'foulard-teranga', 'Aminata Koné', 'AK', '+225 05 61 23 45 78', 'Bouaké', 23, false, 'Nouvelle'),
@@ -28,7 +28,7 @@ insert into "Order" (id, "tenantId", ref, "customerId", "clientName", place, pho
   ('TER-0491', 'foulard-teranga', '#TER-0491', 'c4', 'Fatou Bamba', 'Marcory, Abidjan', '+225 07 45 09 87 11', 'WhatsApp', 'nouvelle', false, 31000),
   ('TER-0490', 'foulard-teranga', '#TER-0490', 'c5', 'Aminata Koné', 'Bouaké', '+225 05 61 23 45 78', 'Web', 'nouvelle', false, 12500),
   ('TER-0489', 'foulard-teranga', '#TER-0489', 'c3', 'Mariam Traoré', 'Plateau, Abidjan', '+225 01 88 76 54 32', 'Web', 'confirmee', true, 86000),
-  ('TER-0488', 'foulard-teranga', '#TER-0488', 'c2', 'Adjoua N''Guessan', 'Yopougon, Abidjan', '+225 05 33 21 09 44', 'Boutique', 'preparation', false, 27500),
+  ('TER-0488', 'foulard-teranga', '#TER-0488', 'c2', 'Adjoua N'Guessan', 'Yopougon, Abidjan', '+225 05 33 21 09 44', 'Boutique', 'preparation', false, 27500),
   ('TER-0487', 'foulard-teranga', '#TER-0487', 'c6', 'Grace Kouassi', 'Riviera, Abidjan', '+225 01 19 82 73 64', 'Web', 'livree', false, 42000),
   ('TER-0486', 'foulard-teranga', '#TER-0486', 'c4', 'Fatou Bamba', 'Marcory, Abidjan', '+225 07 45 09 87 11', 'Web', 'refusee', false, 7000);
 
