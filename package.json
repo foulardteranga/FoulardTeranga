@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "@prisma/client": "^7.8.0",
+    "@supabase/ssr": "^0.12.1",
+    "@supabase/supabase-js": "^2.110.3",
     "next": "16.2.0",
     "react": "19.2.0",
     "react-dom": "19.2.0",
