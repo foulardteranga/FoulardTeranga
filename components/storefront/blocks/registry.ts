@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import type { BlockId } from "@/lib/store/useStorefront";
+import type { Product } from "@/lib/data/types";
 import { HeroBlock } from "./HeroBlock";
 import { CategoryTilesBlock } from "./CategoryTilesBlock";
 import { ProductGridBlock } from "./ProductGridBlock";
@@ -15,7 +16,7 @@ import { ContactBlock } from "./ContactBlock";
  * disponible sur la Home, réordonnable/masquable en mode éditeur — préfigure
  * le futur éditeur de vitrine complet (SECTIONS.md §1).
  */
-export const blockRegistry: Partial<Record<BlockId, ComponentType>> = {
+export const blockRegistry: Partial<Record<BlockId, ComponentType<{ products?: Product[] }>>> = {
   hero: HeroBlock,
   cats: CategoryTilesBlock,
   grid: ProductGridBlock,

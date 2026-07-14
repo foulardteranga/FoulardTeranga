@@ -7,13 +7,14 @@ import { useShop } from "@/lib/store/useShop";
 import { useStorefront } from "@/lib/store/useStorefront";
 import { computeEffectiveStock } from "@/lib/store/shopLogic";
 import { ProductCard } from "@/components/storefront/ProductCard";
+import type { Product } from "@/lib/data/types";
 import { BlockFrame } from "./BlockFrame";
 
-export function ProductGridBlock() {
+export function ProductGridBlock({ products = [] }: { products?: Product[] }) {
   const stockDeductions = useShop((s) => s.stockDeductions);
   const addToCart = useStorefront((s) => s.addToCart);
   const showToast = useStorefront((s) => s.showToast);
-  const products = newestProducts(4);
+  const featured = newestProducts(products, 4);
 
   return (
     <BlockFrame id="grid">
@@ -33,11 +34,11 @@ export function ProductGridBlock() {
             </Link>
           </div>
           <div className="ft-store-home-grid" style={{ display: "grid" }}>
-            {products.map((p) => (
+            {featured.map((p) => (
               <ProductCard
                 key={p.id}
                 product={p}
-                stock={computeEffectiveStock(p.id, stockDeductions)}
+                stock={computeEffectiveStock(p.id, p.stock, stockDeductions)}
                 onAdd={() => {
                   addToCart({ productId: p.id, name: p.name, variant: p.lengths[0], colorHex: p.colors[0], price: p.price });
                   showToast("Ajouté au panier", "success");

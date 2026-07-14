@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { fonts } from "@/lib/theme/tokens";
 import { stripe } from "@/lib/theme/storefront";
-import { catalog, storefrontCategories } from "@/lib/data/catalog";
+import { storefrontCategories } from "@/lib/data/catalog";
+import type { Product } from "@/lib/data/types";
 import { BlockFrame } from "./BlockFrame";
 
 const TILE_COLOR: Record<string, string> = {
@@ -10,14 +11,14 @@ const TILE_COLOR: Record<string, string> = {
   Accessoires: "#C9A227",
 };
 
-export function CategoryTilesBlock() {
+export function CategoryTilesBlock({ products = [] }: { products?: Product[] }) {
   return (
     <BlockFrame id="cats">
       <section className="ft-store-section-tight">
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div className="ft-store-cats" style={{ display: "grid", gap: 14 }}>
             {storefrontCategories.map((cat) => {
-              const count = catalog.filter((p) => p.cat === cat).length;
+              const count = products.filter((p) => p.cat === cat).length;
               return (
                 <Link
                   key={cat}

@@ -8,14 +8,18 @@ import { useShop } from "@/lib/store/useShop";
 import { useStorefront } from "@/lib/store/useStorefront";
 import { computeEffectiveStock } from "@/lib/store/shopLogic";
 import { money } from "@/lib/format";
+import type { Product } from "@/lib/data/types";
 import { BlockFrame } from "./BlockFrame";
 
-export function FeaturedProductBlock() {
-  const product = featuredProduct();
+export function FeaturedProductBlock({ products = [] }: { products?: Product[] }) {
+  const product = featuredProduct(products);
   const stockDeductions = useShop((s) => s.stockDeductions);
   const addToCart = useStorefront((s) => s.addToCart);
   const showToast = useStorefront((s) => s.showToast);
-  const stock = computeEffectiveStock(product.id, stockDeductions);
+
+  if (!product) return null;
+
+  const stock = computeEffectiveStock(product.id, product.stock, stockDeductions);
 
   return (
     <BlockFrame id="featured">
