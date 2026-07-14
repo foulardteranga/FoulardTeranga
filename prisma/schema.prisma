@@ -96,17 +96,19 @@ model Product {
 }
 
 model Customer {
-  id        String          @id @default(cuid())
-  tenantId  String
-  profileId String?         @unique @db.Uuid
-  name      String
-  initials  String
-  phone     String
-  place     String
-  points    Int             @default(0)
-  vip       Boolean         @default(false)
-  segment   CustomerSegment
-  createdAt DateTime        @default(now())
+  id          String          @id @default(cuid())
+  tenantId    String
+  profileId   String?         @unique @db.Uuid
+  name        String
+  initials    String
+  phone       String
+  place       String
+  points      Int             @default(0)
+  ordersCount Int             @default(0)
+  totalSpent  Int             @default(0)
+  vip         Boolean         @default(false)
+  segment     CustomerSegment
+  createdAt   DateTime        @default(now())
 
   tenant  Tenant   @relation(fields: [tenantId], references: [id])
   profile Profile? @relation(fields: [profileId], references: [id])
