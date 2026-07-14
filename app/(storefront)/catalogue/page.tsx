@@ -1,10 +1,12 @@
 import { Suspense } from "react";
+import { getCatalog } from "@/lib/data/catalog";
 import { CatalogView } from "@/components/storefront/views/CatalogView";
 
-export default function CataloguePage() {
+export default async function CataloguePage() {
+  const products = await getCatalog();
   return (
     <Suspense fallback={<div className="ft-store-page" style={{ maxWidth: 1200, margin: "0 auto" }} />}>
-      <CatalogView />
+      <CatalogView products={products} />
     </Suspense>
   );
 }

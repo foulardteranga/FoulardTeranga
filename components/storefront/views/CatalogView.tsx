@@ -11,6 +11,7 @@ import { computeEffectiveStock } from "@/lib/store/shopLogic";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import { Breadcrumb } from "@/components/storefront/Breadcrumb";
 import { money } from "@/lib/format";
+import type { Product } from "@/lib/data/types";
 
 const COLOR_SWATCHES = [
   { hex: "#26326B", label: "Indigo" },
@@ -21,7 +22,7 @@ const COLOR_SWATCHES = [
 ];
 const MOTIFS = ["Wax", "Bazin", "Uni", "Kente", "Tie & dye"];
 
-export function CatalogView() {
+export function CatalogView({ products }: { products: Product[] }) {
   const searchParams = useSearchParams();
   const initialCat = (searchParams.get("cat") as CatalogFilters["cat"]) || "Tous";
 
@@ -46,7 +47,7 @@ export function CatalogView() {
   const addToCart = useStorefront((s) => s.addToCart);
   const showToast = useStorefront((s) => s.showToast);
 
-  const products = useMemo(() => filterCatalog(filters), [filters]);
+  const filtered = useMemo(() => filterCatalog(products, filters), [products, filters]);
 
   const setFilter = <K extends keyof CatalogFilters>(key: K, value: CatalogFilters[K]) =>
     setFilters((f) => ({ ...f, [key]: value }));
@@ -60,7 +61,7 @@ export function CatalogView() {
         {filters.cat === "Tous" ? "Toute la boutique" : filters.cat}
       </h1>
       <p style={{ fontSize: 14, color: colors.muted, margin: "0 0 20px" }}>
-        {products.length} produit{products.length > 1 ? "s" : ""}
+        {filtered.length} produit{filtered.length > 1 ? "s" : ""}
       </p>
 
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
@@ -180,7 +181,7 @@ export function CatalogView() {
                 </div>
               ))}
             </div>
-          ) : products.length === 0 ? (
+          ) : filtered.length === 0 ? (
             <div style={{ background: "#fff", border: "1px solid rgba(30,27,24,.08)", borderRadius: 14, padding: "56px 24px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
               <div style={{ width: 60, height: 60, borderRadius: 999, background: "#F4F0E9", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
                 <Icon path={ICONS.search} size={28} stroke="#B6AEA1" strokeWidth={1.6} />
@@ -198,11 +199,11 @@ export function CatalogView() {
             </div>
           ) : (
             <div className="ft-store-catalog-grid" style={{ display: "grid", gap: 18 }}>
-              {products.map((p) => (
+              {filtered.map((p) => (
                 <ProductCard
                   key={p.id}
                   product={p}
-                  stock={computeEffectiveStock(p.id, stockDeductions)}
+                  stock={computeEffectiveStock(p.id, p.stock, stockDeductions)}
                   onAdd={() => {
                     addToCart({ productId: p.id, name: p.name, variant: p.lengths[0], colorHex: p.colors[0], price: p.price });
                     showToast("Ajouté au panier", "success");
