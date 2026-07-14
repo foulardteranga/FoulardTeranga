@@ -1,4 +1,4 @@
-import { getCatalog } from "@/lib/data/catalog";
+import { getCatalog } from "@/lib/data/catalog.server";
 import { InventoryScreen } from "@/components/dashboard/screens/InventoryScreen";
 
 export default async function InventoryPage() {

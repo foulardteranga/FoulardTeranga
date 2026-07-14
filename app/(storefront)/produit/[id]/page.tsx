@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { getCatalog, getProductById, relatedTo } from "@/lib/data/catalog";
+import { getCatalog, getProductById } from "@/lib/data/catalog.server";
+import { relatedTo } from "@/lib/data/catalog";
 import { ProductView } from "@/components/storefront/views/ProductView";
 
 export async function generateStaticParams() {

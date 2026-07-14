@@ -1,4 +1,4 @@
-import { getCatalog } from "@/lib/data/catalog";
+import { getCatalog } from "@/lib/data/catalog.server";
 import { PosScreen } from "@/components/dashboard/screens/PosScreen";
 
 export default async function PosPage() {

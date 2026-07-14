@@ -1,4 +1,4 @@
-import { getCatalog } from "@/lib/data/catalog";
+import { getCatalog } from "@/lib/data/catalog.server";
 import { HomeShell } from "@/components/storefront/HomeShell";
 
 export default async function StorefrontHomePage() {

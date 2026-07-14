@@ -6,8 +6,8 @@ import {
   featuredProduct,
   relatedTo,
   filterCatalog,
-  toProduct,
 } from "@/lib/data/catalog";
+import { toProduct } from "@/lib/data/catalog.server";
 import type { Product } from "@/lib/data/types";
 
 const FIXTURE_PRODUCTS: Product[] = [

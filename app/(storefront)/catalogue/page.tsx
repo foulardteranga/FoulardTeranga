@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getCatalog } from "@/lib/data/catalog";
+import { getCatalog } from "@/lib/data/catalog.server";
 import { CatalogView } from "@/components/storefront/views/CatalogView";
 
 export default async function CataloguePage() {

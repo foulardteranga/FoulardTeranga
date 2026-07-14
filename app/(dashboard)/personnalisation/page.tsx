@@ -1,4 +1,4 @@
-import { getCatalog } from "@/lib/data/catalog";
+import { getCatalog } from "@/lib/data/catalog.server";
 import { ThemeScreen } from "@/components/dashboard/screens/ThemeScreen";
 
 export default async function PersonnalisationPage() {
