@@ -148,4 +148,25 @@ Le journal de progression détaillé vit dans `.superpowers/sdd/progress.md` (no
 4. Cliquer « Se déconnecter » → retour à `/admin/connexion` ; un accès direct à `/admin/pos` redemande une connexion.
 5. Mauvais mot de passe → message d'erreur inline, pas de crash.
 
-- Prochain sous-projet : **Catalogue & stock** (`lib/data/catalog.ts` → lectures serveur Postgres).
+## Migration mock → Supabase : sous-projet 3/5 (Catalogue & stock)
+
+**Terminé** (voir `docs/superpowers/plans/2026-07-13-catalog-stock.md` et le spec associé `docs/superpowers/specs/2026-07-13-catalog-stock-design.md`).
+
+- `lib/data/catalog.ts` ne contient plus de tableau mock statique — scindé en deux fichiers : `lib/data/catalog.ts` (fonctions pures/constantes client-safe : `categories`, `storefrontCategories`, `newestProducts`, `featuredProduct`, `relatedTo`, `filterCatalog`, `CatalogFilters`) et `lib/data/catalog.server.ts` (lectures Prisma serveur : `getCatalog()`, `getProductById()`, `toProduct()`). Cette scission (non prévue au plan initial) a été nécessaire suite à un bug trouvé en vérification de build : le fichier unique mélangeait code serveur (`next/headers` via `getCurrentTenant()`) et exports consommés par des Client Components, ce qui cassait `next build`.
+- `lib/db/client.ts` : singleton Prisma (`@prisma/adapter-pg`, requis par le générateur `prisma-client` de Prisma 7) avec pattern anti-HMR standard.
+- Toute la vitrine (Accueil, Catalogue, fiche Produit) et tout le back-office (Inventaire, Tableau de bord, Marketing, Personnalisation, POS) lisent désormais les 12 produits réels depuis Postgres — chaque page est un Server Component qui fetch une fois et transmet en props aux composants clients existants (interactivité panier/filtres inchangée).
+- `computeEffectiveStock` (`lib/store/shopLogic.ts`) ne dépend plus de `lib/data/catalog` — signature changée pour recevoir le stock de base en argument explicite plutôt que de le chercher dans un tableau statique. Action `effectiveStock` (dead code, zéro appelant) supprimée de `useShop.ts`.
+- **Correctif inclus** : l'alerte « stock bas » de `DashboardScreen` utilisait le stock de base au lieu du stock effectif (incohérent avec `InventoryScreen` depuis le Plan 1 Tâche 13) — corrigé au passage.
+- **Sous-projet strictement lecture seule** : aucune écriture Postgres (création/édition produit, ajustement stock) — décision validée en brainstorming.
+- Deux bugs réels trouvés et corrigés pendant la vérification de branche (Tâche 10), aucun des deux détecté par `npm run test` ni `npm run typecheck` — seul `next build --webpack` les révèle :
+  1. Fuite `next/headers` dans le bundle client (voir scission `catalog.ts`/`catalog.server.ts` ci-dessus).
+  2. `generateStaticParams` (fiche produit) s'exécute au build, hors requête HTTP — `getCurrentTenant()` (qui lit les headers de requête) y est indisponible. Corrigé en donnant à `getCatalog()` un paramètre `tenantId` optionnel, `generateStaticParams` passant `DEFAULT_TENANT.id` explicitement (v1 mono-boutique) ; tous les autres appelants gardent la résolution réelle par requête.
+- **Point trouvé en revue finale (opus), corrigé côté données** : `getCatalog()` trie par `ORDER BY createdAt ASC`, mais les 12 produits seedés au sous-projet 1 partageaient tous le même timestamp (seed en un seul batch) — tri non déterministe en théorie, qui « fonctionnait » par chance sur l'ordre physique des lignes. `MarketingScreen`/`ThemeScreen` dépendent d'un ordre `p1..p12` stable (indexation positionnelle). Corrigé par un `UPDATE` direct sur Supabase (confirmé par l'utilisateur avant exécution, pas de migration de schéma) décalant chaque `createdAt` d'1 seconde dans l'ordre p1→p12 — tri désormais garanti déterministe. À surveiller si de nouveaux produits sont insérés en batch à l'avenir.
+- 87/87 tests (nouveaux/adaptés dans `lib/data/catalog.test.ts` et `lib/store/shopLogic.test.ts`), `npm run typecheck` propre sur tout le projet, `npx next build --webpack` réussit (30 pages statiques).
+- **Non vérifié par l'agent** (nécessite le compte owner réel, pas de manipulation de mot de passe par l'agent) : parcours live des écrans back-office authentifiés (Inventaire, Tableau de bord, Marketing, Personnalisation, POS) avec le compte owner — la garde d'auth a été vérifiée (redirection correcte vers `/admin/connexion` pour un visiteur non authentifié, zéro crash), mais l'affichage réel des données une fois connecté reste à confirmer par l'utilisateur, même limitation que le parcours manuel du sous-projet 2.
+- Prochain sous-projet : **Commandes & workflow** (`useShop` → Server Actions + Postgres + Realtime).
+
+## Migration mock → Supabase : reste à faire
+
+- Sous-projet 4/5 : **Commandes & workflow** (`useShop` → Server Actions + Postgres + Realtime, déduction stock réelle à la validation).
+- Sous-projet 5/5 : **Clientes & fidélité** (`lib/data/clients.ts` → Postgres).
