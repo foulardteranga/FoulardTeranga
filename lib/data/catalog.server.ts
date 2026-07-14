@@ -23,11 +23,15 @@ export function toProduct(row: PrismaProduct): Product {
   };
 }
 
-/** Lit tout le catalogue du tenant courant depuis Postgres. */
-export async function getCatalog(): Promise<Product[]> {
-  const tenant = await getCurrentTenant();
+/**
+ * Lit tout le catalogue depuis Postgres. `tenantId` explicite pour les appelants
+ * hors requête HTTP (ex. `generateStaticParams`, exécuté au build — `headers()`
+ * n'y est pas disponible) ; sinon résolu depuis la requête courante via `proxy.ts`.
+ */
+export async function getCatalog(tenantId?: string): Promise<Product[]> {
+  const id = tenantId ?? (await getCurrentTenant()).id;
   const rows = await prisma.product.findMany({
-    where: { tenantId: tenant.id },
+    where: { tenantId: id },
     orderBy: { createdAt: "asc" },
   });
   return rows.map(toProduct);
