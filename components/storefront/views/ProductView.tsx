@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { fonts, colors } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { stripe } from "@/lib/theme/storefront";
-import { relatedTo } from "@/lib/data/catalog";
 import { useShop } from "@/lib/store/useShop";
 import { computeEffectiveStock } from "@/lib/store/shopLogic";
 import { useStorefront } from "@/lib/store/useStorefront";
@@ -23,7 +22,7 @@ const COLOR_NAMES: Record<string, string> = {
   "#1E1B18": "Noir",
 };
 
-export function ProductView({ product }: { product: Product }) {
+export function ProductView({ product, related }: { product: Product; related: Product[] }) {
   const router = useRouter();
   const [colorIdx, setColorIdx] = useState(0);
   const [lenIdx, setLenIdx] = useState(0);
@@ -34,10 +33,9 @@ export function ProductView({ product }: { product: Product }) {
   const addToCart = useStorefront((s) => s.addToCart);
   const showToast = useStorefront((s) => s.showToast);
 
-  const stock = computeEffectiveStock(product.id, stockDeductions);
+  const stock = computeEffectiveStock(product.id, product.stock, stockDeductions);
   const soldOut = stock <= 0;
   const variant = product.lengths[lenIdx];
-  const related = relatedTo(product.id);
 
   const doAdd = () => {
     if (soldOut) { showToast("Article épuisé", "error"); return; }
@@ -166,7 +164,7 @@ export function ProductView({ product }: { product: Product }) {
               <ProductCard
                 key={p.id}
                 product={p}
-                stock={computeEffectiveStock(p.id, stockDeductions)}
+                stock={computeEffectiveStock(p.id, p.stock, stockDeductions)}
                 onAdd={() => {
                   addToCart({ productId: p.id, name: p.name, variant: p.lengths[0], colorHex: p.colors[0], price: p.price });
                   showToast("Ajouté au panier", "success");

@@ -1,14 +1,17 @@
 import { notFound } from "next/navigation";
-import { catalog } from "@/lib/data/catalog";
+import { getCatalog, getProductById, relatedTo } from "@/lib/data/catalog";
 import { ProductView } from "@/components/storefront/views/ProductView";
 
-export function generateStaticParams() {
-  return catalog.map((p) => ({ id: p.id }));
+export async function generateStaticParams() {
+  const products = await getCatalog();
+  return products.map((p) => ({ id: p.id }));
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const product = catalog.find((p) => p.id === id);
+  const product = await getProductById(id);
   if (!product) notFound();
-  return <ProductView product={product} />;
+  const products = await getCatalog();
+  const related = relatedTo(products, product.id);
+  return <ProductView product={product} related={related} />;
 }
