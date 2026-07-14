@@ -37,7 +37,7 @@ export async function submitWebOrder(
           lines: { create: built.lines },
         },
       });
-    });
+    }, { maxWait: 10000, timeout: 10000 });
 
     revalidatePath("/admin/commandes");
     revalidatePath("/admin/tableau-de-bord");
@@ -69,7 +69,7 @@ export async function confirmOrder(ref: string): Promise<{ ok: true } | { ok: fa
         });
       }
       await tx.order.update({ where: { id: order.id }, data: { status: "confirmee" } });
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10000, timeout: 10000 });
 
     revalidatePath("/admin/commandes");
     revalidatePath("/admin/tableau-de-bord");
