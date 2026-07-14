@@ -101,6 +101,8 @@ npx next build --webpack    # réussit, liste toutes les routes vitrine + back-o
 
 4. **Nettoyage de code mort à faire (non bloquant)** — `effStatus` (`lib/data/orderStatus.ts`) et l'action `effectiveStock` du store (`lib/store/useShop.ts`) n'ont plus aucun appelant après les migrations des Tâches 12/13. À supprimer, ou à garder `effectiveStock` uniquement si le Plan 2 compte l'utiliser via le pattern sûr (`useShop((s) => s.effectiveStock(productId))`, appelé *à l'intérieur* du sélecteur).
 
+5. **`npx prisma generate` à relancer après un merge qui change `prisma/schema.prisma`** — `lib/generated/prisma` est gitignored (jamais committé), donc chaque checkout (y compris le checkout principal après un `git merge --ff-only` d'un worktree qui a modifié le schéma) garde son propre client Prisma généré, périmé tant que `npx prisma generate` n'est pas relancé localement. Rencontré en finalisant le sous-projet 5/5 : `npm run typecheck` échouait juste après la fusion (colonnes `ordersCount`/`totalSpent` introuvables) alors que le code fusionné était correct — résolu par un simple `npx prisma generate` dans le checkout principal, aucun correctif de code nécessaire. À vérifier systématiquement après toute fusion touchant `prisma/schema.prisma`.
+
 ## Comment reprendre
 
 ```bash
