@@ -41,6 +41,7 @@ yarn-error.log*
 # claude code (user-local)
 .claude/settings.local.json
 .claude/worktrees/
+.mcp.json
 
 # macos
 * alias
