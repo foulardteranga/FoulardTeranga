@@ -6,7 +6,7 @@ import { Icon, ICONS } from "@/components/ui/Icon";
 import { categories } from "@/lib/data/catalog";
 import { money } from "@/lib/format";
 import { useBackoffice, type CartLine } from "@/lib/store/useBackoffice";
-import type { Product } from "@/lib/data/types";
+import type { Customer, Product } from "@/lib/data/types";
 
 const PAY_DEF = [
   { id: "espece", label: "Espèces", icon: ICONS.cash },
@@ -14,7 +14,7 @@ const PAY_DEF = [
   { id: "mixte", label: "Mixte", icon: ICONS.mixte },
 ] as const;
 
-export function PosScreen({ products }: { products: Product[] }) {
+export function PosScreen({ products, customers }: { products: Product[]; customers: Customer[] }) {
   const [query, setQuery] = useState("");
   const [cat, setCat] = useState<(typeof categories)[number]>("Tous");
 
@@ -148,7 +148,7 @@ export function PosScreen({ products }: { products: Product[] }) {
       </div>
 
       {/* cart desktop */}
-      <CartPanelDesktop total={total} sub={sub} disc={disc} />
+      <CartPanelDesktop total={total} sub={sub} disc={disc} customers={customers} />
 
       {/* mobile cart bar */}
       {cartCount > 0 && !cartOpen && (
@@ -197,7 +197,7 @@ export function PosScreen({ products }: { products: Product[] }) {
       )}
 
       {/* mobile cart sheet */}
-      {cartOpen && <CartSheetMobile total={total} onClose={closeCart} />}
+      {cartOpen && <CartSheetMobile total={total} onClose={closeCart} customers={customers} />}
 
       {/* spacer to clear the fixed mobile cart bar */}
       {cartCount > 0 && <div className="ft-mobile-only" style={{ height: 60 }} aria-hidden />}
@@ -283,10 +283,12 @@ function ProductCard({ product: p }: { product: Product }) {
 }
 
 /* ----- Client attach block (shared) ----- */
-function ClientBlock() {
+function ClientBlock({ customers }: { customers: Customer[] }) {
   const client = useBackoffice((s) => s.client);
   const attachClient = useBackoffice((s) => s.attachClient);
   const detachClient = useBackoffice((s) => s.detachClient);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [query, setQuery] = useState("");
 
   if (client) {
     return (
@@ -325,9 +327,76 @@ function ClientBlock() {
     );
   }
 
+  if (pickerOpen) {
+    const q = query.trim().toLowerCase();
+    const filtered = customers.filter(
+      (c) => !q || c.name.toLowerCase().includes(q) || c.phone.toLowerCase().includes(q)
+    );
+    return (
+      <div>
+        <input
+          autoFocus
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Rechercher nom ou téléphone…"
+          style={{
+            width: "100%",
+            height: 38,
+            padding: "0 12px",
+            border: `1.5px solid ${colors.borderField}`,
+            borderRadius: 10,
+            font: `400 13px ${fonts.ui}`,
+            outline: "none",
+          }}
+        />
+        <div style={{ maxHeight: 180, overflowY: "auto", marginTop: 8 }}>
+          {filtered.length === 0 ? (
+            <div style={{ fontSize: 12.5, color: colors.muted, padding: "8px 2px" }}>Aucune cliente trouvée.</div>
+          ) : (
+            filtered.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => {
+                  attachClient(c);
+                  setPickerOpen(false);
+                  setQuery("");
+                }}
+                style={{
+                  display: "flex",
+                  width: "100%",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 8,
+                  padding: "8px 4px",
+                  border: "none",
+                  borderBottom: `1px solid ${colors.faintLine}`,
+                  background: "none",
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
+              >
+                <span style={{ fontWeight: 600, fontSize: 13 }}>{c.name}</span>
+                <span style={{ fontSize: 11.5, color: colors.muted }}>{c.phone}</span>
+              </button>
+            ))
+          )}
+        </div>
+        <button
+          onClick={() => {
+            setPickerOpen(false);
+            setQuery("");
+          }}
+          style={{ marginTop: 6, font: `500 12px ${fonts.ui}`, color: colors.muted, background: "none", border: "none", cursor: "pointer" }}
+        >
+          Annuler
+        </button>
+      </div>
+    );
+  }
+
   return (
     <button
-      onClick={attachClient}
+      onClick={() => setPickerOpen(true)}
       style={{
         width: "100%",
         height: 42,
@@ -417,7 +486,7 @@ function PayButton({ total, big }: { total: number; big?: boolean }) {
 }
 
 /* ----- Desktop cart aside ----- */
-function CartPanelDesktop({ total, sub, disc }: { total: number; sub: number; disc: number }) {
+function CartPanelDesktop({ total, sub, disc, customers }: { total: number; sub: number; disc: number; customers: Customer[] }) {
   const cart = useBackoffice((s) => s.cart);
   const clearCart = useBackoffice((s) => s.clearCart);
   const cartCount = cart.reduce((a, l) => a + l.qty, 0);
@@ -458,7 +527,7 @@ function CartPanelDesktop({ total, sub, disc }: { total: number; sub: number; di
       </div>
 
       <div style={{ padding: "12px 18px", borderBottom: `1px solid ${colors.borderSoft}` }}>
-        <ClientBlock />
+        <ClientBlock customers={customers} />
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: "6px 0" }}>
@@ -598,7 +667,7 @@ function stepBtn(w: number): React.CSSProperties {
 }
 
 /* ----- Mobile cart sheet ----- */
-function CartSheetMobile({ total, onClose }: { total: number; onClose: () => void }) {
+function CartSheetMobile({ total, onClose, customers }: { total: number; onClose: () => void; customers: Customer[] }) {
   const cart = useBackoffice((s) => s.cart);
   const incLine = useBackoffice((s) => s.incLine);
 
@@ -640,7 +709,7 @@ function CartSheetMobile({ total, onClose }: { total: number; onClose: () => voi
         </div>
 
         <div style={{ padding: "12px 18px", borderBottom: `1px solid ${colors.borderSoft}` }}>
-          <ClientBlock />
+          <ClientBlock customers={customers} />
         </div>
 
         <div style={{ flex: 1, overflowY: "auto" }}>

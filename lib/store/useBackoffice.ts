@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import type { Customer, Product } from "@/lib/data/types";
-import { clients } from "@/lib/data/clients";
 import { money } from "@/lib/format";
 
 export interface CartLine {
@@ -43,7 +42,7 @@ interface BackofficeState {
   toggleDiscount: (id: string) => void;
   clearCart: () => void;
   setPay: (pay: BackofficeState["pay"]) => void;
-  attachClient: () => void;
+  attachClient: (customer: Customer) => void;
   detachClient: () => void;
   encaisser: () => void;
   openCart: () => void;
@@ -108,7 +107,7 @@ export const useBackoffice = create<BackofficeState>((set, get) => ({
 
   setPay: (pay) => set({ pay }),
 
-  attachClient: () => set({ client: clients[0] }),
+  attachClient: (customer) => set({ client: customer }),
   detachClient: () => set({ client: null }),
 
   encaisser: () => {
