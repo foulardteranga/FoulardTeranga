@@ -4,8 +4,10 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db/client";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { getCurrentTenant } from "@/lib/tenant";
+import { requireZone } from "@/lib/auth";
 import { kycSchema, type KycInput } from "@/lib/validators/kyc";
 import { buildOrderLines, type WebCartLineInput } from "./buildOrderLines";
+import { aggregateQtyByProduct } from "./stockCheck";
 
 export async function submitWebOrder(
   kyc: KycInput,
@@ -50,16 +52,26 @@ export async function submitWebOrder(
 }
 
 export async function confirmOrder(ref: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { allowed } = await requireZone("dashboard");
+  if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+
   try {
+    const tenant = await getCurrentTenant();
+
     await prisma.$transaction(async (tx) => {
-      const order = await tx.order.findUnique({ where: { ref }, include: { lines: true } });
+      const order = await tx.order.findFirst({ where: { ref, tenantId: tenant.id }, include: { lines: true } });
       if (!order) throw new Error("Commande introuvable.");
       if (order.status !== "nouvelle") return; // idempotent : déjà traitée
 
-      for (const line of order.lines) {
-        const product = await tx.product.findUnique({ where: { id: line.productId } });
-        if (!product || product.stock < line.qty) {
-          throw new Error(`Stock insuffisant pour ${line.nameAtOrder}.`);
+      // Agrégation par produit : une commande peut contenir plusieurs lignes
+      // pour le même produit (variantes/longueurs différentes), donc vérifier
+      // chaque ligne isolément contre le stock courant laisserait passer une
+      // demande dont la somme dépasse le stock réel.
+      const demand = aggregateQtyByProduct(order.lines);
+      for (const [productId, { qty, nameAtOrder }] of demand) {
+        const product = await tx.product.findUnique({ where: { id: productId } });
+        if (!product || product.stock < qty) {
+          throw new Error(`Stock insuffisant pour ${nameAtOrder}.`);
         }
       }
       for (const line of order.lines) {
@@ -83,8 +95,12 @@ export async function confirmOrder(ref: string): Promise<{ ok: true } | { ok: fa
 }
 
 export async function rejectOrder(ref: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { allowed } = await requireZone("dashboard");
+  if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+
   try {
-    const order = await prisma.order.findUnique({ where: { ref } });
+    const tenant = await getCurrentTenant();
+    const order = await prisma.order.findFirst({ where: { ref, tenantId: tenant.id } });
     if (!order) return { ok: false, error: "Commande introuvable." };
     if (order.status === "nouvelle") {
       await prisma.order.update({ where: { id: order.id }, data: { status: "refusee" } });
