@@ -2,27 +2,27 @@
 
 import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
-import { catalog } from "@/lib/data/catalog";
 import { money } from "@/lib/format";
+import type { Product } from "@/lib/data/types";
 
-const STARS = [
-  { p: catalog[4], sold: 128 },
-  { p: catalog[0], sold: 96 },
-  { p: catalog[6], sold: 74 },
-  { p: catalog[2], sold: 61 },
-];
-const DORMANT = [
-  { p: catalog[9], days: 52 },
-  { p: catalog[5], days: 41 },
-  { p: catalog[7], days: 38 },
-  { p: catalog[10], days: 29 },
-];
 const PROMOS = [
   { code: "TERANGA10", desc: "−10% dès 25 000 FCFA", period: "01/07 → 31/07/2026", used: 34 },
   { code: "VIP15", desc: "−15% clientes VIP", period: "Permanent", used: 12 },
 ];
 
-export function MarketingScreen() {
+export function MarketingScreen({ products }: { products: Product[] }) {
+  const STARS = [
+    { p: products[4], sold: 128 },
+    { p: products[0], sold: 96 },
+    { p: products[6], sold: 74 },
+    { p: products[2], sold: 61 },
+  ];
+  const DORMANT = [
+    { p: products[9], days: 52 },
+    { p: products[5], days: 41 },
+    { p: products[7], days: 38 },
+    { p: products[10], days: 29 },
+  ];
   return (
     <div className="ft-pad" style={{ maxWidth: 1200 }}>
       <div className="ft-grid-2" style={{ marginBottom: 14 }}>

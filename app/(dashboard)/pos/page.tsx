@@ -1,5 +1,7 @@
+import { getCatalog } from "@/lib/data/catalog";
 import { PosScreen } from "@/components/dashboard/screens/PosScreen";
 
-export default function PosPage() {
-  return <PosScreen />;
+export default async function PosPage() {
+  const products = await getCatalog();
+  return <PosScreen products={products} />;
 }

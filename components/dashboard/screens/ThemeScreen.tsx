@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { colors, fonts, hexA } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
-import { catalog } from "@/lib/data/catalog";
 import { money } from "@/lib/format";
+import type { Product } from "@/lib/data/types";
 
 interface ThemeState {
   shopName: string;
@@ -31,14 +31,14 @@ const FONT_OPTIONS: Array<{ label: string; val: ThemeState["font"]; family: stri
   { label: "Moderne", val: "Inter", family: fonts.ui },
 ];
 
-export function ThemeScreen() {
+export function ThemeScreen({ products }: { products: Product[] }) {
   const [th, setTh] = useState<ThemeState>(DEFAULTS);
   const set = <K extends keyof ThemeState>(k: K, v: ThemeState[K]) => setTh((s) => ({ ...s, [k]: v }));
 
   const previewFont = th.font === "Inter" ? fonts.ui : fonts.display;
   const heroBg = `linear-gradient(180deg, ${hexA(th.accent, 0.1)}, #fff)`;
   const initial = (th.shopName || "T").trim().charAt(0).toUpperCase();
-  const previewProducts = [catalog[0], catalog[1], catalog[2]];
+  const previewProducts = [products[0], products[1], products[2]];
 
   return (
     <div className="ft-pad">

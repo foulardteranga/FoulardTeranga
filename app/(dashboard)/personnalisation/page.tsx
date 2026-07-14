@@ -1,5 +1,7 @@
+import { getCatalog } from "@/lib/data/catalog";
 import { ThemeScreen } from "@/components/dashboard/screens/ThemeScreen";
 
-export default function PersonnalisationPage() {
-  return <ThemeScreen />;
+export default async function PersonnalisationPage() {
+  const products = await getCatalog();
+  return <ThemeScreen products={products} />;
 }

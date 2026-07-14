@@ -3,9 +3,10 @@
 import { useMemo, useState } from "react";
 import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
-import { catalog, categories } from "@/lib/data/catalog";
+import { categories } from "@/lib/data/catalog";
 import { money } from "@/lib/format";
 import { useBackoffice, type CartLine } from "@/lib/store/useBackoffice";
+import type { Product } from "@/lib/data/types";
 
 const PAY_DEF = [
   { id: "espece", label: "Espèces", icon: ICONS.cash },
@@ -13,7 +14,7 @@ const PAY_DEF = [
   { id: "mixte", label: "Mixte", icon: ICONS.mixte },
 ] as const;
 
-export function PosScreen() {
+export function PosScreen({ products }: { products: Product[] }) {
   const [query, setQuery] = useState("");
   const [cat, setCat] = useState<(typeof categories)[number]>("Tous");
 
@@ -24,12 +25,12 @@ export function PosScreen() {
   const closeCart = useBackoffice((s) => s.closeCart);
 
   const q = query.trim().toLowerCase();
-  const products = useMemo(
+  const filtered = useMemo(
     () =>
-      catalog.filter(
+      products.filter(
         (p) => (cat === "Tous" || p.cat === cat) && (!q || p.name.toLowerCase().includes(q))
       ),
-    [cat, q]
+    [products, cat, q]
   );
 
   const sub = cart.reduce((a, l) => a + l.price * l.qty, 0);
@@ -116,7 +117,7 @@ export function PosScreen() {
           })}
         </div>
 
-        {products.length === 0 ? (
+        {filtered.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 20px", color: colors.muted }}>
             <div
               style={{
@@ -139,7 +140,7 @@ export function PosScreen() {
           </div>
         ) : (
           <div className="ft-pos-grid">
-            {products.map((p) => (
+            {filtered.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}
           </div>
@@ -204,7 +205,7 @@ export function PosScreen() {
   );
 }
 
-function ProductCard({ product: p }: { product: (typeof catalog)[number] }) {
+function ProductCard({ product: p }: { product: Product }) {
   const addToCart = useBackoffice((s) => s.addToCart);
   return (
     <div
