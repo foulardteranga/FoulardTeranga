@@ -5,9 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { fonts, colors } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { filterCatalog, categories, type CatalogFilters } from "@/lib/data/catalog";
-import { useShop } from "@/lib/store/useShop";
 import { useStorefront } from "@/lib/store/useStorefront";
-import { computeEffectiveStock } from "@/lib/store/shopLogic";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import { Breadcrumb } from "@/components/storefront/Breadcrumb";
 import { money } from "@/lib/format";
@@ -43,7 +41,6 @@ export function CatalogView({ products }: { products: Product[] }) {
     return () => clearTimeout(timer);
   }, [filters.cat, filters.color, filters.motif, filters.priceMax, filters.query, filters.sort]);
 
-  const stockDeductions = useShop((s) => s.stockDeductions);
   const addToCart = useStorefront((s) => s.addToCart);
   const showToast = useStorefront((s) => s.showToast);
 
@@ -203,7 +200,7 @@ export function CatalogView({ products }: { products: Product[] }) {
                 <ProductCard
                   key={p.id}
                   product={p}
-                  stock={computeEffectiveStock(p.id, p.stock, stockDeductions)}
+                  stock={p.stock}
                   onAdd={() => {
                     addToCart({ productId: p.id, name: p.name, variant: p.lengths[0], colorHex: p.colors[0], price: p.price });
                     showToast("Ajouté au panier", "success");

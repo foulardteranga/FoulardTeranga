@@ -5,8 +5,6 @@ import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { money } from "@/lib/format";
 import type { Product } from "@/lib/data/types";
-import { useShop } from "@/lib/store/useShop";
-import { computeEffectiveStock } from "@/lib/store/shopLogic";
 
 function lvlDot(v: number, seuil: number): string {
   if (v <= Math.round(seuil * 0.5)) return colors.danger;
@@ -23,7 +21,6 @@ const HISTORY = [
 export function InventoryScreen({ products }: { products: Product[] }) {
   const [query, setQuery] = useState("");
   const [drawerId, setDrawerId] = useState<string | null>(null);
-  const stockDeductions = useShop((s) => s.stockDeductions);
 
   const q = query.trim().toLowerCase();
   const rows = useMemo(
@@ -102,7 +99,7 @@ export function InventoryScreen({ products }: { products: Product[] }) {
             </thead>
             <tbody>
               {rows.map((p, i) => {
-                const s1 = computeEffectiveStock(p.id, p.stock, stockDeductions);
+                const s1 = p.stock;
                 const s2 = Math.max(0, Math.round(p.stock * 0.4));
                 const s3 = Math.round(p.stock * 0.25) + 2;
                 return (
@@ -232,8 +229,7 @@ function PageBtn({ children, active, disabled }: { children: React.ReactNode; ac
 }
 
 function EditDrawer({ product: p, onClose }: { product: Product; onClose: () => void }) {
-  const stockDeductions = useShop((s) => s.stockDeductions);
-  const s1 = computeEffectiveStock(p.id, p.stock, stockDeductions);
+  const s1 = p.stock;
   const s2 = Math.round(p.stock * 0.4);
   const s3 = Math.round(p.stock * 0.25) + 2;
   const stocks = [

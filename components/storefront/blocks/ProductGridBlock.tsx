@@ -3,15 +3,12 @@
 import Link from "next/link";
 import { fonts, colors } from "@/lib/theme/tokens";
 import { newestProducts } from "@/lib/data/catalog";
-import { useShop } from "@/lib/store/useShop";
 import { useStorefront } from "@/lib/store/useStorefront";
-import { computeEffectiveStock } from "@/lib/store/shopLogic";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import type { Product } from "@/lib/data/types";
 import { BlockFrame } from "./BlockFrame";
 
 export function ProductGridBlock({ products = [] }: { products?: Product[] }) {
-  const stockDeductions = useShop((s) => s.stockDeductions);
   const addToCart = useStorefront((s) => s.addToCart);
   const showToast = useStorefront((s) => s.showToast);
   const featured = newestProducts(products, 4);
@@ -38,7 +35,7 @@ export function ProductGridBlock({ products = [] }: { products?: Product[] }) {
               <ProductCard
                 key={p.id}
                 product={p}
-                stock={computeEffectiveStock(p.id, p.stock, stockDeductions)}
+                stock={p.stock}
                 onAdd={() => {
                   addToCart({ productId: p.id, name: p.name, variant: p.lengths[0], colorHex: p.colors[0], price: p.price });
                   showToast("Ajouté au panier", "success");

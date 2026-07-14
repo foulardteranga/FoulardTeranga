@@ -4,22 +4,19 @@ import Link from "next/link";
 import { fonts, colors } from "@/lib/theme/tokens";
 import { stripe } from "@/lib/theme/storefront";
 import { featuredProduct } from "@/lib/data/catalog";
-import { useShop } from "@/lib/store/useShop";
 import { useStorefront } from "@/lib/store/useStorefront";
-import { computeEffectiveStock } from "@/lib/store/shopLogic";
 import { money } from "@/lib/format";
 import type { Product } from "@/lib/data/types";
 import { BlockFrame } from "./BlockFrame";
 
 export function FeaturedProductBlock({ products = [] }: { products?: Product[] }) {
   const product = featuredProduct(products);
-  const stockDeductions = useShop((s) => s.stockDeductions);
   const addToCart = useStorefront((s) => s.addToCart);
   const showToast = useStorefront((s) => s.showToast);
 
   if (!product) return null;
 
-  const stock = computeEffectiveStock(product.id, product.stock, stockDeductions);
+  const stock = product.stock;
 
   return (
     <BlockFrame id="featured">

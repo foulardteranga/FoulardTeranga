@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import { fonts, colors } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { stripe } from "@/lib/theme/storefront";
-import { useShop } from "@/lib/store/useShop";
-import { computeEffectiveStock } from "@/lib/store/shopLogic";
 import { useStorefront } from "@/lib/store/useStorefront";
 import { money, fmt } from "@/lib/format";
 import { Breadcrumb } from "@/components/storefront/Breadcrumb";
@@ -29,11 +27,10 @@ export function ProductView({ product, related }: { product: Product; related: P
   const [qty, setQty] = useState(1);
   const [fav, setFav] = useState(false);
 
-  const stockDeductions = useShop((s) => s.stockDeductions);
   const addToCart = useStorefront((s) => s.addToCart);
   const showToast = useStorefront((s) => s.showToast);
 
-  const stock = computeEffectiveStock(product.id, product.stock, stockDeductions);
+  const stock = product.stock;
   const soldOut = stock <= 0;
   const variant = product.lengths[lenIdx];
 
@@ -164,7 +161,7 @@ export function ProductView({ product, related }: { product: Product; related: P
               <ProductCard
                 key={p.id}
                 product={p}
-                stock={computeEffectiveStock(p.id, p.stock, stockDeductions)}
+                stock={p.stock}
                 onAdd={() => {
                   addToCart({ productId: p.id, name: p.name, variant: p.lengths[0], colorHex: p.colors[0], price: p.price });
                   showToast("Ajouté au panier", "success");
