@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db/client";
+import { Prisma } from "@/lib/generated/prisma/client";
 import { getCurrentTenant } from "@/lib/tenant";
 import { kycSchema, type KycInput } from "@/lib/validators/kyc";
 import { buildOrderLines, type WebCartLineInput } from "./buildOrderLines";
@@ -68,15 +69,16 @@ export async function confirmOrder(ref: string): Promise<{ ok: true } | { ok: fa
         });
       }
       await tx.order.update({ where: { id: order.id }, data: { status: "confirmee" } });
-    });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
     revalidatePath("/admin/commandes");
     revalidatePath("/admin/tableau-de-bord");
     revalidatePath("/admin/inventaire");
     return { ok: true };
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Une erreur est survenue, réessayez.";
-    return { ok: false, error: message };
+    const message = err instanceof Error ? err.message : "";
+    const known = message === "Commande introuvable." || message.startsWith("Stock insuffisant pour ");
+    return { ok: false, error: known ? message : "Une erreur est survenue, réessayez." };
   }
 }
 
