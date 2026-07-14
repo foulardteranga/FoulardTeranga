@@ -9,7 +9,7 @@ import { Breadcrumb } from "@/components/storefront/Breadcrumb";
 import { LoyaltyBadge } from "@/components/storefront/LoyaltyBadge";
 import { stripe } from "@/lib/theme/storefront";
 import { useStorefront } from "@/lib/store/useStorefront";
-import { useShop, type WebCartLine } from "@/lib/store/useShop";
+import { submitWebOrder } from "@/lib/orders/actions";
 import { validateKyc, type KycFieldErrors } from "@/lib/validators/kyc";
 import { cartSubtotal } from "@/lib/store/cartLogic";
 import { money, fmt } from "@/lib/format";
@@ -23,9 +23,9 @@ export function CheckoutView() {
   const setSending = useStorefront((s) => s.setSending);
   const clearCart = useStorefront((s) => s.clearCart);
   const resetKyc = useStorefront((s) => s.resetKyc);
-  const submitWebOrder = useShop((s) => s.submitWebOrder);
 
   const [errors, setErrors] = useState<KycFieldErrors>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const subtotal = cartSubtotal(cart);
 
   if (cart.length === 0) {
@@ -37,30 +37,27 @@ export function CheckoutView() {
     );
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const result = validateKyc(kyc);
     if (!result.ok) {
       setErrors(result.errors);
       return;
     }
     setErrors({});
+    setSubmitError(null);
     setSending(true);
 
-    const lines: WebCartLine[] = cart.map((l) => ({
-      productId: l.productId,
-      name: l.name,
-      variant: l.variant,
-      price: l.price,
-      qty: l.qty,
-    }));
+    const lines = cart.map((l) => ({ productId: l.productId, qty: l.qty }));
+    const response = await submitWebOrder(result.data, lines);
 
-    setTimeout(() => {
-      const order = submitWebOrder(result.data, lines);
-      setSending(false);
-      clearCart();
-      resetKyc();
-      router.push(`/confirmation?ref=${encodeURIComponent(order.id)}`);
-    }, 600);
+    setSending(false);
+    if (!response.ok) {
+      setSubmitError(response.error);
+      return;
+    }
+    clearCart();
+    resetKyc();
+    router.push(`/confirmation?ref=${encodeURIComponent(response.ref)}`);
   };
 
   return (
@@ -81,6 +78,13 @@ export function CheckoutView() {
               La gérante vous contactera pour confirmer votre commande, le mode de livraison et le paiement.
             </span>
           </div>
+
+          {submitError && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#F8E5E3", borderRadius: 12, padding: "14px 16px", marginBottom: 24 }}>
+              <Icon path={ICONS.info} size={20} stroke="#9c352d" strokeWidth={1.75} style={{ flex: "none" }} />
+              <span style={{ fontSize: 13.5, color: "#9c352d", fontWeight: 500, lineHeight: 1.45 }}>{submitError}</span>
+            </div>
+          )}
 
           <Field label="Nom complet *" error={errors.name}>
             <input value={kyc.name} onChange={(e) => setKycField("name", e.target.value)} placeholder="Ex. Aya Koffi" style={inputStyle(!!errors.name)} />

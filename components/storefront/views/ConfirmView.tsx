@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { fonts, colors } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
-import { useShop } from "@/lib/store/useShop";
+import type { Order } from "@/lib/data/types";
 
 const STEPS = [
   { title: "En attente de confirmation", desc: "Nous avons bien reçu votre demande." },
@@ -13,12 +12,15 @@ const STEPS = [
   { title: "Livrée", desc: "Remise en main propre ou par livreur." },
 ];
 
-export function ConfirmView() {
-  const searchParams = useSearchParams();
-  const ref = searchParams.get("ref") ?? "#TER-0000";
-  const orders = useShop((s) => s.orders);
-  const order = orders.find((o) => o.id === ref);
-  const name = order?.client ?? "";
+export function ConfirmView({ order }: { order: Order | null }) {
+  if (!order) {
+    return (
+      <div className="ft-store-page" style={{ maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
+        <p style={{ color: colors.muted, marginBottom: 12 }}>Commande introuvable.</p>
+        <Link href="/catalogue" style={{ color: colors.primary, fontWeight: 600 }}>Découvrir la boutique →</Link>
+      </div>
+    );
+  }
 
   return (
     <div className="ft-store-page" style={{ maxWidth: 720, margin: "0 auto" }}>
@@ -30,10 +32,10 @@ export function ConfirmView() {
           Demande envoyée !
         </h1>
         <p style={{ fontSize: 15, color: colors.muted, margin: "0 auto 6px", maxWidth: 420, lineHeight: 1.55 }}>
-          Merci {name}. La gérante vous contactera très vite pour confirmer votre commande.
+          Merci {order.client}. La gérante vous contactera très vite pour confirmer votre commande.
         </p>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8, font: `600 13px ${fonts.ui}`, color: colors.primary, background: colors.bgInfo, padding: "6px 14px", borderRadius: 999, marginTop: 8 }}>
-          Commande {ref}
+          Commande {order.id}
         </div>
       </div>
 
