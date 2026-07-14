@@ -1,4 +1,3 @@
-import { catalog } from "@/lib/data/catalog";
 import { fmt, money } from "@/lib/format";
 import type { Order, OrderLine, OrderStatus } from "@/lib/data/types";
 import type { KycInput } from "@/lib/validators/kyc";
@@ -21,11 +20,9 @@ export function countPending(orders: Order[], overrides: Record<string, OrderSta
 }
 
 /** Stock effectif = stock de base moins les déductions déjà appliquées (jamais négatif). */
-export function computeEffectiveStock(productId: string, deductions: Record<string, number>): number {
-  const product = catalog.find((p) => p.id === productId);
-  if (!product) return 0;
+export function computeEffectiveStock(productId: string, baseStock: number, deductions: Record<string, number>): number {
   const deducted = deductions[productId] ?? 0;
-  return Math.max(0, product.stock - deducted);
+  return Math.max(0, baseStock - deducted);
 }
 
 /** Construit une commande Web en attente. Le total est recalculé ici — jamais reçu du client. */

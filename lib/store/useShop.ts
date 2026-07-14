@@ -10,7 +10,6 @@ import {
   applyConfirmOnce,
   buildWebOrder,
   computeEffectiveStatus,
-  computeEffectiveStock,
   countPending,
   type WebCartLine,
 } from "./shopLogic";
@@ -25,7 +24,6 @@ interface ShopState {
   autoValidate: boolean;
 
   effectiveStatus: (orderId: string) => OrderStatus;
-  effectiveStock: (productId: string) => number;
   pendingCount: () => number;
 
   submitWebOrder: (kyc: KycInput, cartLines: WebCartLine[]) => Order;
@@ -62,8 +60,6 @@ export const useShop = create<ShopState>()(
         const order = s.orders.find((o) => o.id === orderId);
         return order ? computeEffectiveStatus(order, s.statusOverrides) : "nouvelle";
       },
-
-      effectiveStock: (productId) => computeEffectiveStock(productId, get().stockDeductions),
 
       pendingCount: () => countPending(get().orders, get().statusOverrides),
 

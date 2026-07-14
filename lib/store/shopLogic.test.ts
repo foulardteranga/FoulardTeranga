@@ -35,19 +35,19 @@ describe("countPending", () => {
 
 describe("computeEffectiveStock", () => {
   it("returns the base stock with no deduction", () => {
-    expect(computeEffectiveStock("p1", {})).toBe(24);
+    expect(computeEffectiveStock("p1", 24, {})).toBe(24);
   });
 
   it("subtracts a recorded deduction", () => {
-    expect(computeEffectiveStock("p1", { p1: 10 })).toBe(14);
+    expect(computeEffectiveStock("p1", 24, { p1: 10 })).toBe(14);
   });
 
   it("clamps at zero if the deduction exceeds stock", () => {
-    expect(computeEffectiveStock("p1", { p1: 999 })).toBe(0);
+    expect(computeEffectiveStock("p1", 24, { p1: 999 })).toBe(0);
   });
 
-  it("returns 0 for an unknown product id", () => {
-    expect(computeEffectiveStock("nope", {})).toBe(0);
+  it("ignores deductions recorded under a different product id", () => {
+    expect(computeEffectiveStock("p1", 24, { p9: 999 })).toBe(24);
   });
 });
 
