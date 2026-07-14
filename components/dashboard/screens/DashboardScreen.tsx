@@ -4,11 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
-import type { Product } from "@/lib/data/types";
-import { computeEffectiveStatus, computeEffectiveStock } from "@/lib/store/shopLogic";
+import type { Order, Product } from "@/lib/data/types";
 import { money } from "@/lib/format";
 import { initials } from "@/lib/format";
-import { useShop } from "@/lib/store/useShop";
 
 const KPIS = [
   { label: "CA du jour", value: "248 000", unit: "FCFA", delta: "+18%", sub: "vs hier", up: true, icon: ICONS.trendUp },
@@ -23,13 +21,10 @@ const T30: Array<[string, number]> = [
   ["S1", 940], ["S2", 1120], ["S3", 870], ["S4", 1340],
 ];
 
-export function DashboardScreen({ products }: { products: Product[] }) {
+export function DashboardScreen({ products, orders }: { products: Product[]; orders: Order[] }) {
   const router = useRouter();
   const [booting, setBooting] = useState(true);
   const [range, setRange] = useState<"7" | "30">("7");
-  const orders = useShop((s) => s.orders);
-  const overrides = useShop((s) => s.statusOverrides);
-  const stockDeductions = useShop((s) => s.stockDeductions);
 
   useEffect(() => {
     const t = setTimeout(() => setBooting(false), 750);
@@ -46,12 +41,10 @@ export function DashboardScreen({ products }: { products: Product[] }) {
     }));
   }, [range]);
 
-  const lowStockAlerts = products
-    .map((p) => ({ ...p, effectiveStock: computeEffectiveStock(p.id, p.stock, stockDeductions) }))
-    .filter((p) => p.effectiveStock <= 9);
+  const lowStockAlerts = products.filter((p) => p.stock <= 9);
   const lowStock = lowStockAlerts.slice(0, 4);
   const lowStockCount = lowStockAlerts.length;
-  const nouvelles = orders.filter((o) => computeEffectiveStatus(o, overrides) === "nouvelle");
+  const nouvelles = orders.filter((o) => o.status === "nouvelle");
   const toValidate = nouvelles.slice(0, 3);
 
   if (booting) {
@@ -224,8 +217,8 @@ export function DashboardScreen({ products }: { products: Product[] }) {
                 <div style={ellip}>{s.name}</div>
                 <div style={{ fontSize: 12, color: colors.muted }}>Seuil 10 · {s.variant}</div>
               </div>
-              <span style={{ font: `700 13px ${fonts.ui}`, color: s.effectiveStock <= 5 ? colors.danger : colors.warning }}>
-                {s.effectiveStock}
+              <span style={{ font: `700 13px ${fonts.ui}`, color: s.stock <= 5 ? colors.danger : colors.warning }}>
+                {s.stock}
               </span>
             </div>
           ))}
