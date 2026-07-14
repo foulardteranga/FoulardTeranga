@@ -40,6 +40,13 @@ export interface Customer {
   seg: CustomerSegment;
 }
 
+/** Une ligne de l'historique d'achats affiché sur une fiche cliente (dashboard) ou la page Compte (vitrine). */
+export interface CustomerOrderHistoryEntry {
+  ref: string;
+  date: string;
+  total: string;
+}
+
 export type OrderStatus =
   | "nouvelle"
   | "confirmee"
