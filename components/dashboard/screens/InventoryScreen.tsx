@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
-import { catalog } from "@/lib/data/catalog";
 import { money } from "@/lib/format";
 import type { Product } from "@/lib/data/types";
 import { useShop } from "@/lib/store/useShop";
@@ -21,7 +20,7 @@ const HISTORY = [
   { date: "01/07", type: "Ajustement inventaire", qty: "−1", color: colors.fgDanger },
 ];
 
-export function InventoryScreen() {
+export function InventoryScreen({ products }: { products: Product[] }) {
   const [query, setQuery] = useState("");
   const [drawerId, setDrawerId] = useState<string | null>(null);
   const stockDeductions = useShop((s) => s.stockDeductions);
@@ -29,13 +28,13 @@ export function InventoryScreen() {
   const q = query.trim().toLowerCase();
   const rows = useMemo(
     () =>
-      catalog.filter(
+      products.filter(
         (p) => !q || p.name.toLowerCase().includes(q) || p.id.toLowerCase().includes(q)
       ),
-    [q]
+    [products, q]
   );
 
-  const drawerProduct = drawerId ? catalog.find((p) => p.id === drawerId) ?? null : null;
+  const drawerProduct = drawerId ? products.find((p) => p.id === drawerId) ?? null : null;
 
   return (
     <div className="ft-pad">
@@ -103,7 +102,7 @@ export function InventoryScreen() {
             </thead>
             <tbody>
               {rows.map((p, i) => {
-                const s1 = computeEffectiveStock(p.id, stockDeductions);
+                const s1 = computeEffectiveStock(p.id, p.stock, stockDeductions);
                 const s2 = Math.max(0, Math.round(p.stock * 0.4));
                 const s3 = Math.round(p.stock * 0.25) + 2;
                 return (
@@ -151,7 +150,7 @@ export function InventoryScreen() {
           }}
         >
           <span style={{ fontSize: 12.5, color: colors.muted }}>
-            {rows.length} produits · {catalog.length} au total
+            {rows.length} produits · {products.length} au total
           </span>
           <div style={{ display: "flex", gap: 6 }}>
             <PageBtn disabled>‹</PageBtn>
@@ -234,7 +233,7 @@ function PageBtn({ children, active, disabled }: { children: React.ReactNode; ac
 
 function EditDrawer({ product: p, onClose }: { product: Product; onClose: () => void }) {
   const stockDeductions = useShop((s) => s.stockDeductions);
-  const s1 = computeEffectiveStock(p.id, stockDeductions);
+  const s1 = computeEffectiveStock(p.id, p.stock, stockDeductions);
   const s2 = Math.round(p.stock * 0.4);
   const s3 = Math.round(p.stock * 0.25) + 2;
   const stocks = [
