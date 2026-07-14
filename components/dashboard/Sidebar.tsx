@@ -6,7 +6,6 @@ import { colors, fonts } from "@/lib/theme/tokens";
 import { NAV } from "@/lib/nav";
 import { Icon } from "@/components/ui/Icon";
 import { useBackoffice } from "@/lib/store/useBackoffice";
-import { useNewOrdersCount } from "@/lib/store/useNewOrdersCount";
 import { initials } from "@/lib/format";
 import { signOut } from "@/lib/auth/actions";
 import type { Session } from "@/lib/auth";
@@ -18,11 +17,10 @@ const ROLE_LABELS: Record<Session["role"], string> = {
   customer: "Cliente",
 };
 
-export function Sidebar({ session }: { session: Session | null }) {
+export function Sidebar({ session, pendingCount }: { session: Session | null; pendingCount: number }) {
   const pathname = usePathname();
   const offline = useBackoffice((s) => s.offline);
   const toggleOffline = useBackoffice((s) => s.toggleOffline);
-  const ordersBadge = useNewOrdersCount();
 
   return (
     <aside
@@ -78,7 +76,7 @@ export function Sidebar({ session }: { session: Session | null }) {
       <nav style={{ display: "flex", flexDirection: "column", gap: 2, overflowY: "auto" }}>
         {NAV.map((n) => {
           const active = pathname === n.href;
-          const badge = n.ordersBadge ? ordersBadge : 0;
+          const badge = n.ordersBadge ? pendingCount : 0;
           return (
             <Link
               key={n.id}

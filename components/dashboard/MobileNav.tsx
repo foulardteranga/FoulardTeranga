@@ -5,17 +5,15 @@ import { colors, fonts } from "@/lib/theme/tokens";
 import { NAV, MORE_ROUTES } from "@/lib/nav";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { useBackoffice } from "@/lib/store/useBackoffice";
-import { useNewOrdersCount } from "@/lib/store/useNewOrdersCount";
 
 const TAB_IDS = ["pos", "dash", "orders", "inv"];
 
-export function MobileNav() {
+export function MobileNav({ pendingCount }: { pendingCount: number }) {
   const router = useRouter();
   const pathname = usePathname();
   const moreOpen = useBackoffice((s) => s.moreOpen);
   const openMore = useBackoffice((s) => s.openMore);
   const closeMore = useBackoffice((s) => s.closeMore);
-  const ordersBadge = useNewOrdersCount();
 
   const tabs = TAB_IDS.map((id) => NAV.find((n) => n.id === id)!);
   const moreItems = MORE_ROUTES.map((id) => NAV.find((n) => n.id === id)!);
@@ -43,7 +41,7 @@ export function MobileNav() {
       >
         {tabs.map((t) => {
           const active = pathname === t.href;
-          const badge = t.ordersBadge ? ordersBadge : 0;
+          const badge = t.ordersBadge ? pendingCount : 0;
           return (
             <button
               key={t.id}

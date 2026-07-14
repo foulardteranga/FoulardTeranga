@@ -12,7 +12,7 @@ export function ProductCard({
   onAdd,
 }: {
   product: Product;
-  /** Stock effectif (post-déduction) — calculé par l'appelant via useShop.effectiveStock. */
+  /** Stock disponible du produit, transmis par l'appelant. */
   stock: number;
   onAdd: () => void;
 }) {
