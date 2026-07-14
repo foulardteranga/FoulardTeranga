@@ -1,10 +1,22 @@
 import { fonts, colors } from "@/lib/theme/tokens";
-import { clients, customerHistory } from "@/lib/data/clients";
 import { initials } from "@/lib/format";
+import type { Customer, CustomerOrderHistoryEntry } from "@/lib/data/types";
 
-const account = clients[0];
+export function AccountView({
+  account,
+  history,
+}: {
+  account: Customer | null;
+  history: CustomerOrderHistoryEntry[];
+}) {
+  if (!account) {
+    return (
+      <div className="ft-store-page" style={{ maxWidth: 920, margin: "0 auto", textAlign: "center", padding: "60px 20px", color: colors.muted }}>
+        Aucune donnée cliente disponible pour l&apos;instant.
+      </div>
+    );
+  }
 
-export function AccountView() {
   return (
     <div className="ft-store-page" style={{ maxWidth: 920, margin: "0 auto" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 22 }}>
@@ -54,17 +66,21 @@ export function AccountView() {
 
       <div style={{ background: "#fff", border: "1px solid rgba(30,27,24,.08)", borderRadius: 16, padding: "22px 24px" }}>
         <div style={{ font: `600 15px ${fonts.ui}`, marginBottom: 16 }}>Historique des commandes</div>
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          {customerHistory.map((o, i) => (
-            <div key={o.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 0", borderTop: i === 0 ? "none" : "1px solid #EFEAE0" }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ font: `600 14px ${fonts.ui}` }}>{o.id}</div>
-                <div style={{ fontSize: 12.5, color: colors.muted }}>{o.date}</div>
+        {history.length === 0 ? (
+          <div style={{ fontSize: 13.5, color: colors.muted, padding: "8px 0" }}>Aucune commande confirmée pour l&apos;instant.</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {history.map((o, i) => (
+              <div key={o.ref} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 0", borderTop: i === 0 ? "none" : "1px solid #EFEAE0" }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ font: `600 14px ${fonts.ui}` }}>{o.ref}</div>
+                  <div style={{ fontSize: 12.5, color: colors.muted }}>{o.date}</div>
+                </div>
+                <div style={{ font: `700 15px ${fonts.ui}`, color: colors.primary }}>{o.total}</div>
               </div>
-              <div style={{ font: `700 15px ${fonts.ui}`, color: colors.primary }}>{o.total}</div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
