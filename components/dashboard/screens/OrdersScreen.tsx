@@ -4,10 +4,9 @@ import { useState } from "react";
 import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { statusMeta } from "@/lib/data/orderStatus";
-import { computeEffectiveStatus } from "@/lib/store/shopLogic";
 import { initials } from "@/lib/format";
 import { useBackoffice } from "@/lib/store/useBackoffice";
-import { useShop } from "@/lib/store/useShop";
+import { confirmOrder, rejectOrder } from "@/lib/orders/actions";
 import type { Order, OrderStatus } from "@/lib/data/types";
 
 const FILTERS: Array<[string, string, OrderStatus | null]> = [
@@ -19,26 +18,20 @@ const FILTERS: Array<[string, string, OrderStatus | null]> = [
   ["all", "Toutes", null],
 ];
 
-export function OrdersScreen({ initialSel }: { initialSel?: string }) {
+export function OrdersScreen({ orders, initialSel }: { orders: Order[]; initialSel?: string }) {
   const [filter, setFilter] = useState<string>("toValidate");
   const [selId, setSelId] = useState<string | null>(initialSel ?? null);
 
-  const orders = useShop((s) => s.orders);
-  const overrides = useShop((s) => s.statusOverrides);
-  const autoValidate = useShop((s) => s.autoValidate);
-  const toggleAuto = useShop((s) => s.toggleAuto);
-  const confirmOrder = useShop((s) => s.confirmOrder);
-  const rejectOrder = useShop((s) => s.rejectOrder);
   const showToast = useBackoffice((s) => s.showToast);
 
   const cur = FILTERS.find((f) => f[0] === filter)!;
-  const list = orders.filter((o) => (filter === "all" ? true : computeEffectiveStatus(o, overrides) === cur[2]));
+  const list = orders.filter((o) => (filter === "all" ? true : o.status === cur[2]));
 
   const selected: Order | undefined =
     orders.find((o) => o.id === selId) ?? list[0] ?? orders[0];
 
   const count = (st: OrderStatus | null) =>
-    st === null ? orders.length : orders.filter((o) => computeEffectiveStatus(o, overrides) === st).length;
+    st === null ? orders.length : orders.filter((o) => o.status === st).length;
 
   return (
     <div className="ft-pad">
@@ -59,36 +52,8 @@ export function OrdersScreen({ initialSel }: { initialSel?: string }) {
       >
         <Icon path={ICONS.info} size={18} stroke={colors.primary} strokeWidth={1.8} style={{ flex: "none" }} />
         <span style={{ flex: 1 }}>
-          Le stock n&apos;est déduit qu&apos;à la <strong>validation</strong> d&apos;une commande.{" "}
+          Le stock n&apos;est déduit qu&apos;à la <strong>validation</strong> d&apos;une commande.
         </span>
-        <label style={{ display: "flex", alignItems: "center", gap: 9, cursor: "pointer", flex: "none" }}>
-          <span style={{ fontWeight: 600, fontSize: 12.5 }}>Validation auto</span>
-          <span
-            onClick={toggleAuto}
-            style={{
-              width: 44,
-              height: 26,
-              borderRadius: 999,
-              position: "relative",
-              background: autoValidate ? colors.success : colors.borderField,
-              transition: "background .15s",
-            }}
-          >
-            <span
-              style={{
-                position: "absolute",
-                top: 3,
-                width: 20,
-                height: 20,
-                borderRadius: 999,
-                background: "#fff",
-                boxShadow: "0 1px 2px rgba(0,0,0,.2)",
-                transition: "left .15s",
-                left: autoValidate ? 21 : 3,
-              }}
-            />
-          </span>
-        </label>
       </div>
 
       {/* filter tabs */}
@@ -168,7 +133,7 @@ export function OrdersScreen({ initialSel }: { initialSel?: string }) {
             </div>
           ) : (
             list.map((o) => {
-              const st = statusMeta[computeEffectiveStatus(o, overrides)];
+              const st = statusMeta[o.status];
               return (
                 <div
                   key={o.id}
@@ -220,13 +185,15 @@ export function OrdersScreen({ initialSel }: { initialSel?: string }) {
           >
             <OrderDetail
               order={selected}
-              status={computeEffectiveStatus(selected, overrides)}
-              onValidate={() => {
-                confirmOrder(selected.id);
+              status={selected.status}
+              onValidate={async () => {
+                const result = await confirmOrder(selected.id);
+                if (!result.ok) { showToast(result.error, "error"); return; }
                 showToast("Commande validée — stock déduit", "success");
               }}
-              onRefuse={() => {
-                rejectOrder(selected.id);
+              onRefuse={async () => {
+                const result = await rejectOrder(selected.id);
+                if (!result.ok) { showToast(result.error, "error"); return; }
                 showToast("Commande refusée", "error");
               }}
               onEdit={() => showToast("Édition de la commande…", "success")}
