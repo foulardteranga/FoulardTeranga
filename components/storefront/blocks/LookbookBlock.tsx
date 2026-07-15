@@ -11,17 +11,16 @@ const LOOKS = [
 ];
 
 export function LookbookBlock({ settings }: { settings: LookSettings }) {
-  void settings;
   return (
     <BlockFrame id="look">
       <section className="ft-store-section">
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 22 }}>
             <div style={{ font: `600 12px ${fonts.ui}`, letterSpacing: ".1em", color: colors.gold, textTransform: "uppercase", marginBottom: 6 }}>
-              Lookbook
+              {settings.eyebrow}
             </div>
             <h2 className="ft-store-h2" style={{ fontFamily: fonts.display, fontWeight: 600, margin: 0, letterSpacing: "-.01em" }}>
-              Portées avec style
+              {settings.title}
             </h2>
           </div>
           <div className="ft-store-look-grid" style={{ display: "grid", gap: 12 }}>

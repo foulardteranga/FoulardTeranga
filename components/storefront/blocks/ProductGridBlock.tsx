@@ -10,7 +10,6 @@ import type { GridSettings } from "@/lib/storefront/blockSettings";
 import { BlockFrame } from "./BlockFrame";
 
 export function ProductGridBlock({ settings, products = [] }: { settings: GridSettings; products?: Product[] }) {
-  void settings;
   const addToCart = useStorefront((s) => s.addToCart);
   const showToast = useStorefront((s) => s.showToast);
   const featured = newestProducts(products, 4);
@@ -25,7 +24,7 @@ export function ProductGridBlock({ settings, products = [] }: { settings: GridSe
                 À la une
               </div>
               <h2 className="ft-store-h2" style={{ fontFamily: fonts.display, fontWeight: 600, margin: 0, letterSpacing: "-.01em" }}>
-                Nouveautés &amp; best-sellers
+                {settings.title}
               </h2>
             </div>
             <Link href="/catalogue" style={{ font: `600 14px ${fonts.ui}`, color: colors.primary, whiteSpace: "nowrap" }}>

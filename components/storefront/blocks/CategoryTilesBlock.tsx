@@ -13,11 +13,15 @@ const TILE_COLOR: Record<string, string> = {
 };
 
 export function CategoryTilesBlock({ settings, products = [] }: { settings: CatsSettings; products?: Product[] }) {
-  void settings;
   return (
     <BlockFrame id="cats">
       <section className="ft-store-section-tight">
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          {settings.title.trim() !== "" && (
+            <h2 className="ft-store-h2" style={{ fontFamily: fonts.display, fontWeight: 600, margin: "0 0 14px", letterSpacing: "-.01em" }}>
+              {settings.title}
+            </h2>
+          )}
           <div className="ft-store-cats" style={{ display: "grid", gap: 14 }}>
             {storefrontCategories.map((cat) => {
               const count = products.filter((p) => p.cat === cat).length;

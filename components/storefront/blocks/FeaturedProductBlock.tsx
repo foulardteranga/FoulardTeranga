@@ -11,7 +11,6 @@ import type { FeaturedSettings } from "@/lib/storefront/blockSettings";
 import { BlockFrame } from "./BlockFrame";
 
 export function FeaturedProductBlock({ settings, products = [] }: { settings: FeaturedSettings; products?: Product[] }) {
-  void settings;
   const product = featuredProduct(products);
   const addToCart = useStorefront((s) => s.addToCart);
   const showToast = useStorefront((s) => s.showToast);
@@ -32,7 +31,7 @@ export function FeaturedProductBlock({ settings, products = [] }: { settings: Fe
             </div>
             <div className="ft-store-feat-pad" style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
               <div style={{ font: `600 12px ${fonts.ui}`, letterSpacing: ".1em", color: colors.gold, textTransform: "uppercase", marginBottom: 10 }}>
-                Édition limitée
+                {settings.eyebrow}
               </div>
               <h3 className="ft-store-feat-title" style={{ fontFamily: fonts.display, fontWeight: 600, lineHeight: 1.1, margin: "0 0 10px" }}>
                 {product.name}
@@ -47,7 +46,7 @@ export function FeaturedProductBlock({ settings, products = [] }: { settings: Fe
                   href={`/produit/${product.id}`}
                   style={{ height: 48, padding: "0 26px", borderRadius: 10, background: colors.primary, color: "#fff", font: `600 15px ${fonts.ui}`, display: "flex", alignItems: "center" }}
                 >
-                  Voir le produit
+                  {settings.ctaLabel}
                 </Link>
                 <button
                   onClick={() => {
