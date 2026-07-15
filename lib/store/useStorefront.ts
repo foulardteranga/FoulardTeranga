@@ -32,11 +32,6 @@ interface StorefrontState {
   toast: { msg: string; type: ToastType } | null;
   menuOpen: boolean;
 
-  blocksMode: boolean;
-  blockOrder: BlockId[];
-  blockHidden: Partial<Record<BlockId, boolean>>;
-  blockNames: Record<BlockId, string>;
-
   kyc: KycForm;
   kycTouched: boolean;
   sending: boolean;
@@ -50,11 +45,6 @@ interface StorefrontState {
   showToast: (msg: string, type?: ToastType) => void;
   openMenu: () => void;
   closeMenu: () => void;
-
-  toggleBlocksMode: () => void;
-  moveBlock: (id: BlockId, dir: -1 | 1) => void;
-  toggleHideBlock: (id: BlockId) => void;
-  renameBlock: (id: BlockId, name: string) => void;
 
   setKycField: (field: keyof KycForm, value: string | boolean) => void;
   markKycTouched: () => void;
@@ -71,11 +61,6 @@ export const useStorefront = create<StorefrontState>()(
       offline: false,
       toast: null,
       menuOpen: false,
-
-      blocksMode: false,
-      blockOrder: DEFAULT_BLOCK_ORDER,
-      blockHidden: {},
-      blockNames: DEFAULT_BLOCK_NAMES,
 
       kyc: EMPTY_KYC,
       kycTouched: false,
@@ -102,22 +87,6 @@ export const useStorefront = create<StorefrontState>()(
       openMenu: () => set({ menuOpen: true }),
       closeMenu: () => set({ menuOpen: false }),
 
-      toggleBlocksMode: () => set((s) => ({ blocksMode: !s.blocksMode })),
-
-      moveBlock: (id, dir) =>
-        set((s) => {
-          const order = [...s.blockOrder];
-          const i = order.indexOf(id);
-          const j = i + dir;
-          if (i < 0 || j < 0 || j >= order.length) return {};
-          [order[i], order[j]] = [order[j], order[i]];
-          return { blockOrder: order };
-        }),
-
-      toggleHideBlock: (id) => set((s) => ({ blockHidden: { ...s.blockHidden, [id]: !s.blockHidden[id] } })),
-
-      renameBlock: (id, name) => set((s) => ({ blockNames: { ...s.blockNames, [id]: name } })),
-
       setKycField: (field, value) => set((s) => ({ kyc: { ...s.kyc, [field]: value } })),
       markKycTouched: () => set({ kycTouched: true }),
       setSending: (sending) => set({ sending }),
@@ -129,9 +98,6 @@ export const useStorefront = create<StorefrontState>()(
       skipHydration: true,
       partialize: (s) => ({
         cart: s.cart,
-        blockOrder: s.blockOrder,
-        blockHidden: s.blockHidden,
-        blockNames: s.blockNames,
       }),
     }
   )
