@@ -41,20 +41,30 @@ enum OrderChannel {
   Boutique
 }
 
-model Tenant {
-  id           String   @id @default(cuid())
-  slug         String   @unique
-  name         String
-  primaryColor String
-  accentColor  String
-  logoText     String
-  domains      String[]
-  createdAt    DateTime @default(now())
+enum NotificationType {
+  nouvelle_commande
+  stock_bas
+  paiement_recu
+}
 
-  profiles  Profile[]
-  products  Product[]
-  customers Customer[]
-  orders    Order[]
+model Tenant {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  name          String
+  tagline       String   @default("")
+  primaryColor  String
+  accentColor   String
+  font          String   @default("Playfair Display")
+  logoText      String
+  whatsappPhone String?
+  domains       String[]
+  createdAt     DateTime @default(now())
+
+  profiles      Profile[]
+  products      Product[]
+  customers     Customer[]
+  orders        Order[]
+  notifications Notification[]
 }
 
 model Profile {
@@ -134,6 +144,21 @@ model Order {
   tenant   Tenant      @relation(fields: [tenantId], references: [id])
   customer Customer?   @relation(fields: [customerId], references: [id])
   lines    OrderLine[]
+
+  @@index([tenantId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  tenantId  String
+  type      NotificationType
+  title     String
+  body      String
+  href      String
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
 
   @@index([tenantId])
 }
