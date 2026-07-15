@@ -13,6 +13,7 @@ import { submitWebOrder } from "@/lib/orders/actions";
 import { validateKyc, type KycFieldErrors } from "@/lib/validators/kyc";
 import { cartSubtotal } from "@/lib/store/cartLogic";
 import { money, fmt } from "@/lib/format";
+import { COUNTRIES, applyCountryDial } from "@/lib/data/countries";
 
 export function CheckoutView() {
   const router = useRouter();
@@ -91,6 +92,24 @@ export function CheckoutView() {
           </Field>
           <Field label="Lieu de livraison *" error={errors.place}>
             <input value={kyc.place} onChange={(e) => setKycField("place", e.target.value)} placeholder="Ex. Plateau, Abidjan — quartier / repère" style={inputStyle(!!errors.place)} />
+          </Field>
+          <Field label="Pays">
+            <select
+              value={kyc.country}
+              onChange={(e) => {
+                const country = COUNTRIES.find((c) => c.name === e.target.value);
+                setKycField("country", e.target.value);
+                if (country) setKycField("phone", applyCountryDial(kyc.phone, country.dial));
+              }}
+              style={inputStyle(false)}
+            >
+              <option value="">Choisir un pays…</option>
+              {COUNTRIES.map((c) => (
+                <option key={c.name} value={c.name}>
+                  {c.name} ({c.dial})
+                </option>
+              ))}
+            </select>
           </Field>
           <Field label="Numéro de contact *" error={errors.phone}>
             <input value={kyc.phone} onChange={(e) => setKycField("phone", e.target.value)} placeholder="Ex. +225 07 12 45 67 89" style={inputStyle(!!errors.phone)} />

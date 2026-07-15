@@ -37,6 +37,13 @@ export async function getCustomers(): Promise<Customer[]> {
   return rows.map(toCustomer);
 }
 
+/** Lit la fiche cliente liée à une session connectée (rattachement fait à l'inscription). */
+export async function getCustomerByProfileId(profileId: string): Promise<Customer | null> {
+  const tenant = await getCurrentTenant();
+  const row = await prisma.customer.findFirst({ where: { profileId, tenantId: tenant.id } });
+  return row ? toCustomer(row) : null;
+}
+
 /** Lit les commandes confirmées d'une cliente, les plus récentes d'abord. */
 export async function getCustomerOrderHistory(customerId: string): Promise<CustomerOrderHistoryEntry[]> {
   const tenant = await getCurrentTenant();

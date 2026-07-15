@@ -39,12 +39,14 @@ export const DEFAULT_BLOCK_NAMES: Record<BlockId, string> = {
 export interface KycForm {
   name: string;
   place: string;
+  /** Pays sélectionné pour préfixer automatiquement l'indicatif téléphonique — non transmis à la commande. */
+  country: string;
   phone: string;
   note: string;
   wa: boolean;
 }
 
-const EMPTY_KYC: KycForm = { name: "", place: "", phone: "", note: "", wa: true };
+const EMPTY_KYC: KycForm = { name: "", place: "", country: "", phone: "", note: "", wa: true };
 
 interface StorefrontState {
   cart: StoreCartLine[];
