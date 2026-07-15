@@ -41,6 +41,12 @@ enum OrderChannel {
   Boutique
 }
 
+enum PaymentMethod {
+  espece
+  mm
+  mixte
+}
+
 enum NotificationType {
   nouvelle_commande
   stock_bas
@@ -128,18 +134,19 @@ model Customer {
 }
 
 model Order {
-  id         String       @id @default(cuid())
-  tenantId   String
-  ref        String       @unique @default(dbgenerated("('#TER-' || nextval('orders_ref_seq'))"))
-  customerId String?
-  clientName String
-  place      String
-  phone      String
-  channel    OrderChannel
-  status     OrderStatus  @default(nouvelle)
-  vipAtOrder Boolean      @default(false)
-  total      Int
-  createdAt  DateTime     @default(now())
+  id            String         @id @default(cuid())
+  tenantId      String
+  ref           String         @unique @default(dbgenerated("('#TER-' || nextval('orders_ref_seq'))"))
+  customerId    String?
+  clientName    String
+  place         String
+  phone         String
+  channel       OrderChannel
+  paymentMethod PaymentMethod?
+  status        OrderStatus    @default(nouvelle)
+  vipAtOrder    Boolean        @default(false)
+  total         Int
+  createdAt     DateTime       @default(now())
 
   tenant   Tenant      @relation(fields: [tenantId], references: [id])
   customer Customer?   @relation(fields: [customerId], references: [id])
@@ -170,6 +177,7 @@ model OrderLine {
   nameAtOrder String
   qty         Int
   unitPrice   Int
+  discount    Int    @default(0)
   lineTotal   Int
 
   order   Order   @relation(fields: [orderId], references: [id])
