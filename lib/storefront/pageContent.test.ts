@@ -34,6 +34,24 @@ describe("parsePageContent", () => {
     const page = defaultPage();
     expect(parsePageContent(JSON.parse(JSON.stringify(page)))).toEqual(page);
   });
+
+  it("remplace par les réglages par défaut un bloc connu dont les settings sont invalides (sans le supprimer)", () => {
+    const parsed = parsePageContent({
+      blocks: [{ type: "hero", name: "X", visible: true, settings: { title: 123 } }],
+    });
+    expect(parsed.blocks).toHaveLength(1);
+    expect(parsed.blocks[0].type).toBe("hero");
+    // settings retombent sur les valeurs par défaut du hero
+    const heroDefault = defaultPage().blocks.find((b) => b.type === "hero")!.settings;
+    expect(parsed.blocks[0].settings).toEqual(heroDefault);
+  });
+
+  it("defaultPage retourne des réglages indépendants à chaque appel (pas de référence partagée)", () => {
+    const a = defaultPage();
+    (a.blocks[0].settings as Record<string, unknown>).title = "MUTÉ";
+    const b = defaultPage();
+    expect((b.blocks[0].settings as Record<string, unknown>).title).not.toBe("MUTÉ");
+  });
 });
 
 describe("réducteurs", () => {
