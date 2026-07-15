@@ -1,9 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { money } from "@/lib/format";
+import { useBackoffice } from "@/lib/store/useBackoffice";
+import { createProduct } from "@/lib/inventory/actions";
+import { PRODUCT_CATEGORIES } from "@/lib/validators/product";
 import type { Product } from "@/lib/data/types";
 
 function lvlDot(v: number, seuil: number): string {
@@ -18,18 +22,27 @@ const HISTORY = [
   { date: "01/07", type: "Ajustement inventaire", qty: "−1", color: colors.fgDanger },
 ];
 
+const PAGE_SIZE = 8;
+
 export function InventoryScreen({ products }: { products: Product[] }) {
   const [query, setQuery] = useState("");
   const [drawerId, setDrawerId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [page, setPage] = useState(1);
+  const router = useRouter();
 
   const q = query.trim().toLowerCase();
-  const rows = useMemo(
+  const filtered = useMemo(
     () =>
       products.filter(
         (p) => !q || p.name.toLowerCase().includes(q) || p.id.toLowerCase().includes(q)
       ),
     [products, q]
   );
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount);
+  const rows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const drawerProduct = drawerId ? products.find((p) => p.id === drawerId) ?? null : null;
 
@@ -54,7 +67,10 @@ export function InventoryScreen({ products }: { products: Product[] }) {
           <Icon path={ICONS.search} size={17} stroke={colors.muted} />
           <input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(1);
+            }}
             placeholder="Rechercher un produit, une référence…"
             style={{ flex: 1, border: "none", outline: "none", font: `400 14px ${fonts.ui}`, background: "transparent" }}
           />
@@ -62,6 +78,7 @@ export function InventoryScreen({ products }: { products: Product[] }) {
         <ToolbarBtn icon={ICONS.download} label="Importer CSV" />
         <ToolbarBtn icon={ICONS.upload} label="Exporter" />
         <button
+          onClick={() => setCreating(true)}
           className="ft-primary-btn"
           style={{
             height: 42,
@@ -147,18 +164,34 @@ export function InventoryScreen({ products }: { products: Product[] }) {
           }}
         >
           <span style={{ fontSize: 12.5, color: colors.muted }}>
-            {rows.length} produits · {products.length} au total
+            {filtered.length} produits · {products.length} au total
           </span>
           <div style={{ display: "flex", gap: 6 }}>
-            <PageBtn disabled>‹</PageBtn>
-            <PageBtn active>1</PageBtn>
-            <PageBtn>2</PageBtn>
-            <PageBtn>›</PageBtn>
+            <PageBtn disabled={safePage <= 1} onClick={() => setPage(safePage - 1)}>
+              ‹
+            </PageBtn>
+            {Array.from({ length: pageCount }, (_, i) => i + 1).map((n) => (
+              <PageBtn key={n} active={n === safePage} onClick={() => setPage(n)}>
+                {n}
+              </PageBtn>
+            ))}
+            <PageBtn disabled={safePage >= pageCount} onClick={() => setPage(safePage + 1)}>
+              ›
+            </PageBtn>
           </div>
         </div>
       </div>
 
       {drawerProduct && <EditDrawer product={drawerProduct} onClose={() => setDrawerId(null)} />}
+      {creating && (
+        <NewProductDrawer
+          onClose={() => setCreating(false)}
+          onCreated={() => {
+            setCreating(false);
+            router.refresh();
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -207,10 +240,21 @@ function ToolbarBtn({ icon, label }: { icon: string; label: string }) {
   );
 }
 
-function PageBtn({ children, active, disabled }: { children: React.ReactNode; active?: boolean; disabled?: boolean }) {
+function PageBtn({
+  children,
+  active,
+  disabled,
+  onClick,
+}: {
+  children: React.ReactNode;
+  active?: boolean;
+  disabled?: boolean;
+  onClick?: () => void;
+}) {
   return (
     <button
       disabled={disabled}
+      onClick={onClick}
       style={{
         height: 32,
         minWidth: 32,
@@ -227,6 +271,181 @@ function PageBtn({ children, active, disabled }: { children: React.ReactNode; ac
     </button>
   );
 }
+
+const SWATCH_PALETTE = ["#26326B", "#D07A34", "#C9A227", "#1E5F4E", "#7A2E5D", "#8a3a1c"];
+
+interface NewProductForm {
+  category: (typeof PRODUCT_CATEGORIES)[number];
+  name: string;
+  variant: string;
+  motif: string;
+  price: string;
+  stock: string;
+  swatch: string;
+  lengths: string;
+  description: string;
+}
+
+const EMPTY_PRODUCT_FORM: NewProductForm = {
+  category: "Foulards",
+  name: "",
+  variant: "",
+  motif: "",
+  price: "",
+  stock: "",
+  swatch: SWATCH_PALETTE[0],
+  lengths: "",
+  description: "",
+};
+
+function NewProductDrawer({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const [form, setForm] = useState<NewProductForm>(EMPTY_PRODUCT_FORM);
+  const [saving, setSaving] = useState(false);
+  const showToast = useBackoffice((s) => s.showToast);
+  const set = <K extends keyof NewProductForm>(k: K, v: NewProductForm[K]) =>
+    setForm((s) => ({ ...s, [k]: v }));
+
+  async function submit() {
+    setSaving(true);
+    const result = await createProduct({ ...form, price: Number(form.price), stock: Number(form.stock) });
+    setSaving(false);
+    if (!result.ok) {
+      showToast(result.error, "error");
+      return;
+    }
+    showToast("Produit ajouté", "success");
+    onCreated();
+  }
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(30,27,24,.4)", zIndex: 50 }} />
+      <div
+        className="ft-drawer"
+        style={{
+          position: "fixed",
+          top: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 51,
+          maxWidth: "100vw",
+          width: 420,
+          background: "#fff",
+          boxShadow: "-8px 0 32px rgba(60,40,20,.18)",
+          display: "flex",
+          flexDirection: "column",
+          animation: "ft-fade .16s ease",
+        }}
+      >
+        <div style={{ padding: "16px 20px", borderBottom: `1px solid ${colors.borderSoft}`, display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ flex: 1, fontFamily: fonts.display, fontWeight: 600, fontSize: 18 }}>Nouveau produit</div>
+          <button
+            onClick={onClose}
+            aria-label="Fermer"
+            style={{ border: "none", background: "#F1ECE2", width: 34, height: 34, borderRadius: 999, fontSize: 18, cursor: "pointer", color: colors.muted }}
+          >
+            ×
+          </button>
+        </div>
+
+        <div style={{ flex: 1, overflowY: "auto", padding: "18px 20px" }}>
+          <FormField label="Nom du produit">
+            <input value={form.name} onChange={(e) => set("name", e.target.value)} style={textField} placeholder="Foulard tissé main" />
+          </FormField>
+
+          <FormField label="Catégorie">
+            <select value={form.category} onChange={(e) => set("category", e.target.value as NewProductForm["category"])} style={textField}>
+              {PRODUCT_CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </FormField>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <FormField label="Variante">
+              <input value={form.variant} onChange={(e) => set("variant", e.target.value)} style={textField} placeholder="Coton · Bleu nuit" />
+            </FormField>
+            <FormField label="Motif">
+              <input value={form.motif} onChange={(e) => set("motif", e.target.value)} style={textField} placeholder="Wax, Uni…" />
+            </FormField>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <FormField label="Prix (FCFA)">
+              <input type="number" min={0} value={form.price} onChange={(e) => set("price", e.target.value)} style={textField} placeholder="15000" />
+            </FormField>
+            <FormField label="Stock initial">
+              <input type="number" min={0} value={form.stock} onChange={(e) => set("stock", e.target.value)} style={textField} placeholder="10" />
+            </FormField>
+          </div>
+
+          <FormField label="Longueurs / tailles (séparées par une virgule)">
+            <input value={form.lengths} onChange={(e) => set("lengths", e.target.value)} style={textField} placeholder="Taille unique" />
+          </FormField>
+
+          <FormField label="Couleur">
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {SWATCH_PALETTE.map((h) => (
+                <button
+                  key={h}
+                  onClick={() => set("swatch", h)}
+                  aria-label={h}
+                  style={{ width: 34, height: 34, borderRadius: 9, cursor: "pointer", background: h, border: `3px solid ${form.swatch === h ? colors.ink : "transparent"}` }}
+                />
+              ))}
+            </div>
+          </FormField>
+
+          <FormField label="Description">
+            <textarea
+              value={form.description}
+              onChange={(e) => set("description", e.target.value)}
+              rows={4}
+              style={{ ...textField, height: "auto", padding: "10px 13px", resize: "vertical" }}
+            />
+          </FormField>
+        </div>
+
+        <div style={{ padding: "14px 20px", borderTop: `1px solid ${colors.borderSoft}`, display: "flex", gap: 10 }}>
+          <button
+            onClick={onClose}
+            disabled={saving}
+            style={{ flex: 1, height: 46, border: `1.5px solid ${colors.borderField}`, borderRadius: 10, background: "#fff", color: colors.primary, font: `600 14px ${fonts.ui}`, cursor: saving ? "default" : "pointer" }}
+          >
+            Annuler
+          </button>
+          <button
+            onClick={submit}
+            disabled={saving || !form.name || !form.variant || !form.motif || !form.price || !form.stock}
+            style={{ flex: 2, height: 46, border: "none", borderRadius: 10, background: colors.primary, color: "#fff", font: `600 14px ${fonts.ui}`, cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1 }}
+          >
+            {saving ? "Création…" : "Créer le produit"}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function FormField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <label style={{ display: "block", font: `600 12px ${fonts.ui}`, color: colors.muted, marginBottom: 7 }}>{label}</label>
+      {children}
+    </div>
+  );
+}
+
+const textField: React.CSSProperties = {
+  width: "100%",
+  height: 42,
+  padding: "0 13px",
+  border: `1.5px solid ${colors.borderField}`,
+  borderRadius: 10,
+  font: `400 14px ${fonts.ui}`,
+};
 
 function EditDrawer({ product: p, onClose }: { product: Product; onClose: () => void }) {
   const s1 = p.stock;
