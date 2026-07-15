@@ -48,7 +48,7 @@ export async function getCustomerByProfileId(profileId: string): Promise<Custome
 export async function getCustomerOrderHistory(customerId: string): Promise<CustomerOrderHistoryEntry[]> {
   const tenant = await getCurrentTenant();
   const rows = await prisma.order.findMany({
-    where: { customerId, tenantId: tenant.id, status: "confirmee" },
+    where: { customerId, tenantId: tenant.id, status: { in: ["confirmee", "preparation", "livree"] } },
     orderBy: { createdAt: "desc" },
   });
   return rows.map((o) => ({ ref: o.ref, date: formatOrderDate(o.createdAt), total: money(o.total) }));

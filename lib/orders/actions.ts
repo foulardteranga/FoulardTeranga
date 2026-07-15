@@ -53,7 +53,7 @@ export async function submitWebOrder(
       type: "nouvelle_commande",
       title: "Nouvelle commande",
       body: `${order.ref} · ${order.clientName} · ${money(order.total)}`,
-      href: "/commandes",
+      href: "/admin/commandes",
     });
 
     revalidatePath("/admin/commandes");
@@ -125,7 +125,7 @@ export async function confirmOrder(ref: string): Promise<{ ok: true } | { ok: fa
         type: "stock_bas",
         title: "Stock bas",
         body: `${product.name} — ${product.stock} restant${product.stock > 1 ? "s" : ""}`,
-        href: "/inventaire",
+        href: "/admin/inventaire",
       });
     }
 
