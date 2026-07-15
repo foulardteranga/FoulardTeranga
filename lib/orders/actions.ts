@@ -9,9 +9,8 @@ import { kycSchema, type KycInput } from "@/lib/validators/kyc";
 import { orderEditSchema, type OrderEditInput } from "@/lib/validators/orderEdit";
 import { buildOrderLines, type WebCartLineInput } from "./buildOrderLines";
 import { aggregateQtyByProduct } from "./stockCheck";
-import { initials, money } from "@/lib/format";
-import { normalizePhone } from "@/lib/customers/normalizePhone";
-import { computeLoyalty } from "@/lib/customers/loyalty";
+import { money } from "@/lib/format";
+import { applyLoyaltyOrder } from "@/lib/customers/applyLoyaltyOrder";
 import { createNotification } from "@/lib/notifications/create";
 
 /** Sous ce seuil de stock restant, une commande validée déclenche une alerte "stock bas". */
@@ -102,47 +101,19 @@ export async function confirmOrder(ref: string): Promise<{ ok: true } | { ok: fa
       }
 
       // Rattachement fidélité : miroir de la déduction de stock ci-dessus,
-      // uniquement à la validation. Rapprochement par téléphone normalisé
-      // (le format KYC est libre, la comparaison brute créerait des doublons).
-      const normalizedPhone = normalizePhone(order.phone);
-      const candidates = await tx.customer.findMany({ where: { tenantId: tenant.id } });
-      const existing = candidates.find((c) => normalizePhone(c.phone) === normalizedPhone);
-
-      const newOrdersCount = (existing?.ordersCount ?? 0) + 1;
-      const newTotalSpent = (existing?.totalSpent ?? 0) + order.total;
-      const { points, vip, segment } = computeLoyalty(newTotalSpent, newOrdersCount);
-
-      const customer = existing
-        ? await tx.customer.update({
-            where: { id: existing.id },
-            data: {
-              name: order.clientName,
-              place: order.place,
-              ordersCount: newOrdersCount,
-              totalSpent: newTotalSpent,
-              points,
-              vip,
-              segment,
-            },
-          })
-        : await tx.customer.create({
-            data: {
-              tenantId: tenant.id,
-              name: order.clientName,
-              initials: initials(order.clientName),
-              phone: order.phone,
-              place: order.place,
-              ordersCount: newOrdersCount,
-              totalSpent: newTotalSpent,
-              points,
-              vip,
-              segment,
-            },
-          });
+      // uniquement à la validation.
+      const { customerId } = await applyLoyaltyOrder({
+        tx,
+        tenantId: tenant.id,
+        orderTotal: order.total,
+        clientName: order.clientName,
+        phone: order.phone,
+        place: order.place,
+      });
 
       await tx.order.update({
         where: { id: order.id },
-        data: { status: "confirmee", customerId: customer.id },
+        data: { status: "confirmee", customerId },
       });
 
       return { lowStock };
