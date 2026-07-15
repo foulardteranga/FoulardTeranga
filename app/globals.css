@@ -483,3 +483,10 @@ textarea {
     bottom: 80px;
   }
 }
+
+/* Éditeur vitrine : deux colonnes (canevas + réglages), empilées sur mobile. */
+@media (max-width: 859.98px) {
+  .ft-editor-cols {
+    grid-template-columns: 1fr !important;
+  }
+}

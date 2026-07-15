@@ -9,6 +9,7 @@ export const DASHBOARD_PATHS = [
   "/marketing",
   "/finance",
   "/personnalisation",
+  "/vitrine",
   "/connexion",
 ] as const;
 
