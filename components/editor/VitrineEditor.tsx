@@ -57,14 +57,17 @@ export function VitrineEditor({
     if (timer.current) clearTimeout(timer.current);
     const saved = await saveDraft(page);
     if (!saved.ok) { setSaveState("error"); setPublishing(false); return; }
-    await publish();
+    const res = await publish();
+    if (!res.ok) { setSaveState("error"); setPublishing(false); return; }
     setPublishing(false);
   }
 
   async function onRevert() {
+    if (timer.current) clearTimeout(timer.current);
     setPublishing(true);
-    await revertDraft();
+    const res = await revertDraft();
     setPublishing(false);
+    if (!res.ok) { setSaveState("error"); return; }
     // recharge la page pour récupérer le brouillon = publié
     window.location.reload();
   }
