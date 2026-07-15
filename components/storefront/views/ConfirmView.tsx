@@ -3,16 +3,18 @@
 import Link from "next/link";
 import { fonts, colors } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
-import type { Order } from "@/lib/data/types";
+import { statusMeta } from "@/lib/data/orderStatus";
+import { whatsappLink } from "@/lib/format";
+import type { Order, OrderStatus } from "@/lib/data/types";
 
 const STEPS = [
-  { title: "En attente de confirmation", desc: "Nous avons bien reçu votre demande." },
-  { title: "Confirmée", desc: "La gérante valide la disponibilité et le prix." },
-  { title: "En préparation", desc: "Vos articles sont emballés avec soin." },
-  { title: "Livrée", desc: "Remise en main propre ou par livreur." },
+  { status: "nouvelle" as OrderStatus, title: "En attente de confirmation", desc: "Nous avons bien reçu votre demande." },
+  { status: "confirmee" as OrderStatus, title: "Confirmée", desc: "La gérante valide la disponibilité et le prix." },
+  { status: "preparation" as OrderStatus, title: "En préparation", desc: "Vos articles sont emballés avec soin." },
+  { status: "livree" as OrderStatus, title: "Livrée", desc: "Remise en main propre ou par livreur." },
 ];
 
-export function ConfirmView({ order }: { order: Order | null }) {
+export function ConfirmView({ order, whatsappPhone }: { order: Order | null; whatsappPhone?: string | null }) {
   if (!order) {
     return (
       <div className="ft-store-page" style={{ maxWidth: 720, margin: "0 auto", textAlign: "center" }}>
@@ -41,33 +43,54 @@ export function ConfirmView({ order }: { order: Order | null }) {
 
       <div style={{ background: "#fff", border: "1px solid rgba(30,27,24,.08)", borderRadius: 16, padding: "26px 28px", marginTop: 16 }}>
         <div style={{ font: `600 15px ${fonts.ui}`, marginBottom: 22 }}>Suivi de la demande</div>
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          {STEPS.map((step, i) => {
-            const active = i === 0;
-            const last = i === STEPS.length - 1;
-            return (
-              <div key={step.title} style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: "none" }}>
-                  <span style={{ width: 30, height: 30, borderRadius: 999, background: active ? colors.success : "#F1ECE2", display: "flex", alignItems: "center", justifyContent: "center", color: active ? "#fff" : "#9a8f7d", font: `700 13px ${fonts.ui}` }}>
-                    {active ? "●" : i + 1}
-                  </span>
-                  {!last && <span style={{ width: 2, height: 26, background: "#EAE4D9" }} />}
-                </div>
-                <div style={{ paddingBottom: last ? 0 : 18 }}>
-                  <div style={{ font: `600 14.5px ${fonts.ui}`, color: active ? colors.ink : "#9a8f7d" }}>{step.title}</div>
-                  <div style={{ fontSize: 13, color: colors.muted, marginTop: 2 }}>{step.desc}</div>
-                </div>
+        {order.status === "refusee" ? (
+          <div style={{ display: "flex", gap: 12, alignItems: "flex-start", background: statusMeta.refusee.bg, borderRadius: 12, padding: "14px 16px" }}>
+            <Icon path={ICONS.infoAlt} size={18} stroke={statusMeta.refusee.color} strokeWidth={2} style={{ flex: "none", marginTop: 1 }} />
+            <div>
+              <div style={{ font: `600 14.5px ${fonts.ui}`, color: statusMeta.refusee.color }}>Commande refusée</div>
+              <div style={{ fontSize: 13, color: colors.muted, marginTop: 2 }}>
+                La gérante n&apos;a pas pu donner suite à cette demande. Contactez-la pour plus de détails.
               </div>
-            );
-          })}
-        </div>
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {STEPS.map((step, i) => {
+              const activeIndex = STEPS.findIndex((s) => s.status === order.status);
+              const reached = i <= activeIndex;
+              const current = i === activeIndex;
+              const last = i === STEPS.length - 1;
+              return (
+                <div key={step.title} style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: "none" }}>
+                    <span style={{ width: 30, height: 30, borderRadius: 999, background: reached ? colors.success : "#F1ECE2", display: "flex", alignItems: "center", justifyContent: "center", color: reached ? "#fff" : "#9a8f7d", font: `700 13px ${fonts.ui}` }}>
+                      {current ? "●" : reached ? "✓" : i + 1}
+                    </span>
+                    {!last && <span style={{ width: 2, height: 26, background: reached && !current ? colors.success : "#EAE4D9" }} />}
+                  </div>
+                  <div style={{ paddingBottom: last ? 0 : 18 }}>
+                    <div style={{ font: `600 14.5px ${fonts.ui}`, color: reached ? colors.ink : "#9a8f7d" }}>{step.title}</div>
+                    <div style={{ fontSize: 13, color: colors.muted, marginTop: 2 }}>{step.desc}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div style={{ display: "flex", gap: 12, marginTop: 16, flexWrap: "wrap" }}>
-        <a href="#" style={{ flex: 1, minWidth: 180, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 9, height: 50, borderRadius: 10, background: colors.success, color: "#fff", font: `700 15px ${fonts.ui}` }}>
-          <Icon path={ICONS.whatsapp} size={20} stroke="#fff" strokeWidth={1.75} />
-          Suivre sur WhatsApp
-        </a>
+        {whatsappPhone && (
+          <a
+            href={whatsappLink(whatsappPhone, `Bonjour, je suis ${order.client} — je souhaite suivre ma commande ${order.id}.`)}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ flex: 1, minWidth: 180, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 9, height: 50, borderRadius: 10, background: colors.success, color: "#fff", font: `700 15px ${fonts.ui}` }}
+          >
+            <Icon path={ICONS.whatsapp} size={20} stroke="#fff" strokeWidth={1.75} />
+            Suivre sur WhatsApp
+          </a>
+        )}
         <Link href="/compte" style={{ flex: 1, minWidth: 180, height: 50, border: `1.5px solid ${colors.primary}`, borderRadius: 10, background: "#fff", color: colors.primary, font: `600 15px ${fonts.ui}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
           Voir mes commandes
         </Link>

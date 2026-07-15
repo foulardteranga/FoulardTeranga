@@ -5,11 +5,20 @@ import { fonts } from "@/lib/theme/tokens";
 import { Icon } from "@/components/ui/Icon";
 import { useStorefront } from "@/lib/store/useStorefront";
 import { blockRegistry } from "@/components/storefront/blocks/registry";
+import { whatsappLink } from "@/lib/format";
 import type { Product } from "@/lib/data/types";
 
-export function HomeShell({ products }: { products: Product[] }) {
+export function HomeShell({
+  products,
+  whatsappPhone,
+  canEditBlocks = false,
+}: {
+  products: Product[];
+  whatsappPhone?: string | null;
+  canEditBlocks?: boolean;
+}) {
   const blockOrder = useStorefront((s) => s.blockOrder);
-  const blocksMode = useStorefront((s) => s.blocksMode);
+  const blocksMode = useStorefront((s) => s.blocksMode) && canEditBlocks;
   const toggleBlocksMode = useStorefront((s) => s.toggleBlocksMode);
 
   const renderableOrder = blockOrder.filter((id) => id in blockRegistry);
@@ -32,7 +41,7 @@ export function HomeShell({ products }: { products: Product[] }) {
 
       {renderableOrder.map((id) => {
         const Block = blockRegistry[id]!;
-        return <Block key={id} products={products} />;
+        return <Block key={id} products={products} whatsappPhone={whatsappPhone} />;
       })}
 
       <footer style={{ background: "#1E1B18", color: "#C9BEB0", marginTop: 20 }}>
@@ -51,25 +60,33 @@ export function HomeShell({ products }: { products: Product[] }) {
           </div>
           <div style={{ fontSize: 13.5, lineHeight: 2 }}>
             <div style={{ color: "#fff", fontWeight: 600, marginBottom: 6 }}>Aide</div>
-            <div>WhatsApp</div>
+            {whatsappPhone ? (
+              <a href={whatsappLink(whatsappPhone)} target="_blank" rel="noopener noreferrer" style={{ color: "#C9BEB0", display: "block" }}>
+                WhatsApp
+              </a>
+            ) : (
+              <div>WhatsApp</div>
+            )}
             <div>Livraison</div>
             <div>Points de fidélité</div>
           </div>
         </div>
       </footer>
 
-      <button
-        onClick={toggleBlocksMode}
-        style={{
-          position: "fixed", right: 20, bottom: 28, zIndex: 55, height: 46, padding: "0 18px",
-          border: "none", borderRadius: 999, background: blocksMode ? "#D07A34" : "#1E1B18", color: "#fff",
-          font: `600 14px ${fonts.ui}`, cursor: "pointer", display: "flex", alignItems: "center", gap: 9,
-          boxShadow: "0 8px 24px rgba(30,27,24,.28)",
-        }}
-      >
-        <Icon path='<rect x="3" y="3" width="18" height="7" rx="1.5"/><rect x="3" y="14" width="18" height="7" rx="1.5"/>' size={18} stroke="#fff" strokeWidth={1.85} />
-        {blocksMode ? "Quitter l'aperçu" : "Aperçu des blocs"}
-      </button>
+      {canEditBlocks && (
+        <button
+          onClick={toggleBlocksMode}
+          style={{
+            position: "fixed", right: 20, bottom: 28, zIndex: 55, height: 46, padding: "0 18px",
+            border: "none", borderRadius: 999, background: blocksMode ? "#D07A34" : "#1E1B18", color: "#fff",
+            font: `600 14px ${fonts.ui}`, cursor: "pointer", display: "flex", alignItems: "center", gap: 9,
+            boxShadow: "0 8px 24px rgba(30,27,24,.28)",
+          }}
+        >
+          <Icon path='<rect x="3" y="3" width="18" height="7" rx="1.5"/><rect x="3" y="14" width="18" height="7" rx="1.5"/>' size={18} stroke="#fff" strokeWidth={1.85} />
+          {blocksMode ? "Quitter l'aperçu" : "Aperçu des blocs"}
+        </button>
+      )}
     </div>
   );
 }

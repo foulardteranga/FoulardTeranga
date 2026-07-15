@@ -4,6 +4,7 @@ import Link from "next/link";
 import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { useStorefront } from "@/lib/store/useStorefront";
+import { whatsappLink } from "@/lib/format";
 
 const LINKS = [
   { label: "Nouveautés", href: "/catalogue?cat=Nouveautés" },
@@ -14,7 +15,7 @@ const LINKS = [
   { label: "Mon compte", href: "/compte" },
 ];
 
-export function MobileMenu() {
+export function MobileMenu({ whatsappPhone }: { whatsappPhone?: string | null }) {
   const menuOpen = useStorefront((s) => s.menuOpen);
   const closeMenu = useStorefront((s) => s.closeMenu);
 
@@ -59,13 +60,20 @@ export function MobileMenu() {
           ))}
         </div>
 
-        <div style={{ marginTop: 24, padding: 16, background: "#fff", border: "1px solid rgba(30,27,24,.08)", borderRadius: 14 }}>
-          <div style={{ font: `600 13px ${fonts.ui}`, marginBottom: 6 }}>Une question ?</div>
-          <a href="#" style={{ display: "inline-flex", alignItems: "center", gap: 8, font: `600 14px ${fonts.ui}`, color: colors.success }}>
-            <Icon path={ICONS.whatsapp} size={18} stroke={colors.success} strokeWidth={1.75} />
-            Écrire sur WhatsApp
-          </a>
-        </div>
+        {whatsappPhone && (
+          <div style={{ marginTop: 24, padding: 16, background: "#fff", border: "1px solid rgba(30,27,24,.08)", borderRadius: 14 }}>
+            <div style={{ font: `600 13px ${fonts.ui}`, marginBottom: 6 }}>Une question ?</div>
+            <a
+              href={whatsappLink(whatsappPhone, "Bonjour, j'ai une question sur la boutique.")}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: "inline-flex", alignItems: "center", gap: 8, font: `600 14px ${fonts.ui}`, color: colors.success }}
+            >
+              <Icon path={ICONS.whatsapp} size={18} stroke={colors.success} strokeWidth={1.75} />
+              Écrire sur WhatsApp
+            </a>
+          </div>
+        )}
       </div>
     </div>
   );

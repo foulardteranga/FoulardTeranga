@@ -16,7 +16,9 @@ import { ContactBlock } from "./ContactBlock";
  * disponible sur la Home, réordonnable/masquable en mode éditeur — préfigure
  * le futur éditeur de vitrine complet (SECTIONS.md §1).
  */
-export const blockRegistry: Partial<Record<BlockId, ComponentType<{ products?: Product[] }>>> = {
+export const blockRegistry: Partial<
+  Record<BlockId, ComponentType<{ products?: Product[]; whatsappPhone?: string | null }>>
+> = {
   hero: HeroBlock,
   cats: CategoryTilesBlock,
   grid: ProductGridBlock,

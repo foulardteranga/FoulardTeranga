@@ -4,25 +4,12 @@ import { useState } from "react";
 import { colors, fonts, hexA } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { money } from "@/lib/format";
+import { useBackoffice } from "@/lib/store/useBackoffice";
+import { updateTenantTheme } from "@/lib/tenant/actions";
+import type { TenantSettings } from "@/lib/data/tenant.server";
 import type { Product } from "@/lib/data/types";
 
-interface ThemeState {
-  shopName: string;
-  tagline: string;
-  primary: string;
-  accent: string;
-  font: "Playfair Display" | "Inter";
-  phone: string;
-}
-
-const DEFAULTS: ThemeState = {
-  shopName: "Foulard Teranga",
-  tagline: "L'élégance au quotidien",
-  primary: "#26326B",
-  accent: "#D07A34",
-  font: "Playfair Display",
-  phone: "+225 07 00 00 00 00",
-};
+type ThemeState = TenantSettings;
 
 const PRIMARY_PALETTE = ["#26326B", "#1E5F4E", "#7A2E5D", "#8a3a1c"];
 const ACCENT_PALETTE = ["#D07A34", "#C9A227", "#B23A48", "#2E7D8A"];
@@ -31,9 +18,22 @@ const FONT_OPTIONS: Array<{ label: string; val: ThemeState["font"]; family: stri
   { label: "Moderne", val: "Inter", family: fonts.ui },
 ];
 
-export function ThemeScreen({ products }: { products: Product[] }) {
-  const [th, setTh] = useState<ThemeState>(DEFAULTS);
+export function ThemeScreen({ products, tenant }: { products: Product[]; tenant: TenantSettings }) {
+  const [th, setTh] = useState<ThemeState>(tenant);
+  const [saving, setSaving] = useState(false);
+  const showToast = useBackoffice((s) => s.showToast);
   const set = <K extends keyof ThemeState>(k: K, v: ThemeState[K]) => setTh((s) => ({ ...s, [k]: v }));
+
+  async function publish() {
+    setSaving(true);
+    const result = await updateTenantTheme(th);
+    setSaving(false);
+    if (!result.ok) {
+      showToast(result.error, "error");
+      return;
+    }
+    showToast("Vitrine mise à jour", "success");
+  }
 
   const previewFont = th.font === "Inter" ? fonts.ui : fonts.display;
   const heroBg = `linear-gradient(180deg, ${hexA(th.accent, 0.1)}, #fff)`;
@@ -131,16 +131,19 @@ export function ThemeScreen({ products }: { products: Product[] }) {
 
           <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
             <button
-              onClick={() => setTh(DEFAULTS)}
-              style={{ flex: 1, height: 46, border: `1.5px solid ${colors.borderField}`, borderRadius: 10, background: "#fff", color: colors.primary, font: `600 14px ${fonts.ui}`, cursor: "pointer" }}
+              onClick={() => setTh(tenant)}
+              disabled={saving}
+              style={{ flex: 1, height: 46, border: `1.5px solid ${colors.borderField}`, borderRadius: 10, background: "#fff", color: colors.primary, font: `600 14px ${fonts.ui}`, cursor: saving ? "default" : "pointer" }}
             >
               Réinitialiser
             </button>
             <button
+              onClick={publish}
+              disabled={saving}
               className="ft-primary-btn"
-              style={{ flex: 2, height: 46, border: "none", borderRadius: 10, background: colors.primary, color: "#fff", font: `600 14px ${fonts.ui}`, cursor: "pointer" }}
+              style={{ flex: 2, height: 46, border: "none", borderRadius: 10, background: colors.primary, color: "#fff", font: `600 14px ${fonts.ui}`, cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1 }}
             >
-              Publier
+              {saving ? "Publication…" : "Publier"}
             </button>
           </div>
         </div>

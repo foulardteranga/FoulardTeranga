@@ -16,3 +16,10 @@ export function initials(name: string): string {
     .join("")
     .toUpperCase();
 }
+
+/** Lien de discussion WhatsApp (click-to-chat) à partir d'un numéro affiché en FR ("+225 07 …"). */
+export function whatsappLink(phone: string, message?: string): string {
+  const digits = phone.replace(/\D/g, "");
+  const query = message ? `?text=${encodeURIComponent(message)}` : "";
+  return `https://wa.me/${digits}${query}`;
+}

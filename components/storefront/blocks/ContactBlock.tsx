@@ -1,8 +1,9 @@
 import { fonts, colors } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
+import { whatsappLink } from "@/lib/format";
 import { BlockFrame } from "./BlockFrame";
 
-export function ContactBlock() {
+export function ContactBlock({ whatsappPhone }: { whatsappPhone?: string | null }) {
   return (
     <BlockFrame id="contact">
       <section id="ft-contact" className="ft-store-section">
@@ -12,13 +13,17 @@ export function ContactBlock() {
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <ContactRow icon={ICONS.mapPin} title="Boutique Plateau" body="Rue du Commerce, Plateau, Abidjan · Côte d'Ivoire" />
               <ContactRow icon={ICONS.clock} title="Horaires" body="Lun – Sam · 9h – 19h" />
-              <a
-                href="#"
-                style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 9, height: 48, borderRadius: 10, background: colors.success, color: "#fff", font: `700 15px ${fonts.ui}`, marginTop: 4 }}
-              >
-                <Icon path={ICONS.whatsapp} size={20} stroke="#fff" strokeWidth={1.75} />
-                Commander sur WhatsApp
-              </a>
+              {whatsappPhone && (
+                <a
+                  href={whatsappLink(whatsappPhone, "Bonjour, je souhaite commander un article.")}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 9, height: 48, borderRadius: 10, background: colors.success, color: "#fff", font: `700 15px ${fonts.ui}`, marginTop: 4 }}
+                >
+                  <Icon path={ICONS.whatsapp} size={20} stroke="#fff" strokeWidth={1.75} />
+                  Commander sur WhatsApp
+                </a>
+              )}
             </div>
           </div>
           <div
