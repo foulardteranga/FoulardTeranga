@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { statusMeta } from "@/lib/data/orderStatus";
-import { initials } from "@/lib/format";
+import { initials, whatsappLink } from "@/lib/format";
 import { useBackoffice } from "@/lib/store/useBackoffice";
-import { confirmOrder, rejectOrder } from "@/lib/orders/actions";
+import { confirmOrder, rejectOrder, updateOrder } from "@/lib/orders/actions";
 import type { Order, OrderStatus } from "@/lib/data/types";
 
 const FILTERS: Array<[string, string, OrderStatus | null]> = [
@@ -21,6 +22,8 @@ const FILTERS: Array<[string, string, OrderStatus | null]> = [
 export function OrdersScreen({ orders, initialSel }: { orders: Order[]; initialSel?: string }) {
   const [filter, setFilter] = useState<string>("toValidate");
   const [selId, setSelId] = useState<string | null>(initialSel ?? null);
+  const [editing, setEditing] = useState(false);
+  const router = useRouter();
 
   const showToast = useBackoffice((s) => s.showToast);
 
@@ -196,11 +199,22 @@ export function OrdersScreen({ orders, initialSel }: { orders: Order[]; initialS
                 if (!result.ok) { showToast(result.error, "error"); return; }
                 showToast("Commande refusée", "error");
               }}
-              onEdit={() => showToast("Édition de la commande…", "success")}
+              onEdit={() => setEditing(true)}
             />
           </div>
         )}
       </div>
+
+      {editing && selected && (
+        <EditOrderModal
+          order={selected}
+          onClose={() => setEditing(false)}
+          onSaved={() => {
+            setEditing(false);
+            router.refresh();
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -315,7 +329,10 @@ function OrderDetail({
           </div>
         </div>
 
-        <button
+        <a
+          href={whatsappLink(o.phone, `Bonjour ${o.client}, à propos de votre commande ${o.id}…`)}
+          target="_blank"
+          rel="noopener noreferrer"
           className="ft-hover-surface"
           style={{
             width: "100%",
@@ -331,11 +348,12 @@ function OrderDetail({
             justifyContent: "center",
             gap: 9,
             marginBottom: 14,
+            textDecoration: "none",
           }}
         >
           <Icon path={ICONS.whatsapp} size={17} stroke={colors.success} strokeWidth={1.9} />
           Contacter la cliente (WhatsApp / appel)
-        </button>
+        </a>
 
         {actionable ? (
           <>
@@ -377,6 +395,82 @@ function OrderDetail({
     </>
   );
 }
+
+function EditOrderModal({ order, onClose, onSaved }: { order: Order; onClose: () => void; onSaved: () => void }) {
+  const [clientName, setClientName] = useState(order.client);
+  const [place, setPlace] = useState(order.place);
+  const [phone, setPhone] = useState(order.phone);
+  const [saving, setSaving] = useState(false);
+  const showToast = useBackoffice((s) => s.showToast);
+
+  async function submit() {
+    setSaving(true);
+    const result = await updateOrder(order.id, { clientName, place, phone });
+    setSaving(false);
+    if (!result.ok) {
+      showToast(result.error, "error");
+      return;
+    }
+    showToast("Commande mise à jour", "success");
+    onSaved();
+  }
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(30,27,24,.4)", zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{ background: "#fff", borderRadius: 16, width: 420, maxWidth: "92vw", padding: "22px 24px", boxShadow: "0 20px 50px rgba(30,27,24,.24)" }}
+        >
+          <div style={{ fontFamily: fonts.display, fontWeight: 600, fontSize: 18, marginBottom: 4 }}>Modifier la commande</div>
+          <div style={{ fontSize: 12.5, color: colors.muted, marginBottom: 18 }}>{order.id}</div>
+
+          <label style={modalLabel}>Nom de la cliente</label>
+          <input value={clientName} onChange={(e) => setClientName(e.target.value)} style={modalField} />
+
+          <label style={modalLabel}>Lieu de livraison</label>
+          <input value={place} onChange={(e) => setPlace(e.target.value)} style={modalField} />
+
+          <label style={modalLabel}>Téléphone</label>
+          <input value={phone} onChange={(e) => setPhone(e.target.value)} style={modalField} />
+
+          <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
+            <button
+              onClick={onClose}
+              disabled={saving}
+              style={{ flex: 1, height: 46, border: `1.5px solid ${colors.borderField}`, borderRadius: 10, background: "#fff", color: colors.primary, font: `600 14px ${fonts.ui}`, cursor: saving ? "default" : "pointer" }}
+            >
+              Annuler
+            </button>
+            <button
+              onClick={submit}
+              disabled={saving || !clientName || !place || !phone}
+              style={{ flex: 2, height: 46, border: "none", borderRadius: 10, background: colors.primary, color: "#fff", font: `600 14px ${fonts.ui}`, cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1 }}
+            >
+              {saving ? "Enregistrement…" : "Enregistrer"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+const modalLabel: React.CSSProperties = {
+  display: "block",
+  font: `600 12px ${fonts.ui}`,
+  color: colors.muted,
+  marginTop: 12,
+  marginBottom: 6,
+};
+const modalField: React.CSSProperties = {
+  width: "100%",
+  height: 42,
+  padding: "0 13px",
+  border: `1.5px solid ${colors.borderField}`,
+  borderRadius: 10,
+  font: `400 14px ${fonts.ui}`,
+};
 
 const kycLabel: React.CSSProperties = {
   font: `600 11px ${fonts.ui}`,
