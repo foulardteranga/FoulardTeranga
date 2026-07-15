@@ -1,6 +1,8 @@
 export interface WebCartLineInput {
   productId: string;
   qty: number;
+  /** Remise POS de 10% appliquée à cette ligne — absent/false pour une commande web. */
+  discounted?: boolean;
 }
 
 export interface PriceLookup {
@@ -14,13 +16,19 @@ export interface OrderLineData {
   nameAtOrder: string;
   qty: number;
   unitPrice: number;
+  discount: number;
   lineTotal: number;
 }
+
+/** Taux de remise POS fixe (bouton "Ajouter remise -10%" du panier caisse). */
+export const POS_DISCOUNT_RATE = 0.1;
 
 /**
  * Construit les lignes de commande et le total à partir de prix serveur —
  * jamais du prix envoyé par le client. `products` doit contenir un prix
- * actuel par `productId` (lu depuis Postgres par l'appelant).
+ * actuel par `productId` (lu depuis Postgres par l'appelant). La remise
+ * (le cas échéant) est elle aussi recalculée ici à partir du prix serveur,
+ * jamais reçue en FCFA depuis le client.
  */
 export function buildOrderLines(
   cartLines: WebCartLineInput[],
@@ -39,12 +47,14 @@ export function buildOrderLines(
     if (!product) {
       return { ok: false, error: `Produit introuvable : ${line.productId}` };
     }
+    const discount = line.discounted ? Math.round(product.price * POS_DISCOUNT_RATE) : 0;
     lines.push({
       productId: product.id,
       nameAtOrder: product.name,
       qty: line.qty,
       unitPrice: product.price,
-      lineTotal: product.price * line.qty,
+      discount,
+      lineTotal: (product.price - discount) * line.qty,
     });
   }
   const total = lines.reduce((sum, l) => sum + l.lineTotal, 0);
