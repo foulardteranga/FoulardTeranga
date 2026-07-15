@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import type { Customer, Product } from "@/lib/data/types";
-import { money } from "@/lib/format";
 
 export interface CartLine {
   id: string;
@@ -18,6 +17,7 @@ export interface Ticket {
   items: number;
   pay: string;
   total: string;
+  ref: string;
 }
 
 interface BackofficeState {
@@ -43,7 +43,7 @@ interface BackofficeState {
   setPay: (pay: BackofficeState["pay"]) => void;
   attachClient: (customer: Customer) => void;
   detachClient: () => void;
-  encaisser: () => void;
+  showTicket: (ticket: Ticket) => void;
   openCart: () => void;
   closeCart: () => void;
 
@@ -108,29 +108,7 @@ export const useBackoffice = create<BackofficeState>((set, get) => ({
   attachClient: (customer) => set({ client: customer }),
   detachClient: () => set({ client: null }),
 
-  encaisser: () => {
-    const s = get();
-    if (!s.cart.length) return;
-    const sub = s.cart.reduce((a, l) => a + l.price * l.qty, 0);
-    const disc = s.cart.reduce((a, l) => a + l.discount * l.qty, 0);
-    const items = s.cart.reduce((a, l) => a + l.qty, 0);
-    const payLabels: Record<BackofficeState["pay"], string> = {
-      espece: "Espèces",
-      mm: "Mobile Money",
-      mixte: "Mixte",
-    };
-    if (s.offline) {
-      set({ queued: s.queued + 1, cart: [], client: null, cartOpen: false });
-      get().showToast("Vente mise en file — à resynchroniser", "warning");
-      return;
-    }
-    set({
-      ticket: { items, pay: payLabels[s.pay], total: money(sub - disc) },
-      cart: [],
-      client: null,
-      cartOpen: false,
-    });
-  },
+  showTicket: (ticket) => set({ ticket, cart: [], client: null, cartOpen: false }),
 
   openCart: () => set({ cartOpen: true }),
   closeCart: () => set({ cartOpen: false }),
