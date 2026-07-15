@@ -57,6 +57,7 @@ export function TicketModal() {
           </div>
         </div>
         <div style={{ padding: "20px 24px" }}>
+          <Row label="Référence" value={ticket.ref} strong />
           <Row label="Articles" value={String(ticket.items)} />
           <Row label="Mode de paiement" value={ticket.pay} strong />
           <div
