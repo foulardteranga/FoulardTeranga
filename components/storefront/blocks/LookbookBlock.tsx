@@ -1,5 +1,6 @@
 import { fonts, colors } from "@/lib/theme/tokens";
 import { stripe } from "@/lib/theme/storefront";
+import type { LookSettings } from "@/lib/storefront/blockSettings";
 import { BlockFrame } from "./BlockFrame";
 
 const LOOKS = [
@@ -9,7 +10,8 @@ const LOOKS = [
   { label: "look 04 · 3:4", hex: "#0E9F6E" },
 ];
 
-export function LookbookBlock() {
+export function LookbookBlock({ settings }: { settings: LookSettings }) {
+  void settings;
   return (
     <BlockFrame id="look">
       <section className="ft-store-section">

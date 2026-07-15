@@ -7,9 +7,11 @@ import { featuredProduct } from "@/lib/data/catalog";
 import { useStorefront } from "@/lib/store/useStorefront";
 import { money } from "@/lib/format";
 import type { Product } from "@/lib/data/types";
+import type { FeaturedSettings } from "@/lib/storefront/blockSettings";
 import { BlockFrame } from "./BlockFrame";
 
-export function FeaturedProductBlock({ products = [] }: { products?: Product[] }) {
+export function FeaturedProductBlock({ settings, products = [] }: { settings: FeaturedSettings; products?: Product[] }) {
+  void settings;
   const product = featuredProduct(products);
   const addToCart = useStorefront((s) => s.addToCart);
   const showToast = useStorefront((s) => s.showToast);

@@ -1,9 +1,11 @@
 import { fonts, colors } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { whatsappLink } from "@/lib/format";
+import type { ContactSettings } from "@/lib/storefront/blockSettings";
 import { BlockFrame } from "./BlockFrame";
 
-export function ContactBlock({ whatsappPhone }: { whatsappPhone?: string | null }) {
+export function ContactBlock({ settings, whatsappPhone }: { settings: ContactSettings; whatsappPhone?: string | null }) {
+  void settings;
   return (
     <BlockFrame id="contact">
       <section id="ft-contact" className="ft-store-section">

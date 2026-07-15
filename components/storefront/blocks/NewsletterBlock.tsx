@@ -2,9 +2,11 @@
 
 import { fonts } from "@/lib/theme/tokens";
 import { useStorefront } from "@/lib/store/useStorefront";
+import type { NewsSettings } from "@/lib/storefront/blockSettings";
 import { BlockFrame } from "./BlockFrame";
 
-export function NewsletterBlock() {
+export function NewsletterBlock({ settings }: { settings: NewsSettings }) {
+  void settings;
   const showToast = useStorefront((s) => s.showToast);
 
   return (

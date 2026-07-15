@@ -3,7 +3,7 @@ import {
   DEFAULT_BLOCK_ORDER,
   DEFAULT_BLOCK_NAMES,
   type BlockId,
-} from "@/lib/store/useStorefront";
+} from "./blockIds";
 import { BLOCK_SETTINGS } from "./blockSettings";
 
 const BLOCK_IDS = new Set<string>(DEFAULT_BLOCK_ORDER);

@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { fonts } from "@/lib/theme/tokens";
+import type { LoyaltySettings } from "@/lib/storefront/blockSettings";
 import { BlockFrame } from "./BlockFrame";
 
-export function LoyaltyBannerBlock() {
+export function LoyaltyBannerBlock({ settings }: { settings: LoyaltySettings }) {
+  void settings;
   return (
     <BlockFrame id="loyalty">
       <section className="ft-store-section-tight">

@@ -3,6 +3,7 @@ import { fonts } from "@/lib/theme/tokens";
 import { stripe } from "@/lib/theme/storefront";
 import { storefrontCategories } from "@/lib/data/catalog";
 import type { Product } from "@/lib/data/types";
+import type { CatsSettings } from "@/lib/storefront/blockSettings";
 import { BlockFrame } from "./BlockFrame";
 
 const TILE_COLOR: Record<string, string> = {
@@ -11,7 +12,8 @@ const TILE_COLOR: Record<string, string> = {
   Accessoires: "#C9A227",
 };
 
-export function CategoryTilesBlock({ products = [] }: { products?: Product[] }) {
+export function CategoryTilesBlock({ settings, products = [] }: { settings: CatsSettings; products?: Product[] }) {
+  void settings;
   return (
     <BlockFrame id="cats">
       <section className="ft-store-section-tight">

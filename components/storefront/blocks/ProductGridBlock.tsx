@@ -6,9 +6,11 @@ import { newestProducts } from "@/lib/data/catalog";
 import { useStorefront } from "@/lib/store/useStorefront";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import type { Product } from "@/lib/data/types";
+import type { GridSettings } from "@/lib/storefront/blockSettings";
 import { BlockFrame } from "./BlockFrame";
 
-export function ProductGridBlock({ products = [] }: { products?: Product[] }) {
+export function ProductGridBlock({ settings, products = [] }: { settings: GridSettings; products?: Product[] }) {
+  void settings;
   const addToCart = useStorefront((s) => s.addToCart);
   const showToast = useStorefront((s) => s.showToast);
   const featured = newestProducts(products, 4);

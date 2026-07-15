@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { BlockId } from "@/lib/store/useStorefront";
+import type { BlockId } from "./blockIds";
 
 export type FieldKind = "text" | "textarea" | "select" | "toggle" | "number" | "url";
 

@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { fonts } from "@/lib/theme/tokens";
+import type { HeroSettings } from "@/lib/storefront/blockSettings";
 import { BlockFrame } from "./BlockFrame";
 
-export function HeroBlock() {
+export function HeroBlock({ settings }: { settings: HeroSettings }) {
   return (
     <BlockFrame id="hero">
       <section className="ft-store-section">
@@ -26,28 +27,25 @@ export function HeroBlock() {
                   font: `600 12px ${fonts.ui}`, letterSpacing: ".06em", marginBottom: 16,
                 }}
               >
-                NOUVELLE COLLECTION 2026
+                {settings.eyebrow}
               </div>
               <h1 className="ft-store-hero-title" style={{ fontFamily: fonts.display, fontWeight: 600, lineHeight: 1.04, margin: "0 0 12px" }}>
-                L&apos;élégance
-                <br />
-                tissée main
+                {settings.title.split("\n").map((line, i) => (
+                  <span key={i}>
+                    {i > 0 && <br />}
+                    {line}
+                  </span>
+                ))}
               </h1>
               <p className="ft-store-hero-sub" style={{ opacity: 0.92, lineHeight: 1.5, margin: "0 0 22px", maxWidth: 420 }}>
-                Foulards, turbans &amp; accessoires africains pour la femme moderne. Fabriqués en Côte d&apos;Ivoire, dans l&apos;esprit Teranga.
+                {settings.subtitle}
               </p>
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                <Link
-                  href="/catalogue"
-                  style={{ height: 48, padding: "0 26px", borderRadius: 10, background: "#D07A34", color: "#fff", font: `700 15px ${fonts.ui}`, display: "flex", alignItems: "center" }}
-                >
-                  Découvrir la boutique
+                <Link href={settings.ctaLink} style={{ height: 48, padding: "0 26px", borderRadius: 10, background: "#D07A34", color: "#fff", font: `700 15px ${fonts.ui}`, display: "flex", alignItems: "center" }}>
+                  {settings.ctaLabel}
                 </Link>
-                <Link
-                  href="/#ft-story"
-                  style={{ height: 48, padding: "0 22px", border: "1.5px solid rgba(255,255,255,.7)", borderRadius: 10, background: "rgba(255,255,255,.08)", color: "#fff", font: `600 15px ${fonts.ui}`, display: "flex", alignItems: "center" }}
-                >
-                  Notre histoire
+                <Link href={settings.secondaryCtaLink} style={{ height: 48, padding: "0 22px", border: "1.5px solid rgba(255,255,255,.7)", borderRadius: 10, background: "rgba(255,255,255,.08)", color: "#fff", font: `600 15px ${fonts.ui}`, display: "flex", alignItems: "center" }}>
+                  {settings.secondaryCtaLabel}
                 </Link>
               </div>
             </div>

@@ -4,37 +4,15 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { DEFAULT_TENANT } from "@/lib/tenant/registry";
 import { addLine, incLine as incLineLogic, removeLine, type StoreCartLine } from "./cartLogic";
+import { DEFAULT_BLOCK_ORDER, DEFAULT_BLOCK_NAMES, type BlockId } from "@/lib/storefront/blockIds";
 
 export type { StoreCartLine } from "./cartLogic";
+// Ré-exportés pour compat : ces valeurs vivent dans lib/storefront/blockIds.ts
+// (module serveur-safe) car le code serveur (pageContent.ts) en a besoin, et
+// un module "use client" ne peut pas fournir de valeurs au bundle serveur.
+export { DEFAULT_BLOCK_ORDER, DEFAULT_BLOCK_NAMES, type BlockId };
 
 export type ToastType = "success" | "warning" | "error";
-
-export type BlockId =
-  | "hero"
-  | "cats"
-  | "grid"
-  | "loyalty"
-  | "featured"
-  | "story"
-  | "look"
-  | "news"
-  | "contact";
-
-export const DEFAULT_BLOCK_ORDER: BlockId[] = [
-  "hero", "cats", "grid", "loyalty", "featured", "story", "look", "news", "contact",
-];
-
-export const DEFAULT_BLOCK_NAMES: Record<BlockId, string> = {
-  hero: "Bandeau Hero",
-  cats: "Vignettes catégories",
-  grid: "Nouveautés & best-sellers",
-  loyalty: "Bandeau fidélité",
-  featured: "Produit vedette",
-  story: "Notre histoire",
-  look: "Galerie / Lookbook",
-  news: "Newsletter",
-  contact: "Contact & localisation",
-};
 
 export interface KycForm {
   name: string;
