@@ -6,6 +6,7 @@ import { Icon, ICONS } from "@/components/ui/Icon";
 import { categories } from "@/lib/data/catalog";
 import { money } from "@/lib/format";
 import { useBackoffice, type CartLine } from "@/lib/store/useBackoffice";
+import { encaisserVente } from "@/lib/pos/actions";
 import type { Customer, Product } from "@/lib/data/types";
 
 const PAY_DEF = [
@@ -13,6 +14,12 @@ const PAY_DEF = [
   { id: "mm", label: "Mobile M.", icon: ICONS.mobileMoney },
   { id: "mixte", label: "Mixte", icon: ICONS.mixte },
 ] as const;
+
+const PAY_LABELS: Record<"espece" | "mm" | "mixte", string> = {
+  espece: "Espèces",
+  mm: "Mobile Money",
+  mixte: "Mixte",
+};
 
 export function PosScreen({ products, customers }: { products: Product[]; customers: Customer[] }) {
   const [query, setQuery] = useState("");
@@ -456,31 +463,57 @@ function PayMethods() {
 
 function PayButton({ total, big }: { total: number; big?: boolean }) {
   const cart = useBackoffice((s) => s.cart);
+  const pay = useBackoffice((s) => s.pay);
+  const client = useBackoffice((s) => s.client);
   const offline = useBackoffice((s) => s.offline);
-  const encaisser = useBackoffice((s) => s.encaisser);
+  const showToast = useBackoffice((s) => s.showToast);
+  const showTicket = useBackoffice((s) => s.showTicket);
+  const [saving, setSaving] = useState(false);
   const has = cart.length > 0;
+  const canPay = has && !offline && !saving;
+
+  async function handlePay() {
+    setSaving(true);
+    const result = await encaisserVente({
+      lines: cart.map((l) => ({ productId: l.id, qty: l.qty, discounted: l.discount > 0 })),
+      paymentMethod: pay,
+      customerId: client?.id ?? null,
+    });
+    setSaving(false);
+    if (!result.ok) {
+      showToast(result.error, "error");
+      return;
+    }
+    showTicket({
+      items: cart.reduce((a, l) => a + l.qty, 0),
+      pay: PAY_LABELS[pay],
+      total: money(total),
+      ref: result.ref,
+    });
+  }
+
   return (
     <button
-      onClick={encaisser}
-      disabled={!has}
+      onClick={handlePay}
+      disabled={!canPay}
       className="ft-primary-btn"
       style={{
         width: "100%",
         height: big ? 54 : 52,
         border: "none",
         borderRadius: 10,
-        background: has ? (offline ? colors.warning : colors.primary) : colors.disabled,
+        background: canPay ? colors.primary : colors.disabled,
         color: "#fff",
         font: `700 16px ${fonts.ui}`,
-        cursor: has ? "pointer" : "not-allowed",
+        cursor: canPay ? "pointer" : "not-allowed",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         gap: 10,
       }}
     >
-      {!big && <Icon path={ICONS.check} size={20} stroke="#fff" strokeWidth={2} />}
-      Encaisser {has ? `· ${money(total)}` : ""}
+      {!big && !saving && <Icon path={ICONS.check} size={20} stroke="#fff" strokeWidth={2} />}
+      {offline ? "Connexion requise" : saving ? "Encaissement…" : `Encaisser${has ? ` · ${money(total)}` : ""}`}
     </button>
   );
 }
