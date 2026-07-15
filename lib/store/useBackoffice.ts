@@ -30,7 +30,6 @@ interface BackofficeState {
   offline: boolean;
   queued: number;
   notifOpen: boolean;
-  notifCount: number;
   moreOpen: boolean;
   toast: { msg: string; type: ToastType } | null;
   ticket: Ticket | null;
@@ -67,7 +66,6 @@ export const useBackoffice = create<BackofficeState>((set, get) => ({
   offline: false,
   queued: 0,
   notifOpen: false,
-  notifCount: 3,
   moreOpen: false,
   toast: null,
   ticket: null,

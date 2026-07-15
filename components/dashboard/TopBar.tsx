@@ -1,18 +1,93 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { colors, fonts } from "@/lib/theme/tokens";
 import { SCREEN_META } from "@/lib/nav";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { useBackoffice } from "@/lib/store/useBackoffice";
-import { notifs } from "@/lib/data/notifs";
+import { createClient } from "@/lib/supabase/browser";
+import { markAllNotificationsRead, markNotificationRead } from "@/lib/notifications/actions";
+import { formatOrderAgo } from "@/lib/data/orderStatus";
+import type { NotificationItem } from "@/lib/data/notifications.server";
+import type { NotificationType } from "@/lib/generated/prisma/client";
 
-export function TopBar() {
+const NOTIF_META: Record<NotificationType, { icon: string; iconColor: string; bg: string }> = {
+  nouvelle_commande: { icon: ICONS.orders, iconColor: "#26326B", bg: "#EEF0F7" },
+  stock_bas: { icon: ICONS.alertTriangle, iconColor: "#E0A400", bg: "#FBF1D8" },
+  paiement_recu: { icon: ICONS.check, iconColor: "#0E9F6E", bg: "#E6F4EE" },
+};
+
+export function TopBar({
+  initialNotifications,
+  tenantId,
+}: {
+  initialNotifications: NotificationItem[];
+  tenantId: string;
+}) {
   const pathname = usePathname();
+  const router = useRouter();
   const [title, sub] = SCREEN_META[pathname] ?? ["Back-office", ""];
   const notifOpen = useBackoffice((s) => s.notifOpen);
-  const notifCount = useBackoffice((s) => s.notifCount);
   const toggleNotif = useBackoffice((s) => s.toggleNotif);
+  const closeNotif = useBackoffice((s) => s.closeNotif);
+
+  const [notifications, setNotifications] = useState(initialNotifications);
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!notifOpen) return;
+    function onPointerDown(e: PointerEvent) {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        closeNotif();
+      }
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [notifOpen, closeNotif]);
+
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`notifications-${tenantId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "Notification", filter: `tenantId=eq.${tenantId}` },
+        (payload) => {
+          const row = payload.new as {
+            id: string;
+            type: NotificationType;
+            title: string;
+            body: string;
+            href: string;
+            read: boolean;
+            createdAt: string;
+          };
+          setNotifications((prev) => [
+            { id: row.id, type: row.type, title: row.title, body: row.body, href: row.href, read: row.read, createdAt: row.createdAt },
+            ...prev,
+          ]);
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [tenantId]);
+
+  async function markAllRead() {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    await markAllNotificationsRead();
+  }
+
+  async function openNotif(n: NotificationItem) {
+    setNotifications((prev) => prev.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
+    closeNotif();
+    router.push(n.href);
+    await markNotificationRead(n.id);
+  }
 
   return (
     <header
@@ -109,7 +184,7 @@ export function TopBar() {
         />
       </div>
 
-      <div style={{ position: "relative", flex: "none" }}>
+      <div ref={notifRef} style={{ position: "relative", flex: "none" }}>
         <button
           onClick={toggleNotif}
           className="ft-hover-surface"
@@ -128,7 +203,7 @@ export function TopBar() {
           }}
         >
           <Icon path={ICONS.bell} size={19} stroke={colors.ink} />
-          {notifCount > 0 && (
+          {unreadCount > 0 && (
             <span
               style={{
                 position: "absolute",
@@ -147,7 +222,7 @@ export function TopBar() {
                 border: "2px solid #FAF7F2",
               }}
             >
-              {notifCount}
+              {unreadCount}
             </span>
           )}
         </button>
@@ -178,50 +253,73 @@ export function TopBar() {
               }}
             >
               <span style={{ fontWeight: 600, fontSize: 14 }}>Notifications</span>
-              <span style={{ fontSize: 12, color: colors.primary, fontWeight: 600 }}>
+              <button
+                onClick={markAllRead}
+                disabled={unreadCount === 0}
+                style={{
+                  border: "none",
+                  background: "none",
+                  padding: 0,
+                  fontSize: 12,
+                  color: unreadCount === 0 ? "#B6AEA1" : colors.primary,
+                  fontWeight: 600,
+                  cursor: unreadCount === 0 ? "default" : "pointer",
+                }}
+              >
                 Tout marquer lu
-              </span>
+              </button>
             </div>
             <div style={{ maxHeight: 320, overflowY: "auto" }}>
-              {notifs.map((nt, i) => (
-                <div
-                  key={i}
-                  className="ft-hover-surface"
-                  style={{
-                    display: "flex",
-                    gap: 11,
-                    padding: "12px 16px",
-                    borderBottom: "1px solid #F1ECE2",
-                    cursor: "pointer",
-                  }}
-                >
-                  <span
-                    style={{
-                      width: 34,
-                      height: 34,
-                      borderRadius: 9,
-                      flex: "none",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      background: nt.bg,
-                    }}
-                  >
-                    <Icon path={nt.icon} size={17} stroke={nt.iconColor} />
-                  </span>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.3 }}>
-                      {nt.title}
-                    </div>
-                    <div style={{ fontSize: 12.5, color: colors.muted, lineHeight: 1.35 }}>
-                      {nt.body}
-                    </div>
-                    <div style={{ fontSize: 11, color: "#9a8f7d", marginTop: 3 }}>
-                      {nt.time}
-                    </div>
-                  </div>
+              {notifications.length === 0 ? (
+                <div style={{ padding: "24px 16px", textAlign: "center", fontSize: 13, color: colors.muted }}>
+                  Aucune notification pour l&apos;instant.
                 </div>
-              ))}
+              ) : (
+                notifications.map((n) => {
+                  const meta = NOTIF_META[n.type];
+                  return (
+                    <div
+                      key={n.id}
+                      onClick={() => openNotif(n)}
+                      className="ft-hover-surface"
+                      style={{
+                        display: "flex",
+                        gap: 11,
+                        padding: "12px 16px",
+                        borderBottom: "1px solid #F1ECE2",
+                        cursor: "pointer",
+                        opacity: n.read ? 0.55 : 1,
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: 34,
+                          height: 34,
+                          borderRadius: 9,
+                          flex: "none",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          background: meta.bg,
+                        }}
+                      >
+                        <Icon path={meta.icon} size={17} stroke={meta.iconColor} />
+                      </span>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.3 }}>
+                          {n.title}
+                        </div>
+                        <div style={{ fontSize: 12.5, color: colors.muted, lineHeight: 1.35 }}>
+                          {n.body}
+                        </div>
+                        <div style={{ fontSize: 11, color: "#9a8f7d", marginTop: 3 }}>
+                          {formatOrderAgo(new Date(n.createdAt))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         )}

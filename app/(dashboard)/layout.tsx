@@ -5,14 +5,21 @@ import { OfflineBanner } from "@/components/dashboard/OfflineBanner";
 import { Toast } from "@/components/dashboard/Toast";
 import { TicketModal } from "@/components/dashboard/TicketModal";
 import { getSession } from "@/lib/auth";
+import { getCurrentTenant } from "@/lib/tenant";
 import { getPendingOrdersCount } from "@/lib/data/orders.server";
+import { getNotifications } from "@/lib/data/notifications.server";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [session, pendingCount] = await Promise.all([getSession(), getPendingOrdersCount()]);
+  const [session, pendingCount, notifications, tenant] = await Promise.all([
+    getSession(),
+    getPendingOrdersCount(),
+    getNotifications(),
+    getCurrentTenant(),
+  ]);
 
   return (
     <div
@@ -27,7 +34,7 @@ export default async function DashboardLayout({
 
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         <OfflineBanner />
-        <TopBar />
+        <TopBar initialNotifications={notifications} tenantId={tenant.id} />
         <main className="ft-main" style={{ flex: 1, minWidth: 0, overflowX: "hidden" }}>
           {children}
         </main>
