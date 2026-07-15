@@ -34,6 +34,7 @@ export function MobileNav({ pendingCount }: { pendingCount: number }) {
           right: 0,
           bottom: 0,
           zIndex: 40,
+          display: "flex",
           background: "#fff",
           borderTop: "1px solid rgba(30,27,24,.1)",
           padding: "6px 4px 8px",
