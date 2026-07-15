@@ -5,16 +5,15 @@ import type { ContactSettings } from "@/lib/storefront/blockSettings";
 import { BlockFrame } from "./BlockFrame";
 
 export function ContactBlock({ settings, whatsappPhone }: { settings: ContactSettings; whatsappPhone?: string | null }) {
-  void settings;
   return (
     <BlockFrame id="contact">
       <section id="ft-contact" className="ft-store-section">
         <div className="ft-store-contact" style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gap: 16 }}>
           <div style={{ background: "#fff", border: "1px solid rgba(30,27,24,.08)", borderRadius: 16, padding: "26px 28px" }}>
-            <h3 style={{ fontFamily: fonts.display, fontWeight: 600, fontSize: 24, margin: "0 0 18px" }}>Nous trouver</h3>
+            <h3 style={{ fontFamily: fonts.display, fontWeight: 600, fontSize: 24, margin: "0 0 18px" }}>{settings.title}</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <ContactRow icon={ICONS.mapPin} title="Boutique Plateau" body="Rue du Commerce, Plateau, Abidjan · Côte d'Ivoire" />
-              <ContactRow icon={ICONS.clock} title="Horaires" body="Lun – Sam · 9h – 19h" />
+              <ContactRow icon={ICONS.mapPin} title={settings.locationTitle} body={settings.address} />
+              <ContactRow icon={ICONS.clock} title={settings.hoursTitle} body={settings.hours} />
               {whatsappPhone && (
                 <a
                   href={whatsappLink(whatsappPhone, "Bonjour, je souhaite commander un article.")}

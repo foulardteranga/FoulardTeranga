@@ -4,7 +4,6 @@ import type { LoyaltySettings } from "@/lib/storefront/blockSettings";
 import { BlockFrame } from "./BlockFrame";
 
 export function LoyaltyBannerBlock({ settings }: { settings: LoyaltySettings }) {
-  void settings;
   return (
     <BlockFrame id="loyalty">
       <section className="ft-store-section-tight">
@@ -19,18 +18,18 @@ export function LoyaltyBannerBlock({ settings }: { settings: LoyaltySettings }) 
               </div>
               <div>
                 <div className="ft-store-promo-title" style={{ fontFamily: fonts.display, fontWeight: 600, lineHeight: 1.1 }}>
-                  Programme fidélité Teranga
+                  {settings.title}
                 </div>
                 <div style={{ fontSize: 14, opacity: 0.85, marginTop: 4 }}>
-                  Cumulez des points à chaque commande — 5% offerts dès 300 points.
+                  {settings.text}
                 </div>
               </div>
             </div>
             <Link
-              href="/compte"
+              href={settings.ctaLink}
               style={{ height: 46, padding: "0 24px", borderRadius: 10, background: "#D07A34", color: "#fff", font: `700 15px ${fonts.ui}`, whiteSpace: "nowrap", display: "flex", alignItems: "center" }}
             >
-              Rejoindre le programme
+              {settings.ctaLabel}
             </Link>
           </div>
         </div>
