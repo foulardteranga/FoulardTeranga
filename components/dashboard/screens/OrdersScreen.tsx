@@ -329,31 +329,33 @@ function OrderDetail({
           </div>
         </div>
 
-        <a
-          href={whatsappLink(o.phone, `Bonjour ${o.client}, à propos de votre commande ${o.id}…`)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="ft-hover-surface"
-          style={{
-            width: "100%",
-            height: 44,
-            border: `1.5px solid ${colors.success}`,
-            borderRadius: 10,
-            background: colors.bgSuccess,
-            color: colors.fgSuccess,
-            font: `600 13.5px ${fonts.ui}`,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 9,
-            marginBottom: 14,
-            textDecoration: "none",
-          }}
-        >
-          <Icon path={ICONS.whatsapp} size={17} stroke={colors.success} strokeWidth={1.9} />
-          Contacter la cliente (WhatsApp / appel)
-        </a>
+        {o.phone && (
+          <a
+            href={whatsappLink(o.phone, `Bonjour ${o.client}, à propos de votre commande ${o.id}…`)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ft-hover-surface"
+            style={{
+              width: "100%",
+              height: 44,
+              border: `1.5px solid ${colors.success}`,
+              borderRadius: 10,
+              background: colors.bgSuccess,
+              color: colors.fgSuccess,
+              font: `600 13.5px ${fonts.ui}`,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 9,
+              marginBottom: 14,
+              textDecoration: "none",
+            }}
+          >
+            <Icon path={ICONS.whatsapp} size={17} stroke={colors.success} strokeWidth={1.9} />
+            Contacter la cliente (WhatsApp / appel)
+          </a>
+        )}
 
         {actionable ? (
           <>
