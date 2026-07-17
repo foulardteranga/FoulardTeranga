@@ -43,7 +43,7 @@ export function CategoryTilesBlock({ settings, products = [] }: { settings: Cats
                   }}
                 >
                   {imageUrl && (
-                    <Image src={imageUrl} alt="" fill sizes="(max-width: 900px) 50vw, 33vw" style={{ objectFit: "cover" }} />
+                    <Image src={imageUrl} alt={cat} fill sizes="(max-width: 900px) 50vw, 33vw" style={{ objectFit: "cover" }} />
                   )}
                   <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(30,27,24,.5), transparent 65%)" }} />
                   <div style={{ position: "absolute", left: 16, bottom: 14, color: "#fff" }}>

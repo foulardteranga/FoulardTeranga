@@ -28,7 +28,7 @@ export function LookbookBlock({ settings }: { settings: LookSettings }) {
             {settings.images.length > 0
               ? settings.images.map((src, i) => (
                   <div key={src + i} style={{ position: "relative", borderRadius: 14, overflow: "hidden", aspectRatio: "3 / 4" }}>
-                    <Image src={src} alt="" fill sizes="(max-width: 900px) 50vw, 25vw" style={{ objectFit: "cover" }} />
+                    <Image src={src} alt={`Lookbook photo ${i + 1}`} fill sizes="(max-width: 900px) 50vw, 25vw" style={{ objectFit: "cover" }} />
                   </div>
                 ))
               : LOOKS.map((look) => (
