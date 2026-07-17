@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { fonts, colors } from "@/lib/theme/tokens";
 import type { StorySettings } from "@/lib/storefront/blockSettings";
 import { BlockFrame } from "./BlockFrame";
@@ -30,8 +31,19 @@ export function StoryBlock({ settings }: { settings: StorySettings }) {
               ))}
             </div>
           </div>
-          <div className="ft-store-story-img" style={{ position: "relative", borderRadius: 16, overflow: "hidden", background: "repeating-linear-gradient(45deg,#e0d4c0,#e0d4c0 11px,#ebe1d1 11px,#ebe1d1 22px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, color: "#9a8f7d" }}>atelier · artisanat</span>
+          <div
+            className="ft-store-story-img"
+            style={{
+              position: "relative", borderRadius: 16, overflow: "hidden",
+              background: settings.image ? undefined : "repeating-linear-gradient(45deg,#e0d4c0,#e0d4c0 11px,#ebe1d1 11px,#ebe1d1 22px)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >
+            {settings.image ? (
+              <Image src={settings.image} alt="" fill sizes="(max-width: 900px) 100vw, 50vw" style={{ objectFit: "cover" }} />
+            ) : (
+              <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, color: "#9a8f7d" }}>atelier · artisanat</span>
+            )}
           </div>
         </div>
       </section>
