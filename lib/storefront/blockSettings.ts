@@ -1,7 +1,9 @@
 import { z } from "zod";
 import type { BlockId } from "./blockIds";
 
-export type FieldKind = "text" | "textarea" | "select" | "toggle" | "number" | "url";
+export type FieldKind =
+  | "text" | "textarea" | "select" | "toggle" | "number" | "url"
+  | "image" | "imageList";
 
 export interface FieldDescriptor {
   key: string;
@@ -19,6 +21,7 @@ export const heroSchema = z.object({
   ctaLink: z.string(),
   secondaryCtaLabel: z.string(),
   secondaryCtaLink: z.string(),
+  backgroundImage: z.string(),
 });
 export type HeroSettings = z.infer<typeof heroSchema>;
 export const heroDefaults: HeroSettings = {
@@ -30,6 +33,7 @@ export const heroDefaults: HeroSettings = {
   ctaLink: "/catalogue",
   secondaryCtaLabel: "Notre histoire",
   secondaryCtaLink: "/#ft-story",
+  backgroundImage: "",
 };
 export const heroFields: FieldDescriptor[] = [
   { key: "eyebrow", label: "Pré-titre", kind: "text" },
@@ -39,6 +43,7 @@ export const heroFields: FieldDescriptor[] = [
   { key: "ctaLink", label: "Bouton principal — lien", kind: "url" },
   { key: "secondaryCtaLabel", label: "Bouton secondaire — libellé", kind: "text" },
   { key: "secondaryCtaLink", label: "Bouton secondaire — lien", kind: "url" },
+  { key: "backgroundImage", label: "Image de fond", kind: "image" },
 ];
 
 /* ---- story ---- */
@@ -53,6 +58,7 @@ export const storySchema = z.object({
   stat2Label: z.string(),
   stat3Value: z.string(),
   stat3Label: z.string(),
+  image: z.string(),
 });
 export type StorySettings = z.infer<typeof storySchema>;
 export const storyDefaults: StorySettings = {
@@ -67,6 +73,7 @@ export const storyDefaults: StorySettings = {
   stat2Label: "artisanes partenaires",
   stat3Value: "3",
   stat3Label: "pays livrés",
+  image: "",
 };
 export const storyFields: FieldDescriptor[] = [
   { key: "eyebrow", label: "Pré-titre", kind: "text" },
@@ -79,6 +86,7 @@ export const storyFields: FieldDescriptor[] = [
   { key: "stat2Label", label: "Stat 2 — libellé", kind: "text" },
   { key: "stat3Value", label: "Stat 3 — valeur", kind: "text" },
   { key: "stat3Label", label: "Stat 3 — libellé", kind: "text" },
+  { key: "image", label: "Photo atelier", kind: "image" },
 ];
 
 /* ---- loyalty ---- */
@@ -150,14 +158,23 @@ export const contactFields: FieldDescriptor[] = [
 /* ---- cats ---- */
 export const catsSchema = z.object({
   title: z.string(),
+  foulardsImage: z.string(),
+  turbansImage: z.string(),
+  accessoiresImage: z.string(),
 });
 export type CatsSettings = z.infer<typeof catsSchema>;
 export const catsDefaults: CatsSettings = {
   // titre de section optionnel ; vide = pas de titre (pas de régression)
   title: "",
+  foulardsImage: "",
+  turbansImage: "",
+  accessoiresImage: "",
 };
 export const catsFields: FieldDescriptor[] = [
   { key: "title", label: "Titre de section (optionnel)", kind: "text" },
+  { key: "foulardsImage", label: "Image — Foulards", kind: "image" },
+  { key: "turbansImage", label: "Image — Turbans", kind: "image" },
+  { key: "accessoiresImage", label: "Image — Accessoires", kind: "image" },
 ];
 
 /* ---- grid ---- */
@@ -191,15 +208,18 @@ export const featuredFields: FieldDescriptor[] = [
 export const lookSchema = z.object({
   eyebrow: z.string(),
   title: z.string(),
+  images: z.array(z.string()),
 });
 export type LookSettings = z.infer<typeof lookSchema>;
 export const lookDefaults: LookSettings = {
   eyebrow: "Lookbook",
   title: "Portées avec style",
+  images: [],
 };
 export const lookFields: FieldDescriptor[] = [
   { key: "eyebrow", label: "Pré-titre", kind: "text" },
   { key: "title", label: "Titre", kind: "text" },
+  { key: "images", label: "Galerie", kind: "imageList" },
 ];
 
 export type BlockSettingsMap = {
