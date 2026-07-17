@@ -6,6 +6,9 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import { getCurrentTenant } from "@/lib/tenant";
 import { requireZone } from "@/lib/auth";
 import { pageContentSchema, parsePageContent, defaultPage } from "./pageContent";
+import { randomUUID } from "crypto";
+import { createClient } from "@/lib/supabase/server";
+import { compressImage, validateImageUpload, STOREFRONT_IMAGES_BUCKET } from "./imageUpload";
 
 const SLUG = "home";
 
@@ -80,6 +83,42 @@ export async function revertDraft(): Promise<{ ok: true } | { ok: false; error: 
     });
     revalidatePath("/admin/vitrine");
     return { ok: true };
+  } catch {
+    return { ok: false, error: "Une erreur est survenue, réessayez." };
+  }
+}
+
+/** Upload une image de bloc vers Supabase Storage, compressée côté serveur. */
+export async function uploadBlockImage(
+  formData: FormData
+): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+  const { allowed } = await requireZone("dashboard");
+  if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+
+  const file = formData.get("file");
+  const blockType = formData.get("blockType");
+  const fieldKey = formData.get("fieldKey");
+  if (!(file instanceof File) || typeof blockType !== "string" || typeof fieldKey !== "string") {
+    return { ok: false, error: "Requête invalide." };
+  }
+
+  const validation = validateImageUpload(file);
+  if (!validation.ok) return validation;
+
+  try {
+    const raw = Buffer.from(await file.arrayBuffer());
+    const compressed = await compressImage(raw);
+    const tenant = await getCurrentTenant();
+    const path = `${tenant.id}/${blockType}/${fieldKey}-${randomUUID()}.webp`;
+
+    const supabase = await createClient();
+    const { error: uploadError } = await supabase.storage
+      .from(STOREFRONT_IMAGES_BUCKET)
+      .upload(path, compressed, { contentType: "image/webp", upsert: false });
+    if (uploadError) return { ok: false, error: "Une erreur est survenue, réessayez." };
+
+    const { data } = supabase.storage.from(STOREFRONT_IMAGES_BUCKET).getPublicUrl(path);
+    return { ok: true, url: data.publicUrl };
   } catch {
     return { ok: false, error: "Une erreur est survenue, réessayez." };
   }
