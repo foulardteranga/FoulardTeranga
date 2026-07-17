@@ -13,10 +13,12 @@ on conflict (id) do nothing;
 -- RLS : lecture publique (images décoratives, non sensibles), écriture
 -- réservée à owner/staff du tenant propriétaire du dossier (premier segment
 -- du chemin = tenantId). Réutilise les helpers de la migration 20260713120100_rls.
+drop policy if exists "storefront_images_select_public" on storage.objects;
 create policy "storefront_images_select_public"
 on storage.objects for select
 using (bucket_id = 'storefront-images');
 
+drop policy if exists "storefront_images_write_staff" on storage.objects;
 create policy "storefront_images_write_staff"
 on storage.objects for all
 using (
