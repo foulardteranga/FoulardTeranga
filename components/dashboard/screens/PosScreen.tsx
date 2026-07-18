@@ -671,6 +671,7 @@ function CartLineDesktop({ line: l, stock }: { line: CartLine; stock?: number })
 function CartSheetMobile({ total, onClose, customers, products }: { total: number; onClose: () => void; customers: Customer[]; products: Product[] }) {
   const cart = useBackoffice((s) => s.cart);
   const incLine = useBackoffice((s) => s.incLine);
+  const rmLine = useBackoffice((s) => s.rmLine);
 
   return (
     <>
@@ -741,6 +742,13 @@ function CartSheetMobile({ total, onClose, customers, products }: { total: numbe
                   <div style={{ fontWeight: 700, fontSize: 14, minWidth: 70, textAlign: "right" }}>
                     {money((l.price - l.discount) * l.qty)}
                   </div>
+                  <button
+                    onClick={() => rmLine(l.id)}
+                    aria-label="Retirer l'article"
+                    style={{ border: "none", background: "none", cursor: "pointer", color: "#B6AEA1", fontSize: 18, flex: "none", padding: "0 2px" }}
+                  >
+                    ×
+                  </button>
                 </div>
               </div>
             ))
