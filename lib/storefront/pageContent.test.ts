@@ -54,6 +54,59 @@ describe("parsePageContent", () => {
   });
 });
 
+describe("ids d'instance", () => {
+  it("defaultPage assigne des ids déterministes égaux au type", () => {
+    const page = defaultPage();
+    expect(page.blocks.map((b) => b.id)).toEqual(DEFAULT_BLOCK_ORDER);
+  });
+
+  it("parsePageContent migre l'ancien format (sans id) avec id = type", () => {
+    const legacy = {
+      blocks: [
+        { type: "hero", name: "Bandeau Hero", visible: true, settings: defaultPage().blocks[0].settings },
+        { type: "contact", name: "Contact", visible: false, settings: defaultPage().blocks[8].settings },
+      ],
+    };
+    const parsed = parsePageContent(legacy);
+    expect(parsed.blocks.map((b) => b.id)).toEqual(["hero", "contact"]);
+    expect(parsed.blocks[1].visible).toBe(false);
+  });
+
+  it("le parse est déterministe : deux parses du même JSON donnent les mêmes ids", () => {
+    const legacy = JSON.parse(JSON.stringify({ blocks: defaultPage().blocks.map(({ id: _id, ...rest }) => rest) }));
+    expect(parsePageContent(legacy)).toEqual(parsePageContent(legacy));
+  });
+
+  it("préserve les ids existants (nouveau format) au round-trip", () => {
+    const page = defaultPage();
+    page.blocks[0].id = "custom-uuid-1";
+    expect(parsePageContent(JSON.parse(JSON.stringify(page))).blocks[0].id).toBe("custom-uuid-1");
+  });
+
+  it("dé-duplique les ids en collision de façon déterministe", () => {
+    const base = defaultPage().blocks[0];
+    const parsed = parsePageContent({
+      blocks: [
+        { ...base, id: "dup" },
+        { ...base, id: "dup", name: "Deuxième" },
+      ],
+    });
+    expect(parsed.blocks).toHaveLength(2);
+    expect(parsed.blocks[0].id).toBe("dup");
+    expect(parsed.blocks[1].id).toBe("hero-1");
+    expect(new Set(parsed.blocks.map((b) => b.id)).size).toBe(2);
+  });
+
+  it("les opérations ciblent l'id d'instance, pas le type", () => {
+    const page = defaultPage();
+    page.blocks[0] = { ...page.blocks[0], id: "uuid-hero" };
+    const renamed = renameBlock(page, "uuid-hero", "Accueil");
+    expect(renamed.blocks[0].name).toBe("Accueil");
+    // un id inconnu ne change rien
+    expect(renameBlock(page, "hero", "X").blocks[0].name).toBe("Bandeau Hero");
+  });
+});
+
 describe("réducteurs", () => {
   it("moveBlock déplace un bloc et est immuable", () => {
     const page = defaultPage();
