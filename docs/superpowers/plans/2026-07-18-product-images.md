@@ -87,10 +87,21 @@ Dans `prisma/schema.prisma`, model `Product`, après la ligne `featured    Boole
   gallery     String[]        @default([])
 ```
 
-- [ ] **Step 4: Create and apply the migration**
+- [ ] **Step 4: Create the migration file and regenerate the client**
 
-Run: `npx prisma migrate dev --name product_images`
-Expected: `Your database is now in sync with your schema.` — la migration créée ne contient que deux `ALTER TABLE "Product" ADD COLUMN` (non destructif). Le client Prisma est régénéré automatiquement.
+⚠️ Cette base n'est **pas** suivie par `prisma migrate` (P3005) — ne PAS lancer `npx prisma migrate dev`. Le DDL est appliqué par le contrôleur via Supabase MCP `apply_migration`.
+
+1. Créer `prisma/migrations/20260718090000_product_images/migration.sql` :
+
+```sql
+ALTER TABLE "Product" ADD COLUMN "image" TEXT;
+ALTER TABLE "Product" ADD COLUMN "gallery" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[];
+```
+
+2. Run: `npx prisma generate`
+Expected: `Generated Prisma Client` — le client régénéré expose `image`/`gallery` (aucun accès DB requis ; les tests de cette tâche sont purs).
+
+3. Signaler dans le rapport que le DDL reste à appliquer par le contrôleur.
 
 - [ ] **Step 5: Extend the app type and the mapper**
 
@@ -921,8 +932,8 @@ git commit -m "feat: product photo thumbnails on POS tiles, cart and checkout"
 
 - [ ] **Step 1: Full local gate**
 
-Run: `npm run lint && npm run typecheck && npm test && npm run build`
-Expected: tout PASS, build sans erreur.
+Run: `npm run lint && npm run typecheck && npm test && npx next build --webpack`
+Expected: tout PASS, build sans erreur. (⚠️ `--webpack` obligatoire : Turbopack panique sur les accents NFD du chemin du projet.)
 
 - [ ] **Step 2: End-to-end manual pass**
 
