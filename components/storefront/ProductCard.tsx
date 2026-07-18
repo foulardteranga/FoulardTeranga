@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { colors, fonts } from "@/lib/theme/tokens";
 import { stripe, badgeBackground } from "@/lib/theme/storefront";
 import { money, fmt } from "@/lib/format";
@@ -21,6 +22,15 @@ export function ProductCard({
   return (
     <div style={{ background: "#fff", border: "1px solid rgba(30,27,24,.08)", borderRadius: 14, overflow: "hidden", boxShadow: "0 1px 3px rgba(60,40,20,.08)" }}>
       <Link href={`/produit/${product.id}`} style={{ display: "block", position: "relative", aspectRatio: "4 / 5", background: stripe(product.colors[0]) }}>
+        {product.image && (
+          <Image
+            src={product.image}
+            alt={product.name}
+            fill
+            sizes="(max-width: 768px) 50vw, 25vw"
+            style={{ objectFit: "cover" }}
+          />
+        )}
         {product.badge && (
           <span
             style={{
