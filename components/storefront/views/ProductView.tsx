@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { fonts, colors } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
+import { QtyStepper } from "@/components/ui/QtyStepper";
 import { stripe } from "@/lib/theme/storefront";
 import { useStorefront } from "@/lib/store/useStorefront";
 import { money, fmt } from "@/lib/format";
@@ -155,11 +156,7 @@ export function ProductView({ product, related }: { product: Product; related: P
           </div>
 
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-            <div style={{ display: "inline-flex", alignItems: "center", height: 50, border: `1.5px solid ${colors.borderField}`, borderRadius: 10, overflow: "hidden" }}>
-              <button onClick={() => setQty((q) => Math.max(1, q - 1))} style={{ width: 46, height: "100%", border: "none", background: colors.ivory, fontSize: 20, color: colors.primary, cursor: "pointer" }}>−</button>
-              <span style={{ width: 48, textAlign: "center", font: `600 16px ${fonts.ui}` }}>{qty}</span>
-              <button onClick={() => setQty((q) => q + 1)} style={{ width: 46, height: "100%", border: "none", background: colors.ivory, fontSize: 20, color: colors.primary, cursor: "pointer" }}>+</button>
-            </div>
+            <QtyStepper qty={qty} onChange={setQty} max={stock} big />
             <button
               onClick={doAdd}
               disabled={soldOut}

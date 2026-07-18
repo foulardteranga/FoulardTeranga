@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { fonts, colors } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
+import { QtyStepper } from "@/components/ui/QtyStepper";
 import { stripe } from "@/lib/theme/storefront";
 import { useStorefront } from "@/lib/store/useStorefront";
 import { cartSubtotal, cartCount } from "@/lib/store/cartLogic";
@@ -65,11 +66,7 @@ export function CartView() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontFamily: fonts.display, fontWeight: 600, fontSize: 16 }}>{line.name}</div>
                     <div style={{ fontSize: 12.5, color: colors.muted, margin: "3px 0 10px" }}>{line.variant}</div>
-                    <div style={{ display: "inline-flex", alignItems: "center", height: 38, border: `1.5px solid ${colors.borderField}`, borderRadius: 8, overflow: "hidden" }}>
-                      <button onClick={() => incLine(line.key, -1)} style={{ width: 38, height: "100%", border: "none", background: colors.ivory, fontSize: 17, color: colors.primary, cursor: "pointer" }}>−</button>
-                      <span style={{ width: 42, textAlign: "center", font: `600 14px ${fonts.ui}` }}>{line.qty}</span>
-                      <button onClick={() => incLine(line.key, 1)} style={{ width: 38, height: "100%", border: "none", background: colors.ivory, fontSize: 17, color: colors.primary, cursor: "pointer" }}>+</button>
-                    </div>
+                    <QtyStepper qty={line.qty} onChange={(qty) => incLine(line.key, qty - line.qty)} />
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <div style={{ font: `700 16px ${fonts.ui}`, color: colors.primary }}>{fmt(line.price * line.qty)}</div>

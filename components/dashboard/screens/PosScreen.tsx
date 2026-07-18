@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
+import { QtyStepper } from "@/components/ui/QtyStepper";
 import { categories } from "@/lib/data/catalog";
 import { money } from "@/lib/format";
 import { useBackoffice, type CartLine } from "@/lib/store/useBackoffice";
@@ -155,7 +156,7 @@ export function PosScreen({ products, customers }: { products: Product[]; custom
       </div>
 
       {/* cart desktop */}
-      <CartPanelDesktop total={total} sub={sub} disc={disc} customers={customers} />
+      <CartPanelDesktop total={total} sub={sub} disc={disc} customers={customers} products={products} />
 
       {/* mobile cart bar */}
       {cartCount > 0 && !cartOpen && (
@@ -204,7 +205,7 @@ export function PosScreen({ products, customers }: { products: Product[]; custom
       )}
 
       {/* mobile cart sheet */}
-      {cartOpen && <CartSheetMobile total={total} onClose={closeCart} customers={customers} />}
+      {cartOpen && <CartSheetMobile total={total} onClose={closeCart} customers={customers} products={products} />}
 
       {/* spacer to clear the fixed mobile cart bar */}
       {cartCount > 0 && <div className="ft-mobile-only" style={{ height: 60 }} aria-hidden />}
@@ -523,7 +524,7 @@ function PayButton({ total, big }: { total: number; big?: boolean }) {
 }
 
 /* ----- Desktop cart aside ----- */
-function CartPanelDesktop({ total, sub, disc, customers }: { total: number; sub: number; disc: number; customers: Customer[] }) {
+function CartPanelDesktop({ total, sub, disc, customers, products }: { total: number; sub: number; disc: number; customers: Customer[]; products: Product[] }) {
   const cart = useBackoffice((s) => s.cart);
   const clearCart = useBackoffice((s) => s.clearCart);
   const cartCount = cart.reduce((a, l) => a + l.qty, 0);
@@ -571,7 +572,7 @@ function CartPanelDesktop({ total, sub, disc, customers }: { total: number; sub:
         {cart.length === 0 ? (
           <EmptyCart />
         ) : (
-          cart.map((l) => <CartLineDesktop key={l.id} line={l} />)
+          cart.map((l) => <CartLineDesktop key={l.id} line={l} stock={products.find((p) => p.id === l.id)?.stock} />)
         )}
       </div>
 
@@ -622,7 +623,7 @@ function EmptyCart() {
   );
 }
 
-function CartLineDesktop({ line: l }: { line: CartLine }) {
+function CartLineDesktop({ line: l, stock }: { line: CartLine; stock?: number }) {
   const incLine = useBackoffice((s) => s.incLine);
   const rmLine = useBackoffice((s) => s.rmLine);
   const toggleDiscount = useBackoffice((s) => s.toggleDiscount);
@@ -646,7 +647,7 @@ function CartLineDesktop({ line: l }: { line: CartLine }) {
         </button>
       </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Stepper qty={l.qty} onDec={() => incLine(l.id, -1)} onInc={() => incLine(l.id, 1)} />
+        <QtyStepper qty={l.qty} onChange={(qty) => incLine(l.id, qty - l.qty)} max={stock} />
         <div style={{ textAlign: "right" }}>
           {l.discount > 0 && (
             <div style={{ fontSize: 11, color: "#9a8f7d", textDecoration: "line-through" }}>
@@ -666,45 +667,8 @@ function CartLineDesktop({ line: l }: { line: CartLine }) {
   );
 }
 
-function Stepper({ qty, onDec, onInc, big }: { qty: number; onDec: () => void; onInc: () => void; big?: boolean }) {
-  const w = big ? 38 : 34;
-  const h = big ? 38 : 34;
-  return (
-    <div
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        height: h,
-        border: `1.5px solid ${colors.borderField}`,
-        borderRadius: 9,
-        overflow: "hidden",
-      }}
-    >
-      <button onClick={onDec} style={stepBtn(w)} aria-label="Diminuer">
-        −
-      </button>
-      <span style={{ width: big ? 36 : 38, textAlign: "center", font: `600 14px ${fonts.ui}` }}>{qty}</span>
-      <button onClick={onInc} style={stepBtn(w)} aria-label="Augmenter">
-        +
-      </button>
-    </div>
-  );
-}
-
-function stepBtn(w: number): React.CSSProperties {
-  return {
-    width: w,
-    height: "100%",
-    border: "none",
-    background: colors.ivory,
-    fontSize: w >= 38 ? 18 : 17,
-    color: colors.primary,
-    cursor: "pointer",
-  };
-}
-
 /* ----- Mobile cart sheet ----- */
-function CartSheetMobile({ total, onClose, customers }: { total: number; onClose: () => void; customers: Customer[] }) {
+function CartSheetMobile({ total, onClose, customers, products }: { total: number; onClose: () => void; customers: Customer[]; products: Product[] }) {
   const cart = useBackoffice((s) => s.cart);
   const incLine = useBackoffice((s) => s.incLine);
 
@@ -773,7 +737,7 @@ function CartSheetMobile({ total, onClose, customers }: { total: number; onClose
                   <div style={{ fontSize: 12, color: colors.muted }}>{money(l.price)}</div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <Stepper qty={l.qty} big onDec={() => incLine(l.id, -1)} onInc={() => incLine(l.id, 1)} />
+                  <QtyStepper qty={l.qty} big onChange={(qty) => incLine(l.id, qty - l.qty)} max={products.find((p) => p.id === l.id)?.stock} />
                   <div style={{ fontWeight: 700, fontSize: 14, minWidth: 70, textAlign: "right" }}>
                     {money((l.price - l.discount) * l.qty)}
                   </div>
