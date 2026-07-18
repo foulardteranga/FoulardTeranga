@@ -14,6 +14,7 @@ import { validateKyc, type KycFieldErrors } from "@/lib/validators/kyc";
 import { cartSubtotal } from "@/lib/store/cartLogic";
 import { money, fmt } from "@/lib/format";
 import { COUNTRIES, applyCountryDial } from "@/lib/data/countries";
+import { NumericField } from "@/components/ui/NumericField";
 
 export function CheckoutView() {
   const router = useRouter();
@@ -112,7 +113,7 @@ export function CheckoutView() {
             </select>
           </Field>
           <Field label="Numéro de contact *" error={errors.phone}>
-            <input value={kyc.phone} onChange={(e) => setKycField("phone", e.target.value)} placeholder="Ex. +225 07 12 45 67 89" style={inputStyle(!!errors.phone)} />
+            <NumericField mode="phone" value={kyc.phone} onChange={(v) => setKycField("phone", v)} placeholder="Ex. +225 07 12 45 67 89" invalid={!!errors.phone} />
           </Field>
           <div style={{ marginBottom: 22 }}>
             <label style={{ display: "block", font: `600 13px ${fonts.ui}`, marginBottom: 7 }}>Note (optionnel)</label>
