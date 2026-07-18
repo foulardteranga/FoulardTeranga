@@ -103,6 +103,8 @@ model Product {
   oldPrice    Int?
   badge       String?
   featured    Boolean         @default(false)
+  image       String?
+  gallery     String[]        @default([])
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 

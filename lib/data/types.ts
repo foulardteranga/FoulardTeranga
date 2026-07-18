@@ -23,6 +23,10 @@ export interface Product {
   badge?: string;
   /** Marque ce produit comme le "produit vedette" de la Home. Un seul produit devrait le porter. */
   featured?: boolean;
+  /** Photo principale (URL publique Supabase Storage) ; absente = repli sur le dégradé `swatch`. */
+  image?: string;
+  /** Photos secondaires affichées dans la galerie de la fiche produit. */
+  gallery: string[];
 }
 
 export type CustomerSegment = "VIP" | "Fidèle" | "Nouvelle";

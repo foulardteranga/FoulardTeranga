@@ -20,6 +20,8 @@ export function toProduct(row: PrismaProduct): Product {
     oldPrice: row.oldPrice ?? undefined,
     badge: row.badge ?? undefined,
     featured: row.featured,
+    image: row.image ?? undefined,
+    gallery: row.gallery,
   };
 }
 
