@@ -8,6 +8,7 @@ import { money } from "@/lib/format";
 import { useBackoffice } from "@/lib/store/useBackoffice";
 import { createProduct } from "@/lib/inventory/actions";
 import { PRODUCT_CATEGORIES } from "@/lib/validators/product";
+import { ProductPhotosField } from "@/components/dashboard/ProductPhotosField";
 import type { Product } from "@/lib/data/types";
 
 function lvlDot(v: number, seuil: number): string {
@@ -284,8 +285,8 @@ interface NewProductForm {
   swatch: string;
   lengths: string;
   description: string;
-  image?: string;
-  gallery?: string[];
+  image: string;
+  gallery: string[];
 }
 
 const EMPTY_PRODUCT_FORM: NewProductForm = {
@@ -298,7 +299,7 @@ const EMPTY_PRODUCT_FORM: NewProductForm = {
   swatch: SWATCH_PALETTE[0],
   lengths: "",
   description: "",
-  image: undefined,
+  image: "",
   gallery: [],
 };
 
@@ -315,7 +316,8 @@ function NewProductDrawer({ onClose, onCreated }: { onClose: () => void; onCreat
       ...form,
       price: Number(form.price),
       stock: Number(form.stock),
-      gallery: form.gallery ?? [],
+      image: form.image || undefined,
+      gallery: form.gallery,
     });
     setSaving(false);
     if (!result.ok) {
@@ -360,6 +362,14 @@ function NewProductDrawer({ onClose, onCreated }: { onClose: () => void; onCreat
         <div style={{ flex: 1, overflowY: "auto", padding: "18px 20px" }}>
           <FormField label="Nom du produit">
             <input value={form.name} onChange={(e) => set("name", e.target.value)} style={textField} placeholder="Foulard tissé main" />
+          </FormField>
+
+          <FormField label="Photos">
+            <ProductPhotosField
+              image={form.image}
+              gallery={form.gallery}
+              onChange={({ image, gallery }) => setForm((s) => ({ ...s, image, gallery }))}
+            />
           </FormField>
 
           <FormField label="Catégorie">
