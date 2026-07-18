@@ -5,6 +5,7 @@ import { colors, fonts } from "@/lib/theme/tokens";
 import type { FieldDescriptor } from "@/lib/storefront/blockSettings";
 import type { BlockId } from "@/lib/storefront/blockIds";
 import { uploadBlockImage } from "@/lib/storefront/actions";
+import { NumericField } from "@/components/ui/NumericField";
 
 const miniBtnStyle: React.CSSProperties = {
   display: "inline-flex", alignItems: "center", height: 34, padding: "0 12px",
@@ -155,7 +156,7 @@ export function SettingsField({
           {field.label}
         </label>
       ) : field.kind === "number" ? (
-        <input type="number" value={Number(value ?? 0)} onChange={(e) => onChange(Number(e.target.value))} style={base} />
+        <NumericField mode="integer" value={String(value ?? 0)} onChange={(v) => onChange(Number(v) || 0)} />
       ) : (
         <input type="text" value={String(value ?? "")} onChange={(e) => onChange(e.target.value)} style={base} />
       )}
