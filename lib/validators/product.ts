@@ -10,8 +10,17 @@ export const productSchema = z.object({
   price: z.coerce.number().int().positive("Prix invalide."),
   stock: z.coerce.number().int().min(0, "Stock invalide."),
   swatch: z.string().trim().regex(/^#[0-9a-fA-F]{6}$/, "Couleur invalide."),
+  image: z.url().optional(),
+  gallery: z.array(z.url()).default([]),
   lengths: z.string().trim().default(""),
   description: z.string().trim().default(""),
 });
 
 export type ProductInput = z.infer<typeof productSchema>;
+
+/** Mise à jour des photos d'un produit existant (drawer d'édition, section Photos). */
+export const productImagesSchema = z.object({
+  image: z.url().nullable(),
+  gallery: z.array(z.url()),
+});
+export type ProductImagesInput = z.infer<typeof productImagesSchema>;

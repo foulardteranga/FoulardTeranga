@@ -284,6 +284,8 @@ interface NewProductForm {
   swatch: string;
   lengths: string;
   description: string;
+  image?: string;
+  gallery?: string[];
 }
 
 const EMPTY_PRODUCT_FORM: NewProductForm = {
@@ -296,6 +298,8 @@ const EMPTY_PRODUCT_FORM: NewProductForm = {
   swatch: SWATCH_PALETTE[0],
   lengths: "",
   description: "",
+  image: undefined,
+  gallery: [],
 };
 
 function NewProductDrawer({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
@@ -307,7 +311,12 @@ function NewProductDrawer({ onClose, onCreated }: { onClose: () => void; onCreat
 
   async function submit() {
     setSaving(true);
-    const result = await createProduct({ ...form, price: Number(form.price), stock: Number(form.stock) });
+    const result = await createProduct({
+      ...form,
+      price: Number(form.price),
+      stock: Number(form.stock),
+      gallery: form.gallery ?? [],
+    });
     setSaving(false);
     if (!result.ok) {
       showToast(result.error, "error");
