@@ -3,7 +3,7 @@ import { fonts, colors } from "@/lib/theme/tokens";
 import type { StorySettings } from "@/lib/storefront/blockSettings";
 import { BlockFrame } from "./BlockFrame";
 
-export function StoryBlock({ settings }: { settings: StorySettings }) {
+export function StoryBlock({ settings, anchored = true }: { settings: StorySettings; anchored?: boolean }) {
   const stats = [
     { value: settings.stat1Value, label: settings.stat1Label },
     { value: settings.stat2Value, label: settings.stat2Label },
@@ -11,7 +11,7 @@ export function StoryBlock({ settings }: { settings: StorySettings }) {
   ];
   return (
     <BlockFrame id="story">
-      <section id="ft-story" style={{ background: "#F4EFE7", borderTop: "1px solid rgba(30,27,24,.06)", borderBottom: "1px solid rgba(30,27,24,.06)" }}>
+      <section id={anchored ? "ft-story" : undefined} style={{ background: "#F4EFE7", borderTop: "1px solid rgba(30,27,24,.06)", borderBottom: "1px solid rgba(30,27,24,.06)" }}>
         <div className="ft-store-section ft-store-story" style={{ maxWidth: 1200, margin: "0 auto", display: "grid", alignItems: "center" }}>
           <div>
             <div style={{ font: `600 12px ${fonts.ui}`, letterSpacing: ".1em", color: colors.gold, textTransform: "uppercase", marginBottom: 12 }}>

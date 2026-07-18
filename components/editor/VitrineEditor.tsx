@@ -7,7 +7,6 @@ import {
   moveBlock, renameBlock, setBlockVisible, updateBlockSettings,
   type StorefrontPageContent,
 } from "@/lib/storefront/pageContent";
-import type { BlockId } from "@/lib/store/useStorefront";
 import { saveDraft, publish, revertDraft } from "@/lib/storefront/actions";
 import { BlockSettingsPanel } from "./BlockSettingsPanel";
 import type { Product } from "@/lib/data/types";
@@ -24,7 +23,7 @@ export function VitrineEditor({
   whatsappPhone?: string | null;
 }) {
   const [page, setPage] = useState(initialPage);
-  const [selected, setSelected] = useState<BlockId>(initialPage.blocks[0]?.type ?? "hero");
+  const [selected, setSelected] = useState<string>(initialPage.blocks[0]?.id ?? "");
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [publishing, setPublishing] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -49,7 +48,7 @@ export function VitrineEditor({
 
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
-  const selectedBlock = page.blocks.find((b) => b.type === selected) ?? page.blocks[0];
+  const selectedBlock = page.blocks.find((b) => b.id === selected) ?? page.blocks[0];
 
   async function onPublish() {
     setPublishing(true);
@@ -92,17 +91,21 @@ export function VitrineEditor({
       <div className="ft-editor-cols" style={{ display: "grid", gridTemplateColumns: "1fr 340px", alignItems: "start" }}>
         {/* canevas WYSIWYG (largeur vitrine) */}
         <div style={{ minWidth: 0, overflowX: "hidden" }}>
-          {page.blocks.map((b) => (
+          {page.blocks.map((b, i) => (
             <div
-              key={b.type}
-              onClick={() => setSelected(b.type)}
+              key={b.id}
+              onClick={() => setSelected(b.id)}
               style={{
                 position: "relative", cursor: "pointer", opacity: b.visible ? 1 : 0.4,
-                outline: selected === b.type ? `2px solid ${colors.primary}` : "2px solid transparent",
+                outline: selected === b.id ? `2px solid ${colors.primary}` : "2px solid transparent",
                 outlineOffset: -2,
               }}
             >
-              {renderBlock(b, { products, whatsappPhone })}
+              {renderBlock(b, {
+                products,
+                whatsappPhone,
+                anchored: page.blocks.findIndex((x) => x.type === b.type) === i,
+              })}
             </div>
           ))}
         </div>
@@ -112,10 +115,10 @@ export function VitrineEditor({
           {selectedBlock && (
             <BlockSettingsPanel
               block={selectedBlock}
-              onChangeSetting={(key, value) => apply(updateBlockSettings(page, selectedBlock.type, key, value))}
-              onRename={(name) => apply(renameBlock(page, selectedBlock.type, name))}
-              onToggleVisible={() => apply(setBlockVisible(page, selectedBlock.type, !selectedBlock.visible))}
-              onMove={(dir) => apply(moveBlock(page, selectedBlock.type, dir))}
+              onChangeSetting={(key, value) => apply(updateBlockSettings(page, selectedBlock.id, key, value))}
+              onRename={(name) => apply(renameBlock(page, selectedBlock.id, name))}
+              onToggleVisible={() => apply(setBlockVisible(page, selectedBlock.id, !selectedBlock.visible))}
+              onMove={(dir) => apply(moveBlock(page, selectedBlock.id, dir))}
             />
           )}
         </aside>

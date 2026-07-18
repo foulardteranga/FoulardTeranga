@@ -4,10 +4,10 @@ import { whatsappLink } from "@/lib/format";
 import type { ContactSettings } from "@/lib/storefront/blockSettings";
 import { BlockFrame } from "./BlockFrame";
 
-export function ContactBlock({ settings, whatsappPhone }: { settings: ContactSettings; whatsappPhone?: string | null }) {
+export function ContactBlock({ settings, whatsappPhone, anchored = true }: { settings: ContactSettings; whatsappPhone?: string | null; anchored?: boolean }) {
   return (
     <BlockFrame id="contact">
-      <section id="ft-contact" className="ft-store-section">
+      <section id={anchored ? "ft-contact" : undefined} className="ft-store-section">
         <div className="ft-store-contact" style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gap: 16 }}>
           <div style={{ background: "#fff", border: "1px solid rgba(30,27,24,.08)", borderRadius: 16, padding: "26px 28px" }}>
             <h3 style={{ fontFamily: fonts.display, fontWeight: 600, fontSize: 24, margin: "0 0 18px" }}>{settings.title}</h3>

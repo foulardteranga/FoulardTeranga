@@ -18,8 +18,14 @@ export function HomeShell({
 
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
-      {visible.map((b) => (
-        <div key={b.type}>{renderBlock(b, { products, whatsappPhone })}</div>
+      {visible.map((b, i) => (
+        <div key={b.id}>
+          {renderBlock(b, {
+            products,
+            whatsappPhone,
+            anchored: visible.findIndex((x) => x.type === b.type) === i,
+          })}
+        </div>
       ))}
 
       <footer style={{ background: "#1E1B18", color: "#C9BEB0", marginTop: 20 }}>
