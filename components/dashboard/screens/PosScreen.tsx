@@ -737,7 +737,7 @@ function CartSheetMobile({ total, onClose, customers, products }: { total: numbe
                   <div style={{ fontSize: 12, color: colors.muted }}>{money(l.price)}</div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <QtyStepper qty={l.qty} big onChange={(qty) => incLine(l.id, qty - l.qty)} max={products.find((p) => p.id === l.id)?.stock} />
+                  <QtyStepper qty={l.qty} size="md" onChange={(qty) => incLine(l.id, qty - l.qty)} max={products.find((p) => p.id === l.id)?.stock} />
                   <div style={{ fontWeight: 700, fontSize: 14, minWidth: 70, textAlign: "right" }}>
                     {money((l.price - l.discount) * l.qty)}
                   </div>

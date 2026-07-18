@@ -66,7 +66,7 @@ export function CartView() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontFamily: fonts.display, fontWeight: 600, fontSize: 16 }}>{line.name}</div>
                     <div style={{ fontSize: 12.5, color: colors.muted, margin: "3px 0 10px" }}>{line.variant}</div>
-                    <QtyStepper qty={line.qty} onChange={(qty) => incLine(line.key, qty - line.qty)} />
+                    <QtyStepper qty={line.qty} size="md" onChange={(qty) => incLine(line.key, qty - line.qty)} />
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <div style={{ font: `700 16px ${fonts.ui}`, color: colors.primary }}>{fmt(line.price * line.qty)}</div>

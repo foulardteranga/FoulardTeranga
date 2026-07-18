@@ -156,7 +156,7 @@ export function ProductView({ product, related }: { product: Product; related: P
           </div>
 
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-            <QtyStepper qty={qty} onChange={setQty} max={stock} big />
+            <QtyStepper qty={qty} onChange={setQty} max={stock} size="lg" />
             <button
               onClick={doAdd}
               disabled={soldOut}
