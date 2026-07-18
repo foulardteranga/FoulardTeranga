@@ -87,7 +87,7 @@ export function ProductView({ product, related }: { product: Product; related: P
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
               {photos.slice(0, 4).map((src, i) => (
                 <button
-                  key={src}
+                  key={src + i}
                   onClick={() => setPhotoIdx(i)}
                   aria-label={`Photo ${i + 1}`}
                   style={{ position: "relative", aspectRatio: "1", borderRadius: 10, overflow: "hidden", padding: 0, cursor: "pointer", border: i === photoIdx ? `2px solid ${colors.primary}` : "1px solid rgba(30,27,24,.1)", background: "none" }}
