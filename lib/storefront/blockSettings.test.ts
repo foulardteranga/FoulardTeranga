@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BLOCK_SETTINGS, heroFields, storyFields, catsFields, lookFields } from "./blockSettings";
+import { BLOCK_SETTINGS, BLOCK_LIBRARY, heroFields, storyFields, catsFields, lookFields } from "./blockSettings";
 import { DEFAULT_BLOCK_ORDER } from "@/lib/store/useStorefront";
 
 describe("BLOCK_SETTINGS", () => {
@@ -36,5 +36,14 @@ describe("champs image", () => {
   it("look.images est un champ de type imageList, vide par défaut", () => {
     expect(lookFields.find((f) => f.key === "images")?.kind).toBe("imageList");
     expect(BLOCK_SETTINGS.look.defaults).toMatchObject({ images: [] });
+  });
+});
+
+describe("BLOCK_LIBRARY", () => {
+  it("couvre chaque type de bloc avec libellé et description non vides", () => {
+    for (const type of DEFAULT_BLOCK_ORDER) {
+      expect(BLOCK_LIBRARY[type].label.length).toBeGreaterThan(0);
+      expect(BLOCK_LIBRARY[type].description.length).toBeGreaterThan(0);
+    }
   });
 });

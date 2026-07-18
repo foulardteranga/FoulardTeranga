@@ -248,3 +248,22 @@ export const BLOCK_SETTINGS: Record<
   news: { schema: newsSchema, defaults: newsDefaults, fields: newsFields },
   contact: { schema: contactSchema, defaults: contactDefaults, fields: contactFields },
 };
+
+/** Métadonnées de la bibliothèque de blocs (sélecteur « + Ajouter un bloc »).
+ *  Module server-safe : pas d'icônes ici — l'éditeur (client) mappe BlockId → icône. */
+export interface BlockLibraryEntry {
+  label: string;
+  description: string;
+}
+
+export const BLOCK_LIBRARY: Record<BlockId, BlockLibraryEntry> = {
+  hero: { label: "Bandeau Hero", description: "Grande image d'accueil avec titre et boutons." },
+  cats: { label: "Vignettes catégories", description: "Accès rapide aux catégories de la boutique." },
+  grid: { label: "Grille de produits", description: "Nouveautés et best-sellers du catalogue." },
+  loyalty: { label: "Bandeau fidélité", description: "Met en avant le programme de points." },
+  featured: { label: "Produit vedette", description: "Zoom sur le produit marqué « vedette »." },
+  story: { label: "Notre histoire", description: "Texte de présentation, photo et chiffres clés." },
+  look: { label: "Galerie / Lookbook", description: "Mosaïque de photos portées." },
+  news: { label: "Newsletter", description: "Formulaire d'inscription aux nouveautés." },
+  contact: { label: "Contact & localisation", description: "Adresse, horaires et contact WhatsApp." },
+};
