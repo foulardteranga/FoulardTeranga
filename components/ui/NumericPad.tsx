@@ -47,7 +47,7 @@ export function NumericPad({
         <PadKey label="0" onClick={() => press("0")} />
         <PadKey label="⌫" onClick={() => onChange(deleteLast(value))} muted />
       </div>
-      <button onClick={onConfirm} style={confirmBtn}>Valider</button>
+      <button type="button" onClick={onConfirm} style={confirmBtn}>Valider</button>
     </div>
   );
 }
@@ -55,6 +55,7 @@ export function NumericPad({
 function PadKey({ label, onClick, muted }: { label: string; onClick: () => void; muted?: boolean }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       style={{
         height: 56, border: `1.5px solid ${colors.borderSoft}`, borderRadius: 12,
@@ -68,6 +69,6 @@ function PadKey({ label, onClick, muted }: { label: string; onClick: () => void;
 }
 
 const confirmBtn: React.CSSProperties = {
-  width: "100%", height: 48, border: "none", borderRadius: 10,
+  width: "100%", height: 56, border: "none", borderRadius: 10,
   background: colors.primary, color: "#fff", font: `700 14px ${fonts.ui}`, cursor: "pointer",
 };
