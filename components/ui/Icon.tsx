@@ -83,4 +83,9 @@ export const ICONS = {
   close: '<path d="M18 6 6 18M6 6l12 12"/>',
   image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.5-4.5L5 21"/>',
   print: '<path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/>',
+  gallery: '<rect x="3" y="7" width="14" height="14" rx="2"/><path d="M7 7V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-2"/>',
+  mail: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m4 6 8 7 8-7"/>',
+  duplicate: '<rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V4a2 2 0 0 1 2-2h12"/>',
+  eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+  eyeOff: '<path d="M2 12s4-7 10-7c1.4 0 2.7.3 3.9.8M22 12s-1.4 2.4-3.7 4.4M9.9 9.9a3 3 0 0 0 4.2 4.2M1 1l22 22"/>',
 } as const;
