@@ -8,7 +8,7 @@ import { requireZone } from "@/lib/auth";
 import { pageContentSchema, parsePageContent, defaultPage } from "./pageContent";
 import { randomUUID } from "crypto";
 import { createClient } from "@/lib/supabase/server";
-import { compressImage, validateImageUpload, STOREFRONT_IMAGES_BUCKET } from "./imageUpload";
+import { compressImage, validateImageUpload, STOREFRONT_IMAGES_BUCKET } from "@/lib/images/imageUpload";
 
 const SLUG = "home";
 
