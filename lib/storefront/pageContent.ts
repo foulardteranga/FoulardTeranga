@@ -122,3 +122,66 @@ export function updateBlockSettings(
     ),
   };
 }
+
+/** Insère un nouveau bloc du type demandé en fin de page (réglages par défaut,
+ *  nom auto-suffixé si le type est déjà présent). Retourne l'id créé pour que
+ *  l'éditeur puisse sélectionner le bloc. */
+export function addBlock(
+  page: StorefrontPageContent,
+  type: BlockId
+): { page: StorefrontPageContent; id: string } {
+  const count = page.blocks.filter((b) => b.type === type).length;
+  const name =
+    count === 0 ? DEFAULT_BLOCK_NAMES[type] : `${DEFAULT_BLOCK_NAMES[type]} ${count + 1}`;
+  const id = crypto.randomUUID();
+  const block: BlockInstance = {
+    id,
+    type,
+    name,
+    visible: true,
+    settings: structuredClone(BLOCK_SETTINGS[type].defaults) as Record<string, unknown>,
+  };
+  return { page: { blocks: [...page.blocks, block] }, id };
+}
+
+/** Clone profond de l'instance, inséré juste sous l'original. */
+export function duplicateBlock(
+  page: StorefrontPageContent,
+  id: string
+): { page: StorefrontPageContent; id: string } {
+  const i = page.blocks.findIndex((b) => b.id === id);
+  if (i < 0) return { page, id };
+  const src = page.blocks[i];
+  const copy: BlockInstance = {
+    ...src,
+    id: crypto.randomUUID(),
+    name: `${src.name} (copie)`,
+    settings: structuredClone(src.settings),
+  };
+  const blocks = [...page.blocks];
+  blocks.splice(i + 1, 0, copy);
+  return { page: { blocks }, id: copy.id };
+}
+
+/** Supprime l'instance visée — sauf la dernière : une page vide serait
+ *  « ressuscitée » en page par défaut par parsePageContent au prochain parse. */
+export function removeBlock(page: StorefrontPageContent, id: string): StorefrontPageContent {
+  if (page.blocks.length <= 1) return page;
+  const blocks = page.blocks.filter((b) => b.id !== id);
+  return blocks.length === page.blocks.length ? page : { blocks };
+}
+
+/** Déplace l'instance `fromId` à la position occupée par `toId` (drag-and-drop). */
+export function reorderBlocks(
+  page: StorefrontPageContent,
+  fromId: string,
+  toId: string
+): StorefrontPageContent {
+  const from = page.blocks.findIndex((b) => b.id === fromId);
+  const to = page.blocks.findIndex((b) => b.id === toId);
+  if (from < 0 || to < 0 || from === to) return page;
+  const blocks = [...page.blocks];
+  const [item] = blocks.splice(from, 1);
+  blocks.splice(to, 0, item);
+  return { blocks };
+}
