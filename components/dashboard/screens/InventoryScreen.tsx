@@ -9,6 +9,7 @@ import { useBackoffice } from "@/lib/store/useBackoffice";
 import { createProduct, updateProductImages } from "@/lib/inventory/actions";
 import { PRODUCT_CATEGORIES } from "@/lib/validators/product";
 import { ProductPhotosField } from "@/components/dashboard/ProductPhotosField";
+import { NumericField } from "@/components/ui/NumericField";
 import type { Product } from "@/lib/data/types";
 
 function lvlDot(v: number, seuil: number): string {
@@ -398,10 +399,10 @@ function NewProductDrawer({ onClose, onCreated }: { onClose: () => void; onCreat
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <FormField label="Prix (FCFA)">
-              <input type="number" min={0} value={form.price} onChange={(e) => set("price", e.target.value)} style={textField} placeholder="15000" />
+              <NumericField mode="money" value={form.price} onChange={(v) => set("price", v)} placeholder="15000" min={0} />
             </FormField>
             <FormField label="Stock initial">
-              <input type="number" min={0} value={form.stock} onChange={(e) => set("stock", e.target.value)} style={textField} placeholder="10" />
+              <NumericField mode="integer" value={form.stock} onChange={(v) => set("stock", v)} placeholder="10" min={0} />
             </FormField>
           </div>
 
