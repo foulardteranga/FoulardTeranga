@@ -6,6 +6,8 @@ export interface StoreCartLine {
   colorHex: string;
   price: number;
   qty: number;
+  /** Photo principale du produit au moment de l'ajout (miniatures panier/checkout). */
+  image?: string;
 }
 
 export function cartKey(productId: string, variant: string): string {

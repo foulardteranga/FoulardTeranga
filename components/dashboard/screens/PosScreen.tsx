@@ -237,6 +237,10 @@ function ProductCard({ product: p }: { product: Product }) {
           justifyContent: "center",
         }}
       >
+        {p.image && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={p.image} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+        )}
         <span style={{ fontFamily: "ui-monospace,monospace", fontSize: 10, color: "rgba(30,27,24,.35)" }}>
           {p.id.toUpperCase()}
         </span>

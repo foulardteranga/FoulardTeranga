@@ -40,13 +40,13 @@ export function ProductView({ product, related }: { product: Product; related: P
 
   const doAdd = () => {
     if (soldOut) { showToast("Article épuisé", "error"); return; }
-    addToCart({ productId: product.id, name: product.name, variant, colorHex: product.colors[colorIdx], price: product.price, qty });
+    addToCart({ productId: product.id, name: product.name, variant, colorHex: product.colors[colorIdx], price: product.price, qty, image: product.image });
     showToast("Ajouté au panier", "success");
   };
 
   const buyNow = () => {
     if (soldOut) { showToast("Article épuisé", "error"); return; }
-    addToCart({ productId: product.id, name: product.name, variant, colorHex: product.colors[colorIdx], price: product.price, qty });
+    addToCart({ productId: product.id, name: product.name, variant, colorHex: product.colors[colorIdx], price: product.price, qty, image: product.image });
     router.push("/commander");
   };
 

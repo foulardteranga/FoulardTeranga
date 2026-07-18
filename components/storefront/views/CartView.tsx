@@ -56,7 +56,12 @@ export function CartView() {
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {cart.map((line) => (
                 <div key={line.key} style={{ background: "#fff", border: "1px solid rgba(30,27,24,.08)", borderRadius: 14, padding: 16, display: "flex", gap: 14, alignItems: "center" }}>
-                  <div style={{ width: 74, height: 90, flex: "none", borderRadius: 10, background: stripe(line.colorHex) }} />
+                  {line.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={line.image} alt="" style={{ width: 74, height: 90, flex: "none", borderRadius: 10, objectFit: "cover" }} />
+                  ) : (
+                    <div style={{ width: 74, height: 90, flex: "none", borderRadius: 10, background: stripe(line.colorHex) }} />
+                  )}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontFamily: fonts.display, fontWeight: 600, fontSize: 16 }}>{line.name}</div>
                     <div style={{ fontSize: 12.5, color: colors.muted, margin: "3px 0 10px" }}>{line.variant}</div>

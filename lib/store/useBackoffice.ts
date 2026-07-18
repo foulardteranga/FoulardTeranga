@@ -9,6 +9,7 @@ export interface CartLine {
   qty: number;
   /** Remise unitaire en FCFA (0 = aucune). */
   discount: number;
+  image?: string;
 }
 
 export type ToastType = "success" | "warning" | "error";
@@ -77,7 +78,7 @@ export const useBackoffice = create<BackofficeState>((set, get) => ({
       if (ex) {
         ex.qty += 1;
       } else {
-        cart.push({ id: p.id, name: p.name, variant: p.variant, price: p.price, qty: 1, discount: 0 });
+        cart.push({ id: p.id, name: p.name, variant: p.variant, price: p.price, qty: 1, discount: 0, image: p.image });
       }
       return { cart };
     }),
