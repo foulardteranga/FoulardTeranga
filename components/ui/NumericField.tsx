@@ -84,6 +84,8 @@ export function NumericField({
             onChange={(e) => onChange(e.target.value)}
             inputMode={INPUT_MODE[mode]}
             placeholder={placeholder}
+            min={mode !== "phone" ? min : undefined}
+            max={mode !== "phone" ? max : undefined}
             style={{ ...baseStyle, flex: 1 }}
           />
           <button type="button" onClick={openPad} aria-label="Ouvrir le pavé numérique" style={padIconBtn}>
