@@ -10,13 +10,11 @@ export function BlockSettingsPanel({
   onChangeSetting,
   onRename,
   onToggleVisible,
-  onMove,
 }: {
   block: BlockInstance;
   onChangeSetting: (key: string, value: unknown) => void;
   onRename: (name: string) => void;
   onToggleVisible: () => void;
-  onMove: (dir: -1 | 1) => void;
 }) {
   const fields = BLOCK_SETTINGS[block.type].fields;
   return (
@@ -26,8 +24,6 @@ export function BlockSettingsPanel({
       </div>
       <SettingsField field={{ key: "__name", label: "Nom du bloc (interne)", kind: "text" }} value={block.name} onChange={(v) => onRename(String(v))} blockType={block.type} />
       <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-        <button onClick={() => onMove(-1)} style={miniBtn}>↑ Monter</button>
-        <button onClick={() => onMove(1)} style={miniBtn}>↓ Descendre</button>
         <button onClick={onToggleVisible} style={miniBtn}>{block.visible ? "Masquer" : "Afficher"}</button>
       </div>
       <div style={{ borderTop: `1px solid ${colors.borderSoft}`, paddingTop: 14 }}>
