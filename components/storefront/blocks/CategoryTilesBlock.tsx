@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { fonts } from "@/lib/theme/tokens";
 import { stripe } from "@/lib/theme/storefront";
@@ -10,6 +11,12 @@ const TILE_COLOR: Record<string, string> = {
   Foulards: "#26326B",
   Turbans: "#D07A34",
   Accessoires: "#C9A227",
+};
+
+const CATEGORY_IMAGE_KEY: Record<string, keyof CatsSettings> = {
+  Foulards: "foulardsImage",
+  Turbans: "turbansImage",
+  Accessoires: "accessoiresImage",
 };
 
 export function CategoryTilesBlock({ settings, products = [] }: { settings: CatsSettings; products?: Product[] }) {
@@ -25,15 +32,19 @@ export function CategoryTilesBlock({ settings, products = [] }: { settings: Cats
           <div className="ft-store-cats" style={{ display: "grid", gap: 14 }}>
             {storefrontCategories.map((cat) => {
               const count = products.filter((p) => p.cat === cat).length;
+              const imageUrl = settings[CATEGORY_IMAGE_KEY[cat]];
               return (
                 <Link
                   key={cat}
                   href={`/catalogue?cat=${encodeURIComponent(cat)}`}
                   style={{
                     position: "relative", borderRadius: 14, overflow: "hidden", aspectRatio: "4 / 3",
-                    background: stripe(TILE_COLOR[cat]), display: "block",
+                    background: imageUrl ? undefined : stripe(TILE_COLOR[cat]), display: "block",
                   }}
                 >
+                  {imageUrl && (
+                    <Image src={imageUrl} alt={cat} fill sizes="(max-width: 900px) 50vw, 33vw" style={{ objectFit: "cover" }} />
+                  )}
                   <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(30,27,24,.5), transparent 65%)" }} />
                   <div style={{ position: "absolute", left: 16, bottom: 14, color: "#fff" }}>
                     <div style={{ fontFamily: fonts.display, fontWeight: 600, fontSize: 22 }}>{cat}</div>

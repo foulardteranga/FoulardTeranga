@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { fonts, colors } from "@/lib/theme/tokens";
 import { signInCustomer, signUpCustomer, type CustomerSignInState, type CustomerSignUpState } from "@/lib/customers/actions";
+import { NumericField } from "@/components/ui/NumericField";
 
 export function AccountAuthView() {
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -62,6 +63,7 @@ function LoginForm() {
 
 function SignupForm() {
   const [state, formAction, pending] = useActionState<CustomerSignUpState, FormData>(signUpCustomer, null);
+  const [phone, setPhone] = useState("");
 
   if (state && state.ok && state.needsEmailConfirmation) {
     return (
@@ -77,7 +79,14 @@ function SignupForm() {
         <input type="text" name="name" required style={inputStyle} />
       </Field>
       <Field label="Téléphone" error={state && !state.ok ? state.errors.phone : undefined}>
-        <input type="tel" name="phone" required placeholder="Ex. +225 07 12 45 67 89" style={inputStyle} />
+        <NumericField
+          mode="phone"
+          value={phone}
+          onChange={setPhone}
+          placeholder="Ex. +225 07 12 45 67 89"
+          invalid={!!(state && !state.ok && state.errors.phone)}
+        />
+        <input type="hidden" name="phone" value={phone} required />
       </Field>
       <Field label="Lieu de livraison habituel" error={state && !state.ok ? state.errors.place : undefined}>
         <input type="text" name="place" required style={inputStyle} />

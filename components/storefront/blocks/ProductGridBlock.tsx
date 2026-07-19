@@ -38,7 +38,7 @@ export function ProductGridBlock({ settings, products = [] }: { settings: GridSe
                 product={p}
                 stock={p.stock}
                 onAdd={() => {
-                  addToCart({ productId: p.id, name: p.name, variant: p.lengths[0], colorHex: p.colors[0], price: p.price });
+                  addToCart({ productId: p.id, name: p.name, variant: p.lengths[0], colorHex: p.colors[0], price: p.price, image: p.image });
                   showToast("Ajouté au panier", "success");
                 }}
               />

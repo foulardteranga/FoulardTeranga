@@ -6,8 +6,10 @@ import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { money } from "@/lib/format";
 import { useBackoffice } from "@/lib/store/useBackoffice";
-import { createProduct } from "@/lib/inventory/actions";
+import { createProduct, updateProductImages } from "@/lib/inventory/actions";
 import { PRODUCT_CATEGORIES } from "@/lib/validators/product";
+import { ProductPhotosField } from "@/components/dashboard/ProductPhotosField";
+import { NumericField } from "@/components/ui/NumericField";
 import type { Product } from "@/lib/data/types";
 
 function lvlDot(v: number, seuil: number): string {
@@ -128,7 +130,12 @@ export function InventoryScreen({ products }: { products: Product[] }) {
                   >
                     <td style={{ padding: "10px 16px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <span style={{ width: 34, height: 34, borderRadius: 8, flex: "none", background: p.swatch }} />
+                        {p.image ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={p.image} alt="" style={{ width: 34, height: 34, borderRadius: 8, flex: "none", objectFit: "cover" }} />
+                        ) : (
+                          <span style={{ width: 34, height: 34, borderRadius: 8, flex: "none", background: p.swatch }} />
+                        )}
                         <div>
                           <div style={{ fontWeight: 600, fontSize: 13 }}>{p.name}</div>
                           <div style={{ fontSize: 11, color: "#9a8f7d" }}>REF-{p.id.toUpperCase()}</div>
@@ -284,6 +291,8 @@ interface NewProductForm {
   swatch: string;
   lengths: string;
   description: string;
+  image: string;
+  gallery: string[];
 }
 
 const EMPTY_PRODUCT_FORM: NewProductForm = {
@@ -296,6 +305,8 @@ const EMPTY_PRODUCT_FORM: NewProductForm = {
   swatch: SWATCH_PALETTE[0],
   lengths: "",
   description: "",
+  image: "",
+  gallery: [],
 };
 
 function NewProductDrawer({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
@@ -307,7 +318,13 @@ function NewProductDrawer({ onClose, onCreated }: { onClose: () => void; onCreat
 
   async function submit() {
     setSaving(true);
-    const result = await createProduct({ ...form, price: Number(form.price), stock: Number(form.stock) });
+    const result = await createProduct({
+      ...form,
+      price: Number(form.price),
+      stock: Number(form.stock),
+      image: form.image || undefined,
+      gallery: form.gallery,
+    });
     setSaving(false);
     if (!result.ok) {
       showToast(result.error, "error");
@@ -353,6 +370,14 @@ function NewProductDrawer({ onClose, onCreated }: { onClose: () => void; onCreat
             <input value={form.name} onChange={(e) => set("name", e.target.value)} style={textField} placeholder="Foulard tissé main" />
           </FormField>
 
+          <FormField label="Photos">
+            <ProductPhotosField
+              image={form.image}
+              gallery={form.gallery}
+              onChange={({ image, gallery }) => setForm((s) => ({ ...s, image, gallery }))}
+            />
+          </FormField>
+
           <FormField label="Catégorie">
             <select value={form.category} onChange={(e) => set("category", e.target.value as NewProductForm["category"])} style={textField}>
               {PRODUCT_CATEGORIES.map((c) => (
@@ -374,10 +399,10 @@ function NewProductDrawer({ onClose, onCreated }: { onClose: () => void; onCreat
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <FormField label="Prix (FCFA)">
-              <input type="number" min={0} value={form.price} onChange={(e) => set("price", e.target.value)} style={textField} placeholder="15000" />
+              <NumericField mode="money" value={form.price} onChange={(v) => set("price", v)} placeholder="15000" min={0} />
             </FormField>
             <FormField label="Stock initial">
-              <input type="number" min={0} value={form.stock} onChange={(e) => set("stock", e.target.value)} style={textField} placeholder="10" />
+              <NumericField mode="integer" value={form.stock} onChange={(v) => set("stock", v)} placeholder="10" min={0} />
             </FormField>
           </div>
 
@@ -457,6 +482,24 @@ function EditDrawer({ product: p, onClose }: { product: Product; onClose: () => 
     { label: "Matériel & fournitures", qty: s3, seuil: 5, dot: colors.success },
   ];
 
+  const router = useRouter();
+  const showToast = useBackoffice((s) => s.showToast);
+  const [photos, setPhotos] = useState({ image: p.image ?? "", gallery: p.gallery });
+  const [savingPhotos, setSavingPhotos] = useState(false);
+  const photosDirty = photos.image !== (p.image ?? "") || photos.gallery.join("|") !== p.gallery.join("|");
+
+  async function savePhotos() {
+    setSavingPhotos(true);
+    const res = await updateProductImages(p.id, {
+      image: photos.image || null,
+      gallery: photos.gallery,
+    });
+    setSavingPhotos(false);
+    if (!res.ok) { showToast(res.error, "error"); return; }
+    showToast("Photos enregistrées", "success");
+    router.refresh();
+  }
+
   return (
     <>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(30,27,24,.4)", zIndex: 50 }} />
@@ -477,7 +520,12 @@ function EditDrawer({ product: p, onClose }: { product: Product; onClose: () => 
         }}
       >
         <div style={{ padding: "16px 20px", borderBottom: `1px solid ${colors.borderSoft}`, display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ width: 44, height: 44, borderRadius: 10, flex: "none", background: p.swatch }} />
+          {p.image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={p.image} alt="" style={{ width: 44, height: 44, borderRadius: 10, flex: "none", objectFit: "cover" }} />
+          ) : (
+            <span style={{ width: 44, height: 44, borderRadius: 10, flex: "none", background: p.swatch }} />
+          )}
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontFamily: fonts.display, fontWeight: 600, fontSize: 18, lineHeight: 1.15 }}>{p.name}</div>
             <div style={{ fontSize: 12, color: "#9a8f7d" }}>
@@ -494,6 +542,21 @@ function EditDrawer({ product: p, onClose }: { product: Product; onClose: () => 
         </div>
 
         <div style={{ flex: 1, overflowY: "auto", padding: "18px 20px" }}>
+          <div style={sectionLabel}>Photos</div>
+          <div style={{ marginBottom: 22 }}>
+            <ProductPhotosField image={photos.image} gallery={photos.gallery} onChange={setPhotos} />
+            {photosDirty && (
+              <button
+                onClick={savePhotos}
+                disabled={savingPhotos}
+                className="ft-primary-btn"
+                style={{ marginTop: 10, height: 40, padding: "0 16px", border: "none", borderRadius: 9, background: colors.primary, color: "#fff", font: `600 13px ${fonts.ui}`, cursor: savingPhotos ? "default" : "pointer", opacity: savingPhotos ? 0.7 : 1 }}
+              >
+                {savingPhotos ? "Enregistrement…" : "Enregistrer les photos"}
+              </button>
+            )}
+          </div>
+
           <div style={sectionLabel}>Stock par emplacement</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 22 }}>
             {stocks.map((st) => (

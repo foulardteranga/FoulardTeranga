@@ -51,7 +51,7 @@ export function FeaturedProductBlock({ settings, products = [] }: { settings: Fe
                 <button
                   onClick={() => {
                     if (stock <= 0) { showToast("Article épuisé", "error"); return; }
-                    addToCart({ productId: product.id, name: product.name, variant: product.lengths[0], colorHex: product.colors[0], price: product.price });
+                    addToCart({ productId: product.id, name: product.name, variant: product.lengths[0], colorHex: product.colors[0], price: product.price, image: product.image });
                     showToast("Ajouté au panier", "success");
                   }}
                   style={{ height: 48, padding: "0 22px", border: `1.5px solid ${colors.primary}`, borderRadius: 10, background: "#fff", color: colors.primary, font: `600 15px ${fonts.ui}`, cursor: "pointer" }}

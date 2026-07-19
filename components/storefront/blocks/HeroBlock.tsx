@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { fonts } from "@/lib/theme/tokens";
 import type { HeroSettings } from "@/lib/storefront/blockSettings";
@@ -12,12 +13,18 @@ export function HeroBlock({ settings }: { settings: HeroSettings }) {
             className="ft-store-hero"
             style={{
               position: "relative", overflow: "hidden", display: "flex", alignItems: "flex-end",
-              background: "repeating-linear-gradient(45deg,#d8ccb8,#d8ccb8 12px,#e2d7c4 12px,#e2d7c4 24px)",
+              background: settings.backgroundImage
+                ? undefined
+                : "repeating-linear-gradient(45deg,#d8ccb8,#d8ccb8 12px,#e2d7c4 12px,#e2d7c4 24px)",
             }}
           >
-            <span style={{ position: "absolute", top: 14, left: 16, fontFamily: "ui-monospace, monospace", fontSize: 11, color: "#9a8f7d" }}>
-              visuel hero · 16:9
-            </span>
+            {settings.backgroundImage ? (
+              <Image src={settings.backgroundImage} alt="" fill sizes="100vw" style={{ objectFit: "cover" }} priority />
+            ) : (
+              <span style={{ position: "absolute", top: 14, left: 16, fontFamily: "ui-monospace, monospace", fontSize: 11, color: "#9a8f7d" }}>
+                visuel hero · 16:9
+              </span>
+            )}
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(30,27,24,.6), rgba(30,27,24,.05) 60%)" }} />
             <div className="ft-store-hero-text" style={{ position: "relative", color: "#fff", maxWidth: 560 }}>
               <div

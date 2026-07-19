@@ -10,13 +10,11 @@ export function BlockSettingsPanel({
   onChangeSetting,
   onRename,
   onToggleVisible,
-  onMove,
 }: {
   block: BlockInstance;
   onChangeSetting: (key: string, value: unknown) => void;
   onRename: (name: string) => void;
   onToggleVisible: () => void;
-  onMove: (dir: -1 | 1) => void;
 }) {
   const fields = BLOCK_SETTINGS[block.type].fields;
   return (
@@ -24,15 +22,13 @@ export function BlockSettingsPanel({
       <div style={{ fontFamily: fonts.display, fontWeight: 600, fontSize: 17, marginBottom: 12 }}>
         Réglages du bloc
       </div>
-      <SettingsField field={{ key: "__name", label: "Nom du bloc (interne)", kind: "text" }} value={block.name} onChange={(v) => onRename(String(v))} />
+      <SettingsField field={{ key: "__name", label: "Nom du bloc (interne)", kind: "text" }} value={block.name} onChange={(v) => onRename(String(v))} blockType={block.type} />
       <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-        <button onClick={() => onMove(-1)} style={miniBtn}>↑ Monter</button>
-        <button onClick={() => onMove(1)} style={miniBtn}>↓ Descendre</button>
         <button onClick={onToggleVisible} style={miniBtn}>{block.visible ? "Masquer" : "Afficher"}</button>
       </div>
       <div style={{ borderTop: `1px solid ${colors.borderSoft}`, paddingTop: 14 }}>
         {fields.map((f) => (
-          <SettingsField key={f.key} field={f} value={block.settings[f.key]} onChange={(v) => onChangeSetting(f.key, v)} />
+          <SettingsField key={f.key} field={f} value={block.settings[f.key]} onChange={(v) => onChangeSetting(f.key, v)} blockType={block.type} />
         ))}
       </div>
     </div>

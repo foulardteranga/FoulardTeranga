@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { fonts, colors } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
+import { QtyStepper } from "@/components/ui/QtyStepper";
 import { stripe } from "@/lib/theme/storefront";
 import { useStorefront } from "@/lib/store/useStorefront";
 import { money, fmt } from "@/lib/format";
@@ -27,6 +29,9 @@ export function ProductView({ product, related }: { product: Product; related: P
   const [qty, setQty] = useState(1);
   const [fav, setFav] = useState(false);
 
+  const photos = [product.image, ...product.gallery].filter((u): u is string => Boolean(u));
+  const [photoIdx, setPhotoIdx] = useState(0);
+
   const addToCart = useStorefront((s) => s.addToCart);
   const showToast = useStorefront((s) => s.showToast);
 
@@ -36,13 +41,13 @@ export function ProductView({ product, related }: { product: Product; related: P
 
   const doAdd = () => {
     if (soldOut) { showToast("Article épuisé", "error"); return; }
-    addToCart({ productId: product.id, name: product.name, variant, colorHex: product.colors[colorIdx], price: product.price, qty });
+    addToCart({ productId: product.id, name: product.name, variant, colorHex: product.colors[colorIdx], price: product.price, qty, image: product.image });
     showToast("Ajouté au panier", "success");
   };
 
   const buyNow = () => {
     if (soldOut) { showToast("Article épuisé", "error"); return; }
-    addToCart({ productId: product.id, name: product.name, variant, colorHex: product.colors[colorIdx], price: product.price, qty });
+    addToCart({ productId: product.id, name: product.name, variant, colorHex: product.colors[colorIdx], price: product.price, qty, image: product.image });
     router.push("/commander");
   };
 
@@ -59,7 +64,18 @@ export function ProductView({ product, related }: { product: Product; related: P
       <div className="ft-store-detail" style={{ display: "grid", alignItems: "start" }}>
         <div>
           <div style={{ position: "relative", borderRadius: 16, overflow: "hidden", aspectRatio: "4 / 5", background: stripe(product.colors[colorIdx]), display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
-            <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 12, color: "#9a8f7d" }}>photo produit 4:5</span>
+            {photos.length > 0 ? (
+              <Image
+                src={photos[Math.min(photoIdx, photos.length - 1)]}
+                alt={product.name}
+                fill
+                sizes="(max-width: 900px) 100vw, 50vw"
+                style={{ objectFit: "cover" }}
+                priority
+              />
+            ) : (
+              <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 12, color: "#9a8f7d" }}>photo produit 4:5</span>
+            )}
             <button
               onClick={() => setFav((v) => !v)}
               aria-label="Ajouter aux favoris"
@@ -68,11 +84,26 @@ export function ProductView({ product, related }: { product: Product; related: P
               <Icon path={ICONS.heart} size={20} fill={fav ? colors.accent : "none"} stroke={colors.ink} strokeWidth={1.75} />
             </button>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
-            {product.colors.slice(0, 4).map((hex, i) => (
-              <div key={hex} style={{ aspectRatio: "1", borderRadius: 10, background: stripe(hex), border: i === colorIdx ? `2px solid ${colors.primary}` : "1px solid rgba(30,27,24,.1)" }} />
-            ))}
-          </div>
+          {photos.length > 1 ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+              {photos.slice(0, 4).map((src, i) => (
+                <button
+                  key={src + i}
+                  onClick={() => setPhotoIdx(i)}
+                  aria-label={`Photo ${i + 1}`}
+                  style={{ position: "relative", aspectRatio: "1", borderRadius: 10, overflow: "hidden", padding: 0, cursor: "pointer", border: i === photoIdx ? `2px solid ${colors.primary}` : "1px solid rgba(30,27,24,.1)", background: "none" }}
+                >
+                  <Image src={src} alt="" fill sizes="120px" style={{ objectFit: "cover" }} />
+                </button>
+              ))}
+            </div>
+          ) : photos.length === 0 ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+              {product.colors.slice(0, 4).map((hex, i) => (
+                <div key={hex} style={{ aspectRatio: "1", borderRadius: 10, background: stripe(hex), border: i === colorIdx ? `2px solid ${colors.primary}` : "1px solid rgba(30,27,24,.1)" }} />
+              ))}
+            </div>
+          ) : null}
         </div>
 
         <div>
@@ -125,11 +156,7 @@ export function ProductView({ product, related }: { product: Product; related: P
           </div>
 
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-            <div style={{ display: "inline-flex", alignItems: "center", height: 50, border: `1.5px solid ${colors.borderField}`, borderRadius: 10, overflow: "hidden" }}>
-              <button onClick={() => setQty((q) => Math.max(1, q - 1))} style={{ width: 46, height: "100%", border: "none", background: colors.ivory, fontSize: 20, color: colors.primary, cursor: "pointer" }}>−</button>
-              <span style={{ width: 48, textAlign: "center", font: `600 16px ${fonts.ui}` }}>{qty}</span>
-              <button onClick={() => setQty((q) => q + 1)} style={{ width: 46, height: "100%", border: "none", background: colors.ivory, fontSize: 20, color: colors.primary, cursor: "pointer" }}>+</button>
-            </div>
+            <QtyStepper qty={qty} onChange={setQty} max={stock} size="lg" />
             <button
               onClick={doAdd}
               disabled={soldOut}
@@ -163,7 +190,7 @@ export function ProductView({ product, related }: { product: Product; related: P
                 product={p}
                 stock={p.stock}
                 onAdd={() => {
-                  addToCart({ productId: p.id, name: p.name, variant: p.lengths[0], colorHex: p.colors[0], price: p.price });
+                  addToCart({ productId: p.id, name: p.name, variant: p.lengths[0], colorHex: p.colors[0], price: p.price, image: p.image });
                   showToast("Ajouté au panier", "success");
                 }}
               />

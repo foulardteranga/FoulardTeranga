@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { fonts, colors } from "@/lib/theme/tokens";
 import { stripe } from "@/lib/theme/storefront";
 import type { LookSettings } from "@/lib/storefront/blockSettings";
@@ -24,14 +25,20 @@ export function LookbookBlock({ settings }: { settings: LookSettings }) {
             </h2>
           </div>
           <div className="ft-store-look-grid" style={{ display: "grid", gap: 12 }}>
-            {LOOKS.map((look) => (
-              <div
-                key={look.label}
-                style={{ borderRadius: 14, overflow: "hidden", aspectRatio: "3 / 4", background: stripe(look.hex), display: "flex", alignItems: "flex-end", padding: 12 }}
-              >
-                <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 10.5, color: "#9a8f7d" }}>{look.label}</span>
-              </div>
-            ))}
+            {settings.images.length > 0
+              ? settings.images.map((src, i) => (
+                  <div key={src + i} style={{ position: "relative", borderRadius: 14, overflow: "hidden", aspectRatio: "3 / 4" }}>
+                    <Image src={src} alt={`Lookbook photo ${i + 1}`} fill sizes="(max-width: 900px) 50vw, 25vw" style={{ objectFit: "cover" }} />
+                  </div>
+                ))
+              : LOOKS.map((look) => (
+                  <div
+                    key={look.label}
+                    style={{ borderRadius: 14, overflow: "hidden", aspectRatio: "3 / 4", background: stripe(look.hex), display: "flex", alignItems: "flex-end", padding: 12 }}
+                  >
+                    <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 10.5, color: "#9a8f7d" }}>{look.label}</span>
+                  </div>
+                ))}
           </div>
         </div>
       </section>
