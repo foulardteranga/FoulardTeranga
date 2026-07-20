@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { fmt, money, initials } from "@/lib/format";
+import { fmt, money, initials, whatsappShareLink } from "@/lib/format";
 
 describe("fmt", () => {
   it("groups thousands with a narrow no-break space (current toLocaleString('fr-FR') behavior)", () => {
@@ -24,5 +24,11 @@ describe("initials", () => {
 
   it("handles a single word", () => {
     expect(initials("Madame")).toBe("M");
+  });
+});
+
+describe("whatsappShareLink", () => {
+  it("construit un lien wa.me sans destinataire avec le message encodé", () => {
+    expect(whatsappShareLink("Reçu #TER-1")).toBe("https://wa.me/?text=Re%C3%A7u%20%23TER-1");
   });
 });

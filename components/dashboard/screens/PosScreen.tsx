@@ -8,6 +8,7 @@ import { categories } from "@/lib/data/catalog";
 import { money } from "@/lib/format";
 import { useBackoffice, type CartLine } from "@/lib/store/useBackoffice";
 import { encaisserVente } from "@/lib/pos/actions";
+import { buildTicketMessage } from "@/lib/pos/ticketMessage";
 import { PAYMENT_LABELS, type PosPaymentMethod } from "@/lib/payments/labels";
 import type { Customer, Product } from "@/lib/data/types";
 
@@ -487,11 +488,28 @@ function PayButton({ total, big }: { total: number; big?: boolean }) {
       showToast(result.error, "error");
       return;
     }
+    const message = buildTicketMessage({
+      shopName: result.ticket.shopName,
+      ref: result.ref,
+      date: new Date(),
+      lines: result.ticket.lines,
+      subtotal: result.ticket.subtotal,
+      discount: result.ticket.discount,
+      total: result.ticket.total,
+      payLabel: PAYMENT_LABELS[pay],
+      loyalty: result.ticket.loyalty,
+    });
     showTicket({
+      ref: result.ref,
       items: cart.reduce((a, l) => a + l.qty, 0),
       pay: PAYMENT_LABELS[pay],
-      total: money(total),
-      ref: result.ref,
+      total: money(result.ticket.total),
+      lines: result.ticket.lines,
+      discount: result.ticket.discount,
+      subtotal: result.ticket.subtotal,
+      loyalty: result.ticket.loyalty,
+      waMessage: message,
+      customerPhone: result.ticket.customerPhone,
     });
   }
 

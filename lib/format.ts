@@ -23,3 +23,8 @@ export function whatsappLink(phone: string, message?: string): string {
   const query = message ? `?text=${encodeURIComponent(message)}` : "";
   return `https://wa.me/${digits}${query}`;
 }
+
+/** Lien de partage WhatsApp sans destinataire (l'app ouvre le choix du contact). */
+export function whatsappShareLink(message: string): string {
+  return `https://wa.me/?text=${encodeURIComponent(message)}`;
+}

@@ -16,10 +16,18 @@ export interface CartLine {
 export type ToastType = "success" | "warning" | "error";
 
 export interface Ticket {
+  ref: string;
   items: number;
   pay: string;
   total: string;
-  ref: string;
+  lines: Array<{ name: string; qty: number; lineTotal: number }>;
+  /** Remises par ligne agrégées en FCFA (0 = aucune). */
+  discount: number;
+  subtotal: number;
+  loyalty: { pointsEarned: number; newBalance: number } | null;
+  /** Message WhatsApp pré-construit (buildTicketMessage). */
+  waMessage: string;
+  customerPhone: string | null;
 }
 
 interface BackofficeState {
