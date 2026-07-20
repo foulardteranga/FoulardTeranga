@@ -39,16 +39,19 @@ export function PosScreen({ products, customers }: { products: Product[]; custom
   const [pointsReq, setPointsReq] = useState("0");
   const [preview, setPreview] = useState<DiscountPreview | null>(null);
 
-  // Quand la cliente est détachée, on ne peut plus utiliser de points.
+  // Quand la cliente est détachée, on ne peut plus utiliser de points et on efface la prévisualisation.
   useEffect(() => {
-    if (!client) setPointsReq("0");
+    if (!client) {
+      setPointsReq("0");
+      setPreview(null);
+    }
   }, [client]);
 
   // Re-prévisualiser la remise à chaque changement pertinent (débouncé).
   useEffect(() => {
-    const pointsReqNum = Number(pointsReq) || 0;
+    const effectivePoints = client ? (Number(pointsReq) || 0) : 0;
     const subtotal = cart.reduce((a, l) => a + (l.price - l.discount) * l.qty, 0);
-    if (subtotal === 0 || (!promoCode.trim() && pointsReqNum === 0)) {
+    if (subtotal === 0 || (!promoCode.trim() && effectivePoints === 0)) {
       setPreview(null);
       return;
     }
@@ -56,7 +59,7 @@ export function PosScreen({ products, customers }: { products: Product[]; custom
       const r = await previewPosDiscount({
         subtotal,
         promoCode: promoCode || undefined,
-        pointsRequested: pointsReqNum,
+        pointsRequested: effectivePoints,
         customerId: client?.id ?? null,
       });
       setPreview(r.ok ? r.preview : null);
