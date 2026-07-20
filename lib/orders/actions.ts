@@ -4,21 +4,26 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db/client";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { getCurrentTenant } from "@/lib/tenant";
-import { requireZone } from "@/lib/auth";
+import { requireZone, getSession } from "@/lib/auth";
 import { kycSchema, type KycInput } from "@/lib/validators/kyc";
 import { orderEditSchema, type OrderEditInput } from "@/lib/validators/orderEdit";
 import { buildOrderLines, type WebCartLineInput } from "./buildOrderLines";
 import { aggregateQtyByProduct } from "./stockCheck";
 import { money } from "@/lib/format";
 import { applyLoyaltyOrder } from "@/lib/customers/applyLoyaltyOrder";
+import { normalizePhone } from "@/lib/customers/normalizePhone";
 import { createNotification } from "@/lib/notifications/create";
+import { validatePromo, applyDiscounts } from "@/lib/discounts/engine";
+import { getCustomerByProfileId } from "@/lib/data/customers.server";
+import { findPromoByCode } from "@/lib/data/promos.server";
 
 /** Sous ce seuil de stock restant, une commande validée déclenche une alerte "stock bas". */
 const LOW_STOCK_THRESHOLD = 3;
 
 export async function submitWebOrder(
   kyc: KycInput,
-  cartLines: WebCartLineInput[]
+  cartLines: WebCartLineInput[],
+  discounts?: { promoCode?: string; pointsRequested?: number }
 ): Promise<{ ok: true; ref: string } | { ok: false; error: string }> {
   const parsedKyc = kycSchema.safeParse(kyc);
   if (!parsedKyc.success) {
@@ -35,6 +40,29 @@ export async function submitWebOrder(
       const built = buildOrderLines(cartLines, products);
       if (!built.ok) throw new Error(built.error);
 
+      // Remises DEMANDÉES : aperçu enregistré sur la commande, AUCUN débit
+      // (ni points, ni compteur promo, ni stock) avant validation gérante.
+      const session = await getSession();
+      const customer =
+        session && session.role === "customer" ? await getCustomerByProfileId(session.userId) : null;
+
+      let promoRow = null;
+      if (discounts?.promoCode?.trim()) {
+        promoRow = await findPromoByCode(tx, tenant.id, discounts.promoCode);
+        const verdict = validatePromo(promoRow, {
+          now: new Date(),
+          subtotal: built.total,
+          isVip: customer?.vip ?? false,
+        });
+        if (!verdict.ok) promoRow = null; // code devenu invalide : la demande part sans promo
+      }
+      const d = applyDiscounts({
+        subtotal: built.total,
+        promo: promoRow,
+        pointsRequested: customer ? Math.max(0, Math.floor(discounts?.pointsRequested ?? 0)) : 0,
+        pointsBalance: customer?.points ?? 0,
+      });
+
       return tx.order.create({
         data: {
           tenantId: tenant.id,
@@ -42,7 +70,11 @@ export async function submitWebOrder(
           place: parsedKyc.data.place,
           phone: parsedKyc.data.phone,
           channel: "Web",
-          total: built.total,
+          total: d.total,
+          promoCode: promoRow && d.promoDiscount > 0 ? promoRow.code : null,
+          promoDiscount: d.promoDiscount,
+          pointsUsed: d.pointsUsed,
+          pointsDiscount: d.pointsDiscount,
           lines: { create: built.lines },
         },
       });
@@ -100,21 +132,57 @@ export async function confirmOrder(ref: string): Promise<{ ok: true } | { ok: fa
         }
       }
 
+      // Remises : re-validation au moment de la validation (source de vérité).
+      // Le sous-total vient des lignes ; la cliente est matchée par téléphone
+      // normalisé (même règle que applyLoyaltyOrder) pour connaître solde et VIP.
+      const subtotal = order.lines.reduce((sum, l) => sum + l.lineTotal, 0);
+      const normalized = normalizePhone(order.phone);
+      const candidates = await tx.customer.findMany({ where: { tenantId: tenant.id } });
+      const matched = candidates.find((c) => normalizePhone(c.phone) === normalized) ?? null;
+
+      let promoRow = null;
+      if (order.promoCode) {
+        promoRow = await findPromoByCode(tx, tenant.id, order.promoCode);
+        const verdict = validatePromo(promoRow, {
+          now: new Date(),
+          subtotal,
+          isVip: matched?.vip ?? false,
+        });
+        if (!verdict.ok) promoRow = null; // code plus valide : commande validée SANS la remise promo
+      }
+      const d = applyDiscounts({
+        subtotal,
+        promo: promoRow,
+        pointsRequested: order.pointsUsed, // l'intention enregistrée à la soumission
+        pointsBalance: matched?.points ?? 0,
+      });
+      if (promoRow && d.promoDiscount > 0) {
+        await tx.promoCode.update({ where: { id: promoRow.id }, data: { usedCount: { increment: 1 } } });
+      }
+
       // Rattachement fidélité : miroir de la déduction de stock ci-dessus,
       // uniquement à la validation.
       const { customerId } = await applyLoyaltyOrder({
         tx,
         tenantId: tenant.id,
-        orderTotal: order.total,
+        orderTotal: d.total,
         clientName: order.clientName,
         phone: order.phone,
         place: order.place,
-        pointsToDebit: 0,
+        pointsToDebit: d.pointsUsed,
       });
 
       await tx.order.update({
         where: { id: order.id },
-        data: { status: "confirmee", customerId },
+        data: {
+          status: "confirmee",
+          customerId,
+          total: d.total,
+          promoCode: promoRow && d.promoDiscount > 0 ? promoRow.code : order.promoCode,
+          promoDiscount: d.promoDiscount,
+          pointsUsed: d.pointsUsed,
+          pointsDiscount: d.pointsDiscount,
+        },
       });
 
       return { lowStock };

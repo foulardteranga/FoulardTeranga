@@ -83,4 +83,12 @@ export interface Order {
   status: OrderStatus;
   vip: boolean;
   lines: OrderLine[];
+  /** Σ lineTotal, formaté — affiché quand une remise existe. */
+  subtotal: string;
+  promoCode: string | null;
+  promoDiscount: number;
+  pointsUsed: number;
+  pointsDiscount: number;
+  /** false SEULEMENT pour une commande `nouvelle` dont le code ne passe plus (écart à afficher). */
+  promoStillValid: boolean;
 }
