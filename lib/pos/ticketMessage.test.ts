@@ -14,6 +14,8 @@ const base: TicketMessageInput = {
   total: 32500,
   payLabel: "Wave",
   loyalty: null,
+  promo: null,
+  pointsUsed: null,
 };
 
 describe("buildTicketMessage", () => {
@@ -69,5 +71,18 @@ describe("buildTicketMessage", () => {
 
   it("contient la date au format français", () => {
     expect(buildTicketMessage(base)).toContain("20/07/2026");
+  });
+
+  it("affiche les lignes promo et points avec le sous-total", () => {
+    const msg = buildTicketMessage({
+      ...base,
+      promo: { code: "TERANGA10", discount: 3250 },
+      pointsUsed: { points: 20, discount: 1000 },
+      total: 28250,
+    });
+    expect(msg).toContain("Sous-total : 32 500 FCFA");
+    expect(msg).toContain("Code promo TERANGA10 : −3 250 FCFA");
+    expect(msg).toContain("Points utilisés (20) : −1 000 FCFA");
+    expect(msg).toContain("*Total payé : 28 250 FCFA*");
   });
 });

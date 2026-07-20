@@ -14,3 +14,19 @@ describe("posSaleSchema — modes de paiement", () => {
     expect(posSaleSchema.safeParse({ ...base, paymentMethod: "mm" }).success).toBe(false);
   });
 });
+
+describe("posSaleSchema — remises", () => {
+  it("accepte promoCode et pointsRequested optionnels", () => {
+    const r = posSaleSchema.safeParse({ ...base, paymentMethod: "espece", promoCode: " teranga10 ", pointsRequested: 20 });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.promoCode).toBe("teranga10"); // trim seul — la normalisation MAJUSCULES vit côté lookup
+      expect(r.data.pointsRequested).toBe(20);
+    }
+  });
+  it("refuse des points négatifs et défaut 0", () => {
+    expect(posSaleSchema.safeParse({ ...base, paymentMethod: "espece", pointsRequested: -1 }).success).toBe(false);
+    const r = posSaleSchema.safeParse({ ...base, paymentMethod: "espece" });
+    expect(r.success && r.data.pointsRequested === 0).toBe(true);
+  });
+});

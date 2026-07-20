@@ -482,6 +482,7 @@ function PayButton({ total, big }: { total: number; big?: boolean }) {
       lines: cart.map((l) => ({ productId: l.id, qty: l.qty, discounted: l.discount > 0 })),
       paymentMethod: pay,
       customerId: client?.id ?? null,
+      pointsRequested: 0,
     });
     setSaving(false);
     if (!result.ok) {
@@ -498,6 +499,8 @@ function PayButton({ total, big }: { total: number; big?: boolean }) {
       total: result.ticket.total,
       payLabel: PAYMENT_LABELS[pay],
       loyalty: result.ticket.loyalty,
+      promo: result.ticket.promo,
+      pointsUsed: result.ticket.pointsUsed,
     });
     showTicket({
       ref: result.ref,
