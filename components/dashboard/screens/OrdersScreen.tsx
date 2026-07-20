@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { statusMeta } from "@/lib/data/orderStatus";
-import { initials, whatsappLink } from "@/lib/format";
+import { initials, money, whatsappLink } from "@/lib/format";
 import { useBackoffice } from "@/lib/store/useBackoffice";
 import { confirmOrder, rejectOrder, updateOrder } from "@/lib/orders/actions";
 import type { Order, OrderStatus } from "@/lib/data/types";
@@ -323,9 +323,36 @@ function OrderDetail({
               <span style={{ fontWeight: 600, fontSize: 13 }}>{li.total}</span>
             </div>
           ))}
-          <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 13px", background: colors.rowAlt }}>
-            <span style={{ fontWeight: 600, fontSize: 14 }}>Total</span>
-            <span style={{ fontFamily: fonts.display, fontWeight: 700, fontSize: 19, color: colors.primary }}>{o.total}</span>
+          <div style={{ padding: "12px 13px", background: colors.rowAlt }}>
+            {(o.promoDiscount > 0 || o.pointsUsed > 0) && (
+              <>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
+                  <span style={{ color: colors.muted }}>Sous-total</span>
+                  <span style={{ fontWeight: 600 }}>{o.subtotal}</span>
+                </div>
+                {o.promoDiscount > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
+                    <span style={{ color: colors.muted }}>Code {o.promoCode}</span>
+                    <span style={{ fontWeight: 600, color: colors.fgSuccess }}>−{money(o.promoDiscount)}</span>
+                  </div>
+                )}
+                {o.pointsUsed > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
+                    <span style={{ color: colors.muted }}>Points ({o.pointsUsed})</span>
+                    <span style={{ fontWeight: 600, color: colors.fgSuccess }}>−{money(o.pointsDiscount)}</span>
+                  </div>
+                )}
+              </>
+            )}
+            {!o.promoStillValid && o.status === "nouvelle" && (
+              <div style={{ background: colors.bgWarning, color: colors.fgWarning, borderRadius: 8, padding: "8px 10px", font: `500 12.5px ${fonts.ui}`, marginBottom: 8 }}>
+                Le code {o.promoCode} n&apos;est plus valide — valider appliquera le total sans cette remise.
+              </div>
+            )}
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span style={{ fontWeight: 600, fontSize: 14 }}>Total</span>
+              <span style={{ fontFamily: fonts.display, fontWeight: 700, fontSize: 19, color: colors.primary }}>{o.total}</span>
+            </div>
           </div>
         </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { fonts, colors } from "@/lib/theme/tokens";
@@ -10,11 +10,14 @@ import { LoyaltyBadge } from "@/components/storefront/LoyaltyBadge";
 import { stripe } from "@/lib/theme/storefront";
 import { useStorefront } from "@/lib/store/useStorefront";
 import { submitWebOrder } from "@/lib/orders/actions";
+import { previewWebDiscount } from "@/lib/discounts/webActions";
+import type { DiscountPreview } from "@/lib/discounts/actions";
 import { validateKyc, type KycFieldErrors } from "@/lib/validators/kyc";
 import { cartSubtotal } from "@/lib/store/cartLogic";
 import { money, fmt } from "@/lib/format";
 import { COUNTRIES, applyCountryDial } from "@/lib/data/countries";
 import { NumericField } from "@/components/ui/NumericField";
+import { POINT_VALUE_FCFA } from "@/lib/customers/loyalty";
 
 export function CheckoutView() {
   const router = useRouter();
@@ -29,6 +32,26 @@ export function CheckoutView() {
   const [errors, setErrors] = useState<KycFieldErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const subtotal = cartSubtotal(cart);
+
+  const [promoCode, setPromoCode] = useState("");
+  const [pointsReq, setPointsReq] = useState("0");
+  const [preview, setPreview] = useState<DiscountPreview | null>(null);
+  const [customerPoints, setCustomerPoints] = useState<number | null>(null);
+
+  useEffect(() => {
+    const t = setTimeout(async () => {
+      const r = await previewWebDiscount({
+        subtotal,
+        promoCode: promoCode || undefined,
+        pointsRequested: Number(pointsReq) || 0,
+      });
+      if (r.ok) {
+        setPreview(r.preview);
+        setCustomerPoints(r.customerPoints);
+      }
+    }, 350);
+    return () => clearTimeout(t);
+  }, [subtotal, promoCode, pointsReq]);
 
   if (cart.length === 0) {
     return (
@@ -50,7 +73,10 @@ export function CheckoutView() {
     setSending(true);
 
     const lines = cart.map((l) => ({ productId: l.productId, qty: l.qty }));
-    const response = await submitWebOrder(result.data, lines);
+    const response = await submitWebOrder(result.data, lines, {
+      promoCode: promoCode.trim() || undefined,
+      pointsRequested: Number(pointsReq) || 0,
+    });
 
     setSending(false);
     if (!response.ok) {
@@ -163,12 +189,42 @@ export function CheckoutView() {
               </div>
             ))}
           </div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: "block", font: `600 13px ${fonts.ui}`, marginBottom: 7 }}>Code promo (optionnel)</label>
+            <input
+              value={promoCode}
+              onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+              placeholder="Ex. TERANGA10"
+              style={{ width: "100%", height: 44, padding: "0 13px", border: `1.5px solid ${preview?.promoError ? colors.danger : colors.borderField}`, borderRadius: 10, font: "600 14px ui-monospace,monospace", letterSpacing: ".04em", outline: "none" }}
+            />
+            {preview?.promoError && <p style={{ font: `500 12.5px ${fonts.ui}`, color: "#9c352d", margin: "7px 0 0" }}>{preview.promoError}</p>}
+            {customerPoints !== null && customerPoints > 0 && (
+              <div style={{ marginTop: 12 }}>
+                <label style={{ display: "block", font: `600 13px ${fonts.ui}`, marginBottom: 7 }}>
+                  Utiliser mes points — solde {customerPoints} ({money(customerPoints * POINT_VALUE_FCFA)})
+                </label>
+                <NumericField mode="integer" value={pointsReq} onChange={setPointsReq} min={0} max={customerPoints} placeholder="0" />
+              </div>
+            )}
+          </div>
+          {preview?.promo && (
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, marginBottom: 8 }}>
+              <span>Code {preview.promo.code}</span>
+              <span style={{ fontWeight: 600, color: colors.fgSuccess }}>−{money(preview.promo.discount)}</span>
+            </div>
+          )}
+          {preview && preview.pointsUsed > 0 && (
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, marginBottom: 8 }}>
+              <span>Points ({preview.pointsUsed})</span>
+              <span style={{ fontWeight: 600, color: colors.fgSuccess }}>−{money(preview.pointsDiscount)}</span>
+            </div>
+          )}
           <div style={{ height: 1, background: "#EAE4D9", marginBottom: 14 }} />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
             <span style={{ font: `600 14px ${fonts.ui}` }}>Total estimé</span>
-            <span style={{ font: `700 20px ${fonts.ui}`, color: colors.primary }}>{money(subtotal)}</span>
+            <span style={{ font: `700 20px ${fonts.ui}`, color: colors.primary }}>{money(preview ? preview.total : subtotal)}</span>
           </div>
-          <LoyaltyBadge points={Math.round(subtotal / 500)} />
+          <LoyaltyBadge points={Math.floor((preview ? preview.total : subtotal) / 1000)} />
         </div>
       </div>
     </div>
