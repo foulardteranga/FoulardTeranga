@@ -57,6 +57,11 @@ enum NotificationType {
   paiement_recu
 }
 
+enum PromoKind {
+  percent
+  amount
+}
+
 model Tenant {
   id            String   @id @default(cuid())
   slug          String   @unique
@@ -76,6 +81,7 @@ model Tenant {
   orders          Order[]
   notifications   Notification[]
   storefrontPages StorefrontPage[]
+  promoCodes      PromoCode[]
 }
 
 model Profile {
@@ -141,19 +147,23 @@ model Customer {
 }
 
 model Order {
-  id            String         @id @default(cuid())
-  tenantId      String
-  ref           String         @unique @default(dbgenerated("('#TER-' || nextval('orders_ref_seq'))"))
-  customerId    String?
-  clientName    String
-  place         String
-  phone         String
-  channel       OrderChannel
-  paymentMethod PaymentMethod?
-  status        OrderStatus    @default(nouvelle)
-  vipAtOrder    Boolean        @default(false)
-  total         Int
-  createdAt     DateTime       @default(now())
+  id             String         @id @default(cuid())
+  tenantId       String
+  ref            String         @unique @default(dbgenerated("('#TER-' || nextval('orders_ref_seq'))"))
+  customerId     String?
+  clientName     String
+  place          String
+  phone          String
+  channel        OrderChannel
+  paymentMethod  PaymentMethod?
+  status         OrderStatus    @default(nouvelle)
+  vipAtOrder     Boolean        @default(false)
+  total          Int
+  promoCode      String? // copie texte du code appliqué (historique stable)
+  promoDiscount  Int            @default(0) // FCFA
+  pointsUsed     Int            @default(0) // nb de points débités
+  pointsDiscount Int            @default(0) // FCFA (= pointsUsed × 50 au taux du moment)
+  createdAt      DateTime       @default(now())
 
   tenant   Tenant      @relation(fields: [tenantId], references: [id])
   customer Customer?   @relation(fields: [customerId], references: [id])
@@ -190,6 +200,26 @@ model StorefrontPage {
   tenant Tenant @relation(fields: [tenantId], references: [id])
 
   @@unique([tenantId, slug])
+  @@index([tenantId])
+}
+
+model PromoCode {
+  id        String    @id @default(cuid())
+  tenantId  String
+  code      String // stocké en MAJUSCULES, normalisé à la saisie
+  kind      PromoKind
+  value     Int // % (1-100) si percent, FCFA si amount
+  minTotal  Int? // achat minimum en FCFA
+  startsAt  DateTime?
+  endsAt    DateTime?
+  vipOnly   Boolean   @default(false)
+  active    Boolean   @default(true)
+  usedCount Int       @default(0)
+  createdAt DateTime  @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, code])
   @@index([tenantId])
 }
 
