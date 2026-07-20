@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { POS_PAYMENT_METHODS } from "@/lib/payments/labels";
 
 export const posSaleLineSchema = z.object({
   productId: z.string().min(1),
@@ -8,7 +9,7 @@ export const posSaleLineSchema = z.object({
 
 export const posSaleSchema = z.object({
   lines: z.array(posSaleLineSchema).min(1, "Le panier est vide."),
-  paymentMethod: z.enum(["espece", "mm", "mixte"]),
+  paymentMethod: z.enum(POS_PAYMENT_METHODS),
   customerId: z.string().min(1).nullable().optional(),
 });
 

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { Customer, Product } from "@/lib/data/types";
+import type { PosPaymentMethod } from "@/lib/payments/labels";
 
 export interface CartLine {
   id: string;
@@ -25,7 +26,7 @@ interface BackofficeState {
   // POS
   cart: CartLine[];
   client: Customer | null;
-  pay: "espece" | "mm" | "mixte";
+  pay: PosPaymentMethod;
   cartOpen: boolean;
   // Global UI
   offline: boolean;

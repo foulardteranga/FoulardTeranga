@@ -8,19 +8,17 @@ import { categories } from "@/lib/data/catalog";
 import { money } from "@/lib/format";
 import { useBackoffice, type CartLine } from "@/lib/store/useBackoffice";
 import { encaisserVente } from "@/lib/pos/actions";
+import { PAYMENT_LABELS, type PosPaymentMethod } from "@/lib/payments/labels";
 import type { Customer, Product } from "@/lib/data/types";
 
-const PAY_DEF = [
+const PAY_DEF: ReadonlyArray<{ id: PosPaymentMethod; label: string; icon: string }> = [
   { id: "espece", label: "Espèces", icon: ICONS.cash },
-  { id: "mm", label: "Mobile M.", icon: ICONS.mobileMoney },
+  { id: "orange_money", label: "Orange M.", icon: ICONS.mobileMoney },
+  { id: "wave", label: "Wave", icon: ICONS.mobileMoney },
+  { id: "moov_money", label: "Moov M.", icon: ICONS.mobileMoney },
+  { id: "mtn_momo", label: "MTN MoMo", icon: ICONS.mobileMoney },
   { id: "mixte", label: "Mixte", icon: ICONS.mixte },
-] as const;
-
-const PAY_LABELS: Record<"espece" | "mm" | "mixte", string> = {
-  espece: "Espèces",
-  mm: "Mobile Money",
-  mixte: "Mixte",
-};
+];
 
 export function PosScreen({ products, customers }: { products: Product[]; customers: Customer[] }) {
   const [query, setQuery] = useState("");
@@ -491,7 +489,7 @@ function PayButton({ total, big }: { total: number; big?: boolean }) {
     }
     showTicket({
       items: cart.reduce((a, l) => a + l.qty, 0),
-      pay: PAY_LABELS[pay],
+      pay: PAYMENT_LABELS[pay],
       total: money(total),
       ref: result.ref,
     });
