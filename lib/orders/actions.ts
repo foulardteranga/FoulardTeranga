@@ -109,6 +109,7 @@ export async function confirmOrder(ref: string): Promise<{ ok: true } | { ok: fa
         clientName: order.clientName,
         phone: order.phone,
         place: order.place,
+        pointsToDebit: 0,
       });
 
       await tx.order.update({

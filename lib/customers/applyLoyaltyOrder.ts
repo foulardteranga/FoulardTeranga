@@ -1,7 +1,7 @@
 import type { Prisma } from "@/lib/generated/prisma/client";
 import { initials } from "@/lib/format";
 import { normalizePhone } from "./normalizePhone";
-import { computeLoyalty } from "./loyalty";
+import { computeLoyaltyStatus, pointsEarnedFor } from "./loyalty";
 
 export interface ApplyLoyaltyOrderParams {
   tx: Prisma.TransactionClient;
@@ -13,13 +13,15 @@ export interface ApplyLoyaltyOrderParams {
   clientName?: string;
   phone?: string;
   place?: string;
+  /** Points à débiter du solde dans la même transaction (0 = aucun débit). */
+  pointsToDebit: number;
 }
 
 /**
  * Rattache une commande (web validée ou vente POS) à une fiche cliente et
- * met à jour ses compteurs de fidélité (`computeLoyalty`). `vipBefore`
- * renvoie le statut VIP de la cliente **avant** cette commande — utile pour
- * un snapshot `Order.vipAtOrder` fiable côté appelant.
+ * met à jour ses compteurs de fidélité (`computeLoyaltyStatus`, `pointsEarnedFor`).
+ * `vipBefore` renvoie le statut VIP de la cliente **avant** cette commande —
+ * utile pour un snapshot `Order.vipAtOrder` fiable côté appelant.
  */
 export async function applyLoyaltyOrder(
   params: ApplyLoyaltyOrderParams
@@ -30,17 +32,14 @@ export async function applyLoyaltyOrder(
     const existing = await tx.customer.findUniqueOrThrow({ where: { id: params.customerId } });
     const newOrdersCount = existing.ordersCount + 1;
     const newTotalSpent = existing.totalSpent + orderTotal;
-    const { points, vip, segment } = computeLoyalty(newTotalSpent, newOrdersCount);
+    const earned = pointsEarnedFor(orderTotal);
+    const newBalance = Math.max(0, existing.points + earned - params.pointsToDebit);
+    const { vip, segment } = computeLoyaltyStatus(newTotalSpent, newOrdersCount);
     const updated = await tx.customer.update({
       where: { id: existing.id },
-      data: { ordersCount: newOrdersCount, totalSpent: newTotalSpent, points, vip, segment },
+      data: { ordersCount: newOrdersCount, totalSpent: newTotalSpent, points: newBalance, vip, segment },
     });
-    return {
-      customerId: updated.id,
-      vipBefore: existing.vip,
-      pointsEarned: points - existing.points,
-      newBalance: points,
-    };
+    return { customerId: updated.id, vipBefore: existing.vip, pointsEarned: earned, newBalance };
   }
 
   const clientName = params.clientName ?? "";
@@ -52,7 +51,9 @@ export async function applyLoyaltyOrder(
 
   const newOrdersCount = (existing?.ordersCount ?? 0) + 1;
   const newTotalSpent = (existing?.totalSpent ?? 0) + orderTotal;
-  const { points, vip, segment } = computeLoyalty(newTotalSpent, newOrdersCount);
+  const earned = pointsEarnedFor(orderTotal);
+  const newBalance = Math.max(0, (existing?.points ?? 0) + earned - params.pointsToDebit);
+  const { vip, segment } = computeLoyaltyStatus(newTotalSpent, newOrdersCount);
 
   const customer = existing
     ? await tx.customer.update({
@@ -62,7 +63,7 @@ export async function applyLoyaltyOrder(
           place,
           ordersCount: newOrdersCount,
           totalSpent: newTotalSpent,
-          points,
+          points: newBalance,
           vip,
           segment,
         },
@@ -76,7 +77,7 @@ export async function applyLoyaltyOrder(
           place,
           ordersCount: newOrdersCount,
           totalSpent: newTotalSpent,
-          points,
+          points: newBalance,
           vip,
           segment,
         },
@@ -85,7 +86,7 @@ export async function applyLoyaltyOrder(
   return {
     customerId: customer.id,
     vipBefore: existing?.vip ?? false,
-    pointsEarned: points - (existing?.points ?? 0),
-    newBalance: points,
+    pointsEarned: earned,
+    newBalance,
   };
 }

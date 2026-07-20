@@ -1,24 +1,27 @@
-/** 1 point acquis par tranche de 1 000 FCFA dépensé (constante métier, non éditable en v1). */
+/** 1 point gagné par tranche de 1 000 FCFA réellement payés (constante métier, non éditable en v1). */
 export const POINTS_PER_FCFA_UNIT = 1000;
-/** Seuil de points à partir duquel une cliente passe VIP (constante métier, non éditable en v1). */
-export const VIP_THRESHOLD_POINTS = 150;
+/** Valeur d'un point à l'utilisation : 50 FCFA de remise (constante métier, non éditable en v1). */
+export const POINT_VALUE_FCFA = 50;
+/**
+ * Seuil VIP : 150 000 FCFA dépensés à vie — équivalent exact de l'ancien seuil
+ * « 150 points » du temps où les points étaient dérivés de totalSpent. Le statut
+ * VIP est découplé du solde : dépenser ses points ne le fait jamais perdre.
+ */
+export const VIP_THRESHOLD_SPENT_FCFA = 150_000;
 
 export type CustomerLoyaltySegment = "VIP" | "Fidele" | "Nouvelle";
 
-export interface LoyaltyResult {
-  points: number;
-  vip: boolean;
-  segment: CustomerLoyaltySegment;
+/** Points crédités par une vente, sur le montant réellement payé. */
+export function pointsEarnedFor(paidTotal: number): number {
+  return Math.max(0, Math.floor(paidTotal / POINTS_PER_FCFA_UNIT));
 }
 
-/**
- * Calcule points/statut VIP/segment à partir du total dépensé et du nombre de
- * commandes confirmées cumulés. Une fois VIP (points ne décroissent jamais en
- * v1), le segment ne redescend jamais vers Nouvelle/Fidele.
- */
-export function computeLoyalty(totalSpent: number, ordersCount: number): LoyaltyResult {
-  const points = Math.floor(totalSpent / POINTS_PER_FCFA_UNIT);
-  const vip = points >= VIP_THRESHOLD_POINTS;
+/** Statut VIP + segment, dérivés du cumul dépensé à vie (jamais du solde de points). */
+export function computeLoyaltyStatus(
+  totalSpent: number,
+  ordersCount: number
+): { vip: boolean; segment: CustomerLoyaltySegment } {
+  const vip = totalSpent >= VIP_THRESHOLD_SPENT_FCFA;
   const segment: CustomerLoyaltySegment = vip ? "VIP" : ordersCount === 1 ? "Nouvelle" : "Fidele";
-  return { points, vip, segment };
+  return { vip, segment };
 }

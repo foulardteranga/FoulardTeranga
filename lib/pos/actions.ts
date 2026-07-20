@@ -67,6 +67,7 @@ export async function encaisserVente(
           tenantId: tenant.id,
           orderTotal: built.total,
           customerId: customer.id,
+          pointsToDebit: 0,
         });
         customerId = loyalty.customerId;
         vipAtOrder = loyalty.vipBefore;
