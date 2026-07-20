@@ -224,3 +224,21 @@ Fondation DB · Auth réelle · Catalogue & stock · Commandes & workflow · Cli
 1. `/admin/pos` : vérifier les 6 chips de paiement (2 rangées), encaisser une vente en « Wave » **avec** cliente rattachée → la modale liste les articles + points, « Envoyer sur WhatsApp » ouvre `wa.me/<numéro>?text=…` avec le reçu complet.
 2. Encaisser une vente en « Espèces » **sans** cliente → pas de bloc points, le bouton ouvre `wa.me/?text=…` (choix du contact).
 3. Vérifier en base (`SELECT ref, "paymentMethod" FROM "Order" ORDER BY "createdAt" DESC LIMIT 2;`) → `wave` et `espece`.
+
+## Lot 3 — codes promo & points dépensables (2026-07-20)
+
+**Terminé** — spec `docs/superpowers/specs/2026-07-20-payments-promos-ticket-finance-design.md` (section Lot 3), plan `docs/superpowers/plans/2026-07-20-promo-codes-loyalty-redemption.md`, branche `promo-loyalty-redemption` (depuis `e89c1cc`). Méthode subagent-driven (9 tâches de contenu + vérification), 2 correctifs Important trouvés/corrigés en revue de tâche (`d5e8d86` typage `PromoCreateInput` en `z.infer` ; `f145699` aperçu obsolète au détachement de la cliente), revues Opus dédiées sur les deux tâches transactionnelles (POS + web).
+
+- **Table `PromoCode`** (+ RLS owner/staff, forme `"current_role"()` alignée sur les policies existantes — le SQL littéral du plan aurait échoué sur le mot réservé) ; 4 colonnes de remise sur `Order` ; `Customer.points` est désormais un **solde** (gagné − dépensé), VIP/segment dérivés du cumul dépensé (`totalSpent ≥ 150 000 FCFA`), constantes : 1 pt gagné/1 000 FCFA payés, 1 pt = 50 FCFA de remise.
+- Moteur pur `lib/discounts/engine.ts` (validation FR + cumul promo→points, plafonds solde/restant, 15 tests) partagé par POS et web. Marketing : liste réelle des codes + création + activer/désactiver.
+- **POS** : champ code + saisie de points (solde affiché), aperçu serveur débouncé, tout débité atomiquement dans la transaction Serializable d'`encaisserVente` ; ticket/message WhatsApp avec lignes « Code promo X » / « Points utilisés (n) ».
+- **Web** : code promo pour toutes + « Utiliser mes points » (cliente connectée, résolue par session serveur) au checkout ; `submitWebOrder` enregistre l'**intention** sans rien débiter ; `confirmOrder` re-valide le code, re-plafonne les points au solde du moment, débite tout + incrémente `usedCount` dans la transaction existante ; écran Commandes : lignes de remise + alerte « code plus valide » sur les commandes en attente. Correctif au passage : l'aperçu de points du checkout utilisait un taux erroné (`/500` → `/1000`).
+- **208/208 tests** (25 fichiers), `typecheck` propre, `npx next build --webpack` réussit.
+- **Vérifié en direct (anonyme)** : checkout web — code invalide → « Code inconnu ou inactif » sous le champ ; `TERANGA10` (−10 %, créé en base pour l'essai) → « −1 250 FCFA », total 11 250, badge « +11 points » (sur le montant payé) ; soumission → commande `#TER-2708` en base avec l'intention enregistrée (`promoCode/promoDiscount/total`) et **aucun débit** (`usedCount` = 0, stock inchangé, aucun point touché).
+- Mineurs consignés (non bloquants) : lookup dupliqué dans `createPromoCode` ; regex de date acceptant des dates calendaires invalides ; pas de clamp UI de `value` au changement de type % ; double scan clientes dans `confirmOrder` (voulu, préserve la sémantique).
+
+**Reste pour l'utilisateur** (session owner requise) :
+1. `/admin/marketing` : créer un vrai code (le `TERANGA10` d'essai peut être désactivé/supprimé).
+2. `/admin/commandes` : valider `#TER-2708` (« Test Promo E2E ») → total confirmé 11 250, `usedCount` de TERANGA10 → 1, stock p1 décrémenté, fiche cliente créée avec 11 points.
+3. `/admin/pos` : vente avec code + points d'une cliente → récapitulatif 3 lignes de remise, ticket WhatsApp cohérent, solde de points débité/crédité en base.
+4. Supprimer les données d'essai si souhaité (`#TER-2708`, code `promo-e2e-1`).
