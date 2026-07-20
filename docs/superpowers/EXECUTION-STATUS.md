@@ -208,3 +208,19 @@ Le journal de progression détaillé vit dans `.superpowers/sdd/progress.md` (no
 ## Migration mock → Supabase : les 5 sous-projets sont terminés
 
 Fondation DB · Auth réelle · Catalogue & stock · Commandes & workflow · Clientes & fidélité — tous fusionnés dans `feature/storefront-foundations`.
+
+## Lots paiements détaillés + ticket WhatsApp (2026-07-20)
+
+**Terminé** — lots 1 et 2 du spec `docs/superpowers/specs/2026-07-20-payments-promos-ticket-finance-design.md`, plan `docs/superpowers/plans/2026-07-20-detailed-payments-whatsapp-ticket.md`, branche `payments-whatsapp-ticket` (depuis `0f2f9d4`). Méthode subagent-driven (5 tâches de contenu + vérification), chaque tâche revue (spec + qualité), toutes Approved.
+
+- **Contexte corrigé** : la boutique est en **Côte d'Ivoire** (pas Sénégal — CLAUDE.md §1 à corriger un jour). Portefeuilles : Orange Money, Wave, Moov Money, MTN MoMo.
+- Enum `PaymentMethod` : 7 valeurs (`espece`, `mm` legacy « Mobile Money » réservé à l'historique, `orange_money`, `wave`, `moov_money`, `mtn_momo`, `mixte`), migration additive appliquée au projet Supabase via MCP et vérifiée (`enum_range` = 7 valeurs). Libellés centralisés dans `lib/payments/labels.ts` (premier module de `lib/payments`, dossier prévu par CLAUDE.md §7).
+- POS : 6 chips de paiement (2 rangées de 3), validator Zod refuse `mm` pour les nouvelles ventes (`lib/validators/pos.test.ts`).
+- Ticket WhatsApp : générateur pur `lib/pos/ticketMessage.ts` (5 tests), `encaisserVente` renvoie `ticket: PosTicketData` (lignes, sous-total, remise, total serveur, téléphone cliente, points gagnés/nouveau solde — `applyLoyaltyOrder` étendu, rétro-compatible avec `confirmOrder`). Modale : articles listés, lignes Sous-total/Remise conditionnelles, ligne points, bouton « Envoyer sur WhatsApp » (`whatsappLink` pré-adressé si cliente rattachée, sinon `whatsappShareLink` → choix du contact), bouton Imprimer corrigé (`window.print()` — il fermait la modale).
+- **181/181 tests, typecheck propre, `npx next build --webpack` réussit.** Vitrine publique vérifiée intacte en navigateur, zéro erreur serveur. Garde d'auth `/admin/pos` → `/admin/connexion` confirmée au passage.
+- Mineur consigné (non bloquant, hérité du snippet du plan) : clé React `name+qty` des lignes de la modale — collision possible seulement si deux produits distincts partagent nom ET quantité identiques.
+
+**Reste pour l'utilisateur** (parcours authentifié, non exécutable par l'agent — aucune session owner dans le navigateur, saisie de mot de passe interdite) :
+1. `/admin/pos` : vérifier les 6 chips de paiement (2 rangées), encaisser une vente en « Wave » **avec** cliente rattachée → la modale liste les articles + points, « Envoyer sur WhatsApp » ouvre `wa.me/<numéro>?text=…` avec le reçu complet.
+2. Encaisser une vente en « Espèces » **sans** cliente → pas de bloc points, le bouton ouvre `wa.me/?text=…` (choix du contact).
+3. Vérifier en base (`SELECT ref, "paymentMethod" FROM "Order" ORDER BY "createdAt" DESC LIMIT 2;`) → `wave` et `espece`.
