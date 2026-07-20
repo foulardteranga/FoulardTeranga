@@ -16,6 +16,7 @@ import { createNotification } from "@/lib/notifications/create";
 import { validatePromo, applyDiscounts } from "@/lib/discounts/engine";
 import { getCustomerByProfileId } from "@/lib/data/customers.server";
 import { findPromoByCode } from "@/lib/data/promos.server";
+import { discountRequestSchema } from "@/lib/validators/discounts";
 
 /** Sous ce seuil de stock restant, une commande validée déclenche une alerte "stock bas". */
 const LOW_STOCK_THRESHOLD = 3;
@@ -29,6 +30,10 @@ export async function submitWebOrder(
   if (!parsedKyc.success) {
     return { ok: false, error: "Informations invalides." };
   }
+  // Entrée non fiable (client) : une remise mal formée n'est jamais une erreur
+  // bloquante, elle dégrade simplement vers "aucune remise demandée".
+  const parsedDiscounts = discountRequestSchema.safeParse(discounts ?? {});
+  const safeDiscounts = parsedDiscounts.success ? parsedDiscounts.data : { pointsRequested: 0 };
 
   try {
     const tenant = await getCurrentTenant();
@@ -46,9 +51,17 @@ export async function submitWebOrder(
       const customer =
         session && session.role === "customer" ? await getCustomerByProfileId(session.userId) : null;
 
+      // La cliente à débiter au moment de la validation est retrouvée par
+      // téléphone KYC (voir confirmOrder), pas par la session. Si la personne
+      // connectée saisit le numéro d'une autre cliente, une intention de points
+      // honorée ici débiterait le solde de CETTE AUTRE cliente à la validation.
+      // On n'autorise donc les points que si le téléphone KYC est bien le sien.
+      const sessionOwnsPhone =
+        customer !== null && normalizePhone(parsedKyc.data.phone) === normalizePhone(customer.phone);
+
       let promoRow = null;
-      if (discounts?.promoCode?.trim()) {
-        promoRow = await findPromoByCode(tx, tenant.id, discounts.promoCode);
+      if (safeDiscounts.promoCode?.trim()) {
+        promoRow = await findPromoByCode(tx, tenant.id, safeDiscounts.promoCode);
         const verdict = validatePromo(promoRow, {
           now: new Date(),
           subtotal: built.total,
@@ -59,7 +72,7 @@ export async function submitWebOrder(
       const d = applyDiscounts({
         subtotal: built.total,
         promo: promoRow,
-        pointsRequested: customer ? Math.max(0, Math.floor(discounts?.pointsRequested ?? 0)) : 0,
+        pointsRequested: sessionOwnsPhone ? Math.max(0, Math.floor(safeDiscounts.pointsRequested ?? 0)) : 0,
         pointsBalance: customer?.points ?? 0,
       });
 

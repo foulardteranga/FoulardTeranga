@@ -5,6 +5,7 @@ import { getCurrentTenant } from "@/lib/tenant";
 import { requireZone } from "@/lib/auth";
 import { validatePromo, applyDiscounts } from "./engine";
 import { findPromoByCode } from "@/lib/data/promos.server";
+import { discountRequestSchema } from "@/lib/validators/discounts";
 
 export interface DiscountPreview {
   promo: { code: string; discount: number } | null;
@@ -27,6 +28,11 @@ export async function previewPosDiscount(input: {
   if (!Number.isFinite(input.subtotal) || input.subtotal < 0) {
     return { ok: false, error: "Montant invalide." };
   }
+  const parsedDiscounts = discountRequestSchema.safeParse({
+    promoCode: input.promoCode,
+    pointsRequested: input.pointsRequested,
+  });
+  const safeDiscounts = parsedDiscounts.success ? parsedDiscounts.data : { pointsRequested: 0 };
 
   try {
     const tenant = await getCurrentTenant();
@@ -36,8 +42,8 @@ export async function previewPosDiscount(input: {
 
     let promoRow = null;
     let promoError: string | null = null;
-    if (input.promoCode?.trim()) {
-      promoRow = await findPromoByCode(prisma, tenant.id, input.promoCode);
+    if (safeDiscounts.promoCode?.trim()) {
+      promoRow = await findPromoByCode(prisma, tenant.id, safeDiscounts.promoCode);
       const verdict = validatePromo(promoRow, {
         now: new Date(),
         subtotal: input.subtotal,
@@ -52,7 +58,7 @@ export async function previewPosDiscount(input: {
     const d = applyDiscounts({
       subtotal: input.subtotal,
       promo: promoRow,
-      pointsRequested: customer ? Math.max(0, Math.floor(input.pointsRequested)) : 0,
+      pointsRequested: customer ? Math.max(0, Math.floor(safeDiscounts.pointsRequested ?? 0)) : 0,
       pointsBalance: customer?.points ?? 0,
     });
     return {
