@@ -62,8 +62,8 @@ export function TicketModal() {
           <Row label="Articles" value={String(ticket.items)} />
           <Row label="Mode de paiement" value={ticket.pay} strong />
           <div style={{ borderTop: `1px solid ${colors.borderSoft}`, margin: "10px 0", paddingTop: 10 }}>
-            {ticket.lines.map((l) => (
-              <div key={l.name + l.qty} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, padding: "3px 0", color: colors.ink }}>
+            {ticket.lines.map((l, i) => (
+              <div key={`${l.name}-${i}`} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, padding: "3px 0", color: colors.ink }}>
                 <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.name} × {l.qty}</span>
                 <span style={{ fontWeight: 600 }}>{money(l.lineTotal)}</span>
               </div>

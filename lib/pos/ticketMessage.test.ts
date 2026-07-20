@@ -39,6 +39,28 @@ describe("buildTicketMessage", () => {
     expect(msg).toContain("*Total payé : 29 250 FCFA* (Wave)");
   });
 
+  it("affiche des puces pré-remise dont la somme correspond au sous-total, même avec une remise de ligne", () => {
+    // Données production-shaped : la remise POS -10% s'applique à une ligne
+    // (produite par buildOrderLines), mais le payload ticket doit exposer
+    // lineTotal = unitPrice × qty (avant remise) pour que les puces
+    // s'additionnent au Sous-total, pas au Total.
+    const msg = buildTicketMessage({
+      ...base,
+      lines: [
+        { name: "Foulard tissé main", qty: 2, lineTotal: 24000 },
+        { name: "Turban wax", qty: 1, lineTotal: 8500 },
+      ],
+      subtotal: 32500,
+      discount: 2400,
+      total: 30100,
+    });
+    expect(msg).toContain("• Foulard tissé main × 2 — 24 000 FCFA");
+    expect(msg).toContain("• Turban wax × 1 — 8 500 FCFA");
+    expect(msg).toContain("Sous-total : 32 500 FCFA");
+    expect(msg).toContain("Remise : −2 400 FCFA");
+    expect(msg).toContain("*Total payé : 30 100 FCFA* (Wave)");
+  });
+
   it("affiche le bloc fidélité seulement si une cliente est rattachée", () => {
     expect(buildTicketMessage(base)).not.toContain("Points gagnés");
     const msg = buildTicketMessage({ ...base, loyalty: { pointsEarned: 32, newBalance: 96 } });

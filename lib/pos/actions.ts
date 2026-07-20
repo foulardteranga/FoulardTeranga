@@ -107,7 +107,7 @@ export async function encaisserVente(
         lines: result.built.lines.map((l) => ({
           name: l.nameAtOrder,
           qty: l.qty,
-          lineTotal: l.lineTotal,
+          lineTotal: l.unitPrice * l.qty,
         })),
         subtotal: result.built.lines.reduce((a, l) => a + l.unitPrice * l.qty, 0),
         discount: result.built.lines.reduce((a, l) => a + l.discount * l.qty, 0),
