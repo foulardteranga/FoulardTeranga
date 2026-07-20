@@ -10,9 +10,19 @@ import { buildOrderLines } from "@/lib/orders/buildOrderLines";
 import { aggregateQtyByProduct } from "@/lib/orders/stockCheck";
 import { applyLoyaltyOrder } from "@/lib/customers/applyLoyaltyOrder";
 
+export interface PosTicketData {
+  shopName: string;
+  lines: Array<{ name: string; qty: number; lineTotal: number }>;
+  subtotal: number;
+  discount: number;
+  total: number;
+  customerPhone: string | null;
+  loyalty: { pointsEarned: number; newBalance: number } | null;
+}
+
 export async function encaisserVente(
   input: PosSaleInput
-): Promise<{ ok: true; ref: string } | { ok: false; error: string }> {
+): Promise<{ ok: true; ref: string; ticket: PosTicketData } | { ok: false; error: string }> {
   const { allowed } = await requireZone("dashboard");
   if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
 
@@ -22,7 +32,7 @@ export async function encaisserVente(
   try {
     const tenant = await getCurrentTenant();
 
-    const order = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       const products = await tx.product.findMany({
         where: { tenantId: tenant.id, id: { in: parsed.data.lines.map((l) => l.productId) } },
       });
@@ -45,6 +55,7 @@ export async function encaisserVente(
       let place = "Vente en boutique";
       let customerId: string | null = null;
       let vipAtOrder = false;
+      let loyaltyInfo: { pointsEarned: number; newBalance: number } | null = null;
 
       if (parsed.data.customerId) {
         const customer = await tx.customer.findFirst({
@@ -62,9 +73,10 @@ export async function encaisserVente(
         clientName = customer.name;
         phone = customer.phone;
         place = customer.place;
+        loyaltyInfo = { pointsEarned: loyalty.pointsEarned, newBalance: loyalty.newBalance };
       }
 
-      return tx.order.create({
+      const order = await tx.order.create({
         data: {
           tenantId: tenant.id,
           clientName,
@@ -79,13 +91,31 @@ export async function encaisserVente(
           lines: { create: built.lines },
         },
       });
+
+      return { order, built, phone, loyaltyInfo };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10000, timeout: 10000 });
 
     revalidatePath("/admin/commandes");
     revalidatePath("/admin/tableau-de-bord");
     revalidatePath("/admin/inventaire");
     revalidatePath("/admin/clientes");
-    return { ok: true, ref: order.ref };
+    return {
+      ok: true,
+      ref: result.order.ref,
+      ticket: {
+        shopName: tenant.name,
+        lines: result.built.lines.map((l) => ({
+          name: l.nameAtOrder,
+          qty: l.qty,
+          lineTotal: l.lineTotal,
+        })),
+        subtotal: result.built.lines.reduce((a, l) => a + l.unitPrice * l.qty, 0),
+        discount: result.built.lines.reduce((a, l) => a + l.discount * l.qty, 0),
+        total: result.built.total,
+        customerPhone: result.phone || null,
+        loyalty: result.loyaltyInfo,
+      },
+    };
   } catch (err) {
     const message = err instanceof Error ? err.message : "";
     const known =

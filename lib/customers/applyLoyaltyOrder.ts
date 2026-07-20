@@ -23,7 +23,7 @@ export interface ApplyLoyaltyOrderParams {
  */
 export async function applyLoyaltyOrder(
   params: ApplyLoyaltyOrderParams
-): Promise<{ customerId: string; vipBefore: boolean }> {
+): Promise<{ customerId: string; vipBefore: boolean; pointsEarned: number; newBalance: number }> {
   const { tx, tenantId, orderTotal } = params;
 
   if (params.customerId) {
@@ -35,7 +35,12 @@ export async function applyLoyaltyOrder(
       where: { id: existing.id },
       data: { ordersCount: newOrdersCount, totalSpent: newTotalSpent, points, vip, segment },
     });
-    return { customerId: updated.id, vipBefore: existing.vip };
+    return {
+      customerId: updated.id,
+      vipBefore: existing.vip,
+      pointsEarned: points - existing.points,
+      newBalance: points,
+    };
   }
 
   const clientName = params.clientName ?? "";
@@ -77,5 +82,10 @@ export async function applyLoyaltyOrder(
         },
       });
 
-  return { customerId: customer.id, vipBefore: existing?.vip ?? false };
+  return {
+    customerId: customer.id,
+    vipBefore: existing?.vip ?? false,
+    pointsEarned: points - (existing?.points ?? 0),
+    newBalance: points,
+  };
 }
