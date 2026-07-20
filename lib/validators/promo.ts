@@ -24,4 +24,4 @@ export const promoCreateSchema = z
     path: ["endsAt"],
   });
 
-export type PromoCreateInput = z.input<typeof promoCreateSchema>;
+export type PromoCreateInput = z.infer<typeof promoCreateSchema>;
