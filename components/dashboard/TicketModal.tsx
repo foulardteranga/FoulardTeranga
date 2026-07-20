@@ -69,8 +69,14 @@ export function TicketModal() {
               </div>
             ))}
           </div>
-          {ticket.discount > 0 && <Row label="Sous-total" value={money(ticket.subtotal)} />}
+          {(ticket.discount > 0 || ticket.promo || ticket.pointsUsed) && (
+            <Row label="Sous-total" value={money(ticket.subtotal)} />
+          )}
           {ticket.discount > 0 && <Row label="Remise" value={`−${money(ticket.discount)}`} />}
+          {ticket.promo && <Row label={`Code ${ticket.promo.code}`} value={`−${money(ticket.promo.discount)}`} />}
+          {ticket.pointsUsed && (
+            <Row label={`Points (${ticket.pointsUsed.points})`} value={`−${money(ticket.pointsUsed.discount)}`} />
+          )}
           <div
             style={{
               display: "flex",

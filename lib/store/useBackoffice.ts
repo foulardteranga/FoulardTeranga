@@ -25,6 +25,8 @@ export interface Ticket {
   discount: number;
   subtotal: number;
   loyalty: { pointsEarned: number; newBalance: number } | null;
+  promo: { code: string; discount: number } | null;
+  pointsUsed: { points: number; discount: number } | null;
   /** Message WhatsApp pré-construit (buildTicketMessage). */
   waMessage: string;
   customerPhone: string | null;
