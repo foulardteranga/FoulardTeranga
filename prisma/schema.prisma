@@ -57,6 +57,14 @@ enum NotificationType {
   paiement_recu
 }
 
+enum StockMovementReason {
+  vente_pos
+  vente_web
+  reception
+  perte
+  correction
+}
+
 enum PromoKind {
   percent
   amount
@@ -82,6 +90,7 @@ model Tenant {
   notifications   Notification[]
   storefrontPages StorefrontPage[]
   promoCodes      PromoCode[]
+  stockMovements  StockMovement[]
 }
 
 model Profile {
@@ -91,8 +100,9 @@ model Profile {
   name      String
   createdAt DateTime @default(now())
 
-  tenant   Tenant    @relation(fields: [tenantId], references: [id])
-  customer Customer?
+  tenant         Tenant          @relation(fields: [tenantId], references: [id])
+  customer       Customer?
+  stockMovements StockMovement[]
 
   @@index([tenantId])
 }
@@ -118,8 +128,9 @@ model Product {
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
-  tenant     Tenant      @relation(fields: [tenantId], references: [id])
-  orderLines OrderLine[]
+  tenant         Tenant          @relation(fields: [tenantId], references: [id])
+  orderLines     OrderLine[]
+  stockMovements StockMovement[]
 
   @@index([tenantId])
 }
@@ -221,6 +232,23 @@ model PromoCode {
 
   @@unique([tenantId, code])
   @@index([tenantId])
+}
+
+model StockMovement {
+  id        String              @id @default(cuid())
+  tenantId  String
+  productId String
+  authorId  String              @db.Uuid
+  delta     Int
+  reason    StockMovementReason
+  note      String?
+  createdAt DateTime            @default(now())
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+  author  Profile @relation(fields: [authorId], references: [id])
+
+  @@index([tenantId, productId, createdAt])
 }
 
 model OrderLine {
