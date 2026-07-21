@@ -168,8 +168,8 @@ describe("topSoldProducts", () => {
 describe("lastSaleByProduct", () => {
   it("retient la vente la plus récente par produit", () => {
     const map = lastSaleByProduct([
-      { productId: "p1", qty: 1, lineTotal: 1, soldAt: new Date("2026-07-10T00:00:00Z") },
-      { productId: "p1", qty: 1, lineTotal: 1, soldAt: new Date("2026-07-15T00:00:00Z") },
+      { productId: "p1", soldAt: new Date("2026-07-10T00:00:00Z") },
+      { productId: "p1", soldAt: new Date("2026-07-15T00:00:00Z") },
     ]);
     expect(map.get("p1")?.toISOString()).toBe("2026-07-15T00:00:00.000Z");
   });
@@ -193,5 +193,12 @@ describe("dormantProducts", () => {
 
   it("respecte la limite demandée", () => {
     expect(dormantProducts(products, new Map(), now, 1)).toHaveLength(1);
+  });
+
+  it("distingue un produit vendu il y a longtemps d'un produit jamais vendu", () => {
+    const map = new Map([["p1", new Date("2026-05-20T00:00:00Z")]]); // 61 jours
+    const result = dormantProducts(products, map, now, 4);
+    expect(result[0]).toEqual({ productId: "p1", daysSinceLastSale: 61, neverSold: false });
+    expect(result[1]).toEqual({ productId: "p2", daysSinceLastSale: 19, neverSold: true });
   });
 });

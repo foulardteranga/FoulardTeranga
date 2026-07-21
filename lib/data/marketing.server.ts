@@ -48,7 +48,7 @@ export async function getMarketingStats(): Promise<MarketingStats> {
   const now = new Date();
   const windowStart = addDaysUtc(startOfDayUtc(now), -(WINDOW_DAYS - 1));
 
-  const [products, soldRows, customers, activeCustomerGroups] = await Promise.all([
+  const [products, windowSoldRows, allSoldRows, customers, activeCustomerGroups] = await Promise.all([
     prisma.product.findMany({ where: { tenantId: tenant.id } }),
     prisma.orderLine.findMany({
       where: {
@@ -59,6 +59,14 @@ export async function getMarketingStats(): Promise<MarketingStats> {
         },
       },
       select: { productId: true, qty: true, lineTotal: true, order: { select: { createdAt: true } } },
+    }),
+    // Sans borne de date : sert uniquement à dater la dernière vente de chaque
+    // produit. Si on la limitait à `windowStart`, un produit vendu il y a plus
+    // de 30 jours n'aurait aucune entrée et passerait à tort pour « jamais
+    // vendu » dans la carte « Produits dormants ».
+    prisma.orderLine.findMany({
+      where: { order: { tenantId: tenant.id, status: { in: [...REVENUE_STATUSES] } } },
+      select: { productId: true, order: { select: { createdAt: true } } },
     }),
     prisma.customer.findMany({ where: { tenantId: tenant.id }, select: { ordersCount: true } }),
     prisma.order.findMany({
@@ -73,7 +81,7 @@ export async function getMarketingStats(): Promise<MarketingStats> {
     }),
   ]);
 
-  const lines: SoldLine[] = soldRows.map((l) => ({
+  const windowLines: SoldLine[] = windowSoldRows.map((l) => ({
     productId: l.productId,
     qty: l.qty,
     lineTotal: l.lineTotal,
@@ -81,7 +89,7 @@ export async function getMarketingStats(): Promise<MarketingStats> {
   }));
   const byId = new Map(products.map((p) => [p.id, p]));
 
-  const stars: MarketingProductStat[] = topSoldProducts(lines, CARD_SIZE).flatMap((s) => {
+  const stars: MarketingProductStat[] = topSoldProducts(windowLines, CARD_SIZE).flatMap((s) => {
     const p = byId.get(s.productId);
     if (!p) return [];
     return [{ id: p.id, name: p.name, image: p.image, swatch: p.swatch, qty: s.qty, revenue: s.revenue }];
@@ -89,7 +97,7 @@ export async function getMarketingStats(): Promise<MarketingStats> {
 
   const dormant: MarketingDormantStat[] = dormantProducts(
     products.map((p) => ({ id: p.id, stock: p.stock, createdAt: p.createdAt })),
-    lastSaleByProduct(lines),
+    lastSaleByProduct(allSoldRows.map((l) => ({ productId: l.productId, soldAt: l.order.createdAt }))),
     now,
     CARD_SIZE
   ).flatMap((d) => {

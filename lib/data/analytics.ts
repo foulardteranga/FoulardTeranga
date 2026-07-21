@@ -144,7 +144,9 @@ export function topSoldProducts(
     .slice(0, limit);
 }
 
-export function lastSaleByProduct(lines: SoldLine[]): Map<string, Date> {
+export function lastSaleByProduct(
+  lines: Array<Pick<SoldLine, "productId" | "soldAt">>
+): Map<string, Date> {
   const map = new Map<string, Date>();
   for (const l of lines) {
     const current = map.get(l.productId);
