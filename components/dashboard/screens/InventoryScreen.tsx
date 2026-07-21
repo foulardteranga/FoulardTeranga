@@ -1,13 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { money } from "@/lib/format";
 import { useBackoffice } from "@/lib/store/useBackoffice";
-import { createProduct, updateProductImages } from "@/lib/inventory/actions";
+import { createProduct, updateProductImages, adjustStock, getProductStockMovements } from "@/lib/inventory/actions";
+import type { StockMovementView } from "@/lib/data/stockMovements.server";
 import { PRODUCT_CATEGORIES } from "@/lib/validators/product";
+import { MANUAL_STOCK_REASONS } from "@/lib/validators/stockMovement";
 import { ProductPhotosField } from "@/components/dashboard/ProductPhotosField";
 import { NumericField } from "@/components/ui/NumericField";
 import type { Product } from "@/lib/data/types";
@@ -17,12 +19,6 @@ function lvlDot(v: number, seuil: number): string {
   if (v <= seuil) return colors.warning;
   return colors.success;
 }
-
-const HISTORY = [
-  { date: "05/07", type: "Entrée atelier", qty: "+12", color: colors.fgSuccess },
-  { date: "03/07", type: "Vente boutique", qty: "−3", color: colors.fgDanger },
-  { date: "01/07", type: "Ajustement inventaire", qty: "−1", color: colors.fgDanger },
-];
 
 const PAGE_SIZE = 8;
 
@@ -488,6 +484,51 @@ function EditDrawer({ product: p, onClose }: { product: Product; onClose: () => 
   const [savingPhotos, setSavingPhotos] = useState(false);
   const photosDirty = photos.image !== (p.image ?? "") || photos.gallery.join("|") !== p.gallery.join("|");
 
+  const [movements, setMovements] = useState<StockMovementView[]>([]);
+  const [movementsVersion, setMovementsVersion] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    getProductStockMovements(p.id).then((res) => {
+      if (!cancelled && res.ok) setMovements(res.movements);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [p.id, movementsVersion]);
+
+  const [adjusting, setAdjusting] = useState(false);
+  const [adjustReason, setAdjustReason] = useState<(typeof MANUAL_STOCK_REASONS)[number]>("reception");
+  const [adjustSign, setAdjustSign] = useState<"+" | "-">("+");
+  const [adjustQty, setAdjustQty] = useState("1");
+  const [adjustNote, setAdjustNote] = useState("");
+  const [adjustError, setAdjustError] = useState<string | null>(null);
+  const [adjustSaving, setAdjustSaving] = useState(false);
+
+  async function submitAdjustment() {
+    setAdjustSaving(true);
+    setAdjustError(null);
+    const magnitude = Number(adjustQty) || 0;
+    const delta = adjustSign === "+" ? magnitude : -magnitude;
+    const res = await adjustStock({
+      productId: p.id,
+      delta,
+      reason: adjustReason,
+      note: adjustNote.trim() || undefined,
+    });
+    setAdjustSaving(false);
+    if (!res.ok) {
+      setAdjustError(res.error);
+      return;
+    }
+    showToast("Stock ajusté.", "success");
+    setAdjusting(false);
+    setAdjustQty("1");
+    setAdjustNote("");
+    setMovementsVersion((v) => v + 1);
+    router.refresh();
+  }
+
   async function savePhotos() {
     setSavingPhotos(true);
     const res = await updateProductImages(p.id, {
@@ -579,11 +620,13 @@ function EditDrawer({ product: p, onClose }: { product: Product; onClose: () => 
             <MoveBtn color={colors.success} bg={colors.bgSuccess} fg={colors.fgSuccess} icon={ICONS.plus} label="Entrée" />
             <MoveBtn color={colors.danger} bg={colors.bgDanger} fg={colors.fgDanger} icon={ICONS.minus} label="Sortie" />
             <button
+              type="button"
+              onClick={() => setAdjusting((v) => !v)}
               style={{
                 height: 44,
-                border: `1.5px solid ${colors.borderField}`,
+                border: `1.5px solid ${adjusting ? colors.primary : colors.borderField}`,
                 borderRadius: 10,
-                background: "#fff",
+                background: adjusting ? colors.bgInfo : "#fff",
                 color: colors.primary,
                 font: `600 13px ${fonts.ui}`,
                 cursor: "pointer",
@@ -598,16 +641,125 @@ function EditDrawer({ product: p, onClose }: { product: Product; onClose: () => 
             </button>
           </div>
 
+          {adjusting && (
+            <div style={{ border: `1px solid ${colors.borderSoft}`, borderRadius: 12, padding: 14, marginBottom: 16 }}>
+              <FormField label="Raison">
+                <select
+                  value={adjustReason}
+                  onChange={(e) => setAdjustReason(e.target.value as (typeof MANUAL_STOCK_REASONS)[number])}
+                  style={textField}
+                >
+                  <option value="reception">Entrée atelier / Réception</option>
+                  <option value="perte">Perte ou casse</option>
+                  <option value="correction">Correction d&apos;inventaire</option>
+                </select>
+              </FormField>
+              <FormField label="Écart">
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => setAdjustSign("+")}
+                    style={{
+                      width: 44,
+                      height: 42,
+                      border: `1.5px solid ${adjustSign === "+" ? colors.success : colors.borderField}`,
+                      borderRadius: 10,
+                      background: adjustSign === "+" ? colors.bgSuccess : "#fff",
+                      color: adjustSign === "+" ? colors.fgSuccess : colors.muted,
+                      fontWeight: 700,
+                      fontSize: 18,
+                      cursor: "pointer",
+                    }}
+                  >
+                    +
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAdjustSign("-")}
+                    style={{
+                      width: 44,
+                      height: 42,
+                      border: `1.5px solid ${adjustSign === "-" ? colors.danger : colors.borderField}`,
+                      borderRadius: 10,
+                      background: adjustSign === "-" ? colors.bgDanger : "#fff",
+                      color: adjustSign === "-" ? colors.fgDanger : colors.muted,
+                      fontWeight: 700,
+                      fontSize: 18,
+                      cursor: "pointer",
+                    }}
+                  >
+                    −
+                  </button>
+                  <div style={{ flex: 1 }}>
+                    <NumericField mode="integer" value={adjustQty} onChange={setAdjustQty} min={1} placeholder="1" />
+                  </div>
+                </div>
+              </FormField>
+              <FormField label="Note (optionnel)">
+                <textarea
+                  value={adjustNote}
+                  onChange={(e) => setAdjustNote(e.target.value)}
+                  placeholder="Précision sur ce mouvement…"
+                  style={{ ...textField, height: 64, padding: "10px 13px", resize: "none" }}
+                />
+              </FormField>
+              {adjustError && <p style={{ color: colors.danger, fontSize: 12.5, margin: "0 0 12px" }}>{adjustError}</p>}
+              <div style={{ display: "flex", gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setAdjusting(false)}
+                  style={{
+                    flex: 1,
+                    height: 42,
+                    border: `1.5px solid ${colors.borderField}`,
+                    borderRadius: 10,
+                    background: "#fff",
+                    color: colors.primary,
+                    font: `600 13px ${fonts.ui}`,
+                    cursor: "pointer",
+                  }}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={submitAdjustment}
+                  disabled={adjustSaving}
+                  className="ft-primary-btn"
+                  style={{
+                    flex: 1,
+                    height: 42,
+                    border: "none",
+                    borderRadius: 10,
+                    background: colors.primary,
+                    color: "#fff",
+                    font: `600 13px ${fonts.ui}`,
+                    cursor: adjustSaving ? "default" : "pointer",
+                    opacity: adjustSaving ? 0.7 : 1,
+                  }}
+                >
+                  {adjustSaving ? "Enregistrement…" : "Confirmer l'ajustement"}
+                </button>
+              </div>
+            </div>
+          )}
+
           <div style={{ background: colors.ivory, border: `1px solid ${colors.borderSoft}`, borderRadius: 12, padding: 14 }}>
             <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 10 }}>Derniers mouvements</div>
-            {HISTORY.map((h) => (
-              <div key={h.date} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", fontSize: 12.5 }}>
-                <span style={{ color: colors.muted }}>
-                  {h.date} · {h.type}
-                </span>
-                <span style={{ fontWeight: 600, color: h.color }}>{h.qty}</span>
-              </div>
-            ))}
+            {movements.length === 0 ? (
+              <p style={{ fontSize: 12.5, color: colors.muted, margin: 0 }}>Aucun mouvement enregistré.</p>
+            ) : (
+              movements.map((m) => (
+                <div key={m.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", fontSize: 12.5 }}>
+                  <span style={{ color: colors.muted }}>
+                    {m.date} · {m.reasonLabel} · par {m.authorName}
+                  </span>
+                  <span style={{ fontWeight: 600, color: m.delta >= 0 ? colors.fgSuccess : colors.fgDanger }}>
+                    {m.delta >= 0 ? `+${m.delta}` : m.delta}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
