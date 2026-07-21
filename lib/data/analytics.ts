@@ -144,6 +144,19 @@ export function topSoldProducts(
     .slice(0, limit);
 }
 
+/** Répartition du CA entre le comptoir et les canaux en ligne (Web, WhatsApp). */
+export function splitByChannel(
+  orders: Array<{ channel: string; total: number }>
+): { inStore: number; online: number } {
+  let inStore = 0;
+  let online = 0;
+  for (const o of orders) {
+    if (o.channel === "Boutique") inStore += o.total;
+    else online += o.total;
+  }
+  return { inStore, online };
+}
+
 /**
  * Produits en stock qui dorment : jamais vendus (ancienneté comptée depuis leur
  * création) ou sans vente depuis au moins `thresholdDays` jours, du plus dormant

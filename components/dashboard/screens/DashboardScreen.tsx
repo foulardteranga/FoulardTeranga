@@ -51,6 +51,21 @@ export function DashboardScreen({
     }));
   }, [range, stats]);
 
+  const channelSplit = useMemo(() => {
+    const { inStore, online } = stats.channelSplit;
+    const total = inStore + online;
+    if (total === 0) {
+      return { inStorePct: 100, onlinePct: 0, hasData: false, inStore: 0, online: 0 };
+    }
+    return {
+      inStorePct: Math.round((inStore / total) * 100),
+      onlinePct: Math.round((online / total) * 100),
+      hasData: true,
+      inStore,
+      online,
+    };
+  }, [stats]);
+
   const lowStockAlerts = products.filter((p) => p.stock <= 9);
   const lowStock = lowStockAlerts.slice(0, 4);
   const lowStockCount = lowStockAlerts.length;
@@ -282,12 +297,18 @@ export function DashboardScreen({
         <div style={{ fontWeight: 600, fontSize: 14.5, marginBottom: 4 }}>Physique vs En ligne</div>
         <div style={{ fontSize: 12.5, color: colors.muted, marginBottom: 16 }}>Répartition du CA aujourd&apos;hui</div>
         <div style={{ display: "flex", height: 16, borderRadius: 999, overflow: "hidden", marginBottom: 14 }}>
-          <div style={{ width: "62%", background: colors.primary }} />
-          <div style={{ width: "38%", background: colors.accent }} />
+          {channelSplit.hasData ? (
+            <>
+              <div style={{ width: `${channelSplit.inStorePct}%`, background: colors.primary }} />
+              <div style={{ width: `${channelSplit.onlinePct}%`, background: colors.accent }} />
+            </>
+          ) : (
+            <div style={{ width: "100%", background: colors.borderSoft }} />
+          )}
         </div>
         <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
-          <Legend color={colors.primary} label="Boutique physique" value={money(153760)} />
-          <Legend color={colors.accent} label="En ligne" value={money(94240)} />
+          <Legend color={colors.primary} label="Boutique physique" value={money(channelSplit.inStore)} />
+          <Legend color={colors.accent} label="En ligne" value={money(channelSplit.online)} />
         </div>
       </div>
     </div>

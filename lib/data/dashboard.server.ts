@@ -6,6 +6,7 @@ import {
   dailySeries,
   deltaPct,
   inWindow,
+  splitByChannel,
   startOfDayUtc,
   summarizePeriod,
   weeklySeries,
@@ -20,6 +21,7 @@ export interface DashboardStats {
   deltas: { revenue: number | null; transactions: number | null; averageBasket: number | null };
   series7: Array<{ label: string; value: number }>;
   series30: Array<{ label: string; value: number }>;
+  channelSplit: { inStore: number; online: number };
 }
 
 /** KPI du jour (avec variation vs hier) et séries du graphique de tendance. */
@@ -34,7 +36,14 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       status: { in: [...REVENUE_STATUSES] },
       createdAt: { gte: windowStart },
     },
-    select: { total: true, promoDiscount: true, pointsDiscount: true, paymentMethod: true, createdAt: true },
+    select: {
+      total: true,
+      promoDiscount: true,
+      pointsDiscount: true,
+      paymentMethod: true,
+      createdAt: true,
+      channel: true,
+    },
   });
 
   const orders: RevenueOrder[] = rows.map((r) => ({
@@ -52,6 +61,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
   const today = summarizePeriod(orders.filter((o) => inWindow(o.createdAt, dayStart, dayEnd)));
   const yesterday = summarizePeriod(orders.filter((o) => inWindow(o.createdAt, prevStart, dayStart)));
+  const todayRows = rows.filter((r) => inWindow(r.createdAt, dayStart, dayEnd));
 
   return {
     today: { revenue: today.revenue, transactions: today.transactions, averageBasket: today.averageBasket },
@@ -62,5 +72,6 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     },
     series7: dailySeries(orders, now, 7),
     series30: weeklySeries(orders, now, 4),
+    channelSplit: splitByChannel(todayRows),
   };
 }

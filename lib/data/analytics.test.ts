@@ -11,6 +11,7 @@ import {
   weeklySeries,
   topSoldProducts,
   dormantProducts,
+  splitByChannel,
   type RevenueOrder,
   type SoldLine,
 } from "./analytics";
@@ -206,5 +207,23 @@ describe("dormantProducts", () => {
 
   it("respecte la limite demandée", () => {
     expect(dormantProducts(products, new Map(), now, 1, threshold)).toHaveLength(1);
+  });
+});
+
+describe("splitByChannel", () => {
+  it("compte les commandes « Boutique » comme comptoir", () => {
+    expect(splitByChannel([{ channel: "Boutique", total: 5000 }])).toEqual({ inStore: 5000, online: 0 });
+  });
+
+  it("compte les commandes « Web » et « WhatsApp » comme en ligne", () => {
+    const result = splitByChannel([
+      { channel: "Web", total: 3000 },
+      { channel: "WhatsApp", total: 2000 },
+    ]);
+    expect(result).toEqual({ inStore: 0, online: 5000 });
+  });
+
+  it("renvoie des zéros sans commande", () => {
+    expect(splitByChannel([])).toEqual({ inStore: 0, online: 0 });
   });
 });
