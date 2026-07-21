@@ -264,3 +264,18 @@ Fondation DB · Auth réelle · Catalogue & stock · Commandes & workflow · Cli
 1. `/admin/tableau-de-bord` : vérifier les 3 KPI et le graphique 7 j / 30 j (aujourd'hui sans vente → pastille neutre « — pas de vente hier », c'est le comportement attendu).
 2. `/admin/finance` : le total encaissé sur 30 j doit afficher 330 000 FCFA, dont une majorité « À encaisser » (commandes web validées, jamais encaissées au comptoir).
 3. `/admin/marketing` : produits stars et dormants cohérents avec les ventes réelles.
+
+## Journal des mouvements de stock & ajustement manuel (2026-07-21)
+
+**Terminé** — spec `docs/superpowers/specs/2026-07-21-stock-movements-journal-design.md`, plan `docs/superpowers/plans/2026-07-21-stock-movements-journal.md`, branche `stock-movements-journal` (depuis `b0dc235`). Méthode subagent-driven (7 tâches de contenu + vérification), toutes approuvées sans correctif de fond.
+
+- **Table `StockMovement`** (+ RLS mirée exactement sur les policies `PromoCode` du lot 3, vérifiées en direct avant application) : `delta` signé, `reason` (`vente_pos | vente_web | reception | perte | correction`), `authorId` (jamais null — seules des sessions dashboard authentifiées écrivent du stock), `note` optionnelle.
+- **Instrumentation des ventes existantes** : `encaisserVente` (POS) et `confirmOrder` (validation commande web) insèrent chacun une ligne `StockMovement` **dans leur transaction Serializable existante**, juste après le décrément — jamais l'un sans l'autre. Aucun rétro-remplissage des commandes antérieures.
+- **Ajustement manuel** : le bouton « Ajuster » du tiroir produit, décoratif depuis toujours, est maintenant fonctionnel — raison (Réception/Perte/Correction), écart signé via pavé tactile +/−, note optionnelle. Garde-fou **stock jamais négatif** (`Stock insuffisant pour cet ajustement — stock actuel : X.`), vérifié en direct.
+- **Journal** : 5 derniers mouvements par produit, libellés FR, nom de l'auteur, plus récent d'abord.
+- **241/241 tests, typecheck propre, `npx next build --webpack` réussit.**
+- **Vérifié en direct de bout en bout** (session owner) : ajustement « Perte ou casse » −2 → stock et journal mis à jour, couleur rouge correcte ; garde-fou testé avec −999 → message d'erreur exact, aucune écriture ; vente POS → ligne `vente_pos` automatique ; validation d'une commande web → ligne `vente_web` automatique. Le produit test (Foulard Wax Abidjan) affiche les 3 types de mouvement dans le bon ordre avec le bon auteur.
+- **Note d'outillage (pas un bug applicatif)** : sur `/admin/commandes`, le clic automatisé du navigateur de test n'atteignait pas le gestionnaire React du bouton « Valider » (aucune requête réseau déclenchée) — contourné en dispatchant l'événement `click` via JS. Une fois déclenché, `confirmOrder` a fonctionné parfaitement. À surveiller si un futur agent rencontre le même symptôme sur ce serveur de dev particulier (`dev-3002`, Turbopack sans `--webpack`).
+- Hors périmètre, assumé et documenté dans le spec : les boutons « Entrée »/« Sortie » (`MoveBtn`) du même tiroir restent décoratifs (le spec approuvé ne portait que sur « Ajuster ») ; la section « Stock par emplacement » (interne/sous-traitance/matériel) reste un mock — stock tripartite, chantier à part entière (CLAUDE.md §2).
+
+**Reste pour l'utilisateur** : rien de bloquant — le parcours complet a été vérifié en direct par l'agent avec une session owner active. Vous pouvez supprimer les mouvements de test créés sur « Foulard Wax Abidjan » si souhaité (aucune donnée sensible, juste des ajustements de démonstration).
