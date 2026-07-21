@@ -3,11 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/db/client";
+import { Prisma } from "@/lib/generated/prisma/client";
 import { getCurrentTenant } from "@/lib/tenant";
-import { requireZone } from "@/lib/auth";
+import { requireZone, getSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { compressImage, validateImageUpload, STOREFRONT_IMAGES_BUCKET } from "@/lib/images/imageUpload";
 import { productSchema, productImagesSchema, type ProductInput } from "@/lib/validators/product";
+import { stockAdjustmentSchema, type StockAdjustmentInput } from "@/lib/validators/stockMovement";
 
 export async function createProduct(
   input: ProductInput
@@ -107,5 +109,63 @@ export async function updateProductImages(
     return { ok: true };
   } catch {
     return { ok: false, error: "Une erreur est survenue, réessayez." };
+  }
+}
+
+/** Ajustement manuel de stock (réception, perte/casse, correction d'inventaire). */
+export async function adjustStock(
+  input: StockAdjustmentInput
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { allowed } = await requireZone("dashboard");
+  if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+
+  const session = await getSession();
+  if (!session) return { ok: false, error: "Une erreur est survenue, réessayez." };
+
+  const parsed = stockAdjustmentSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Informations invalides." };
+
+  try {
+    const tenant = await getCurrentTenant();
+
+    await prisma.$transaction(
+      async (tx) => {
+        const product = await tx.product.findFirst({
+          where: { id: parsed.data.productId, tenantId: tenant.id },
+        });
+        if (!product) throw new Error("Produit introuvable.");
+
+        const nextStock = product.stock + parsed.data.delta;
+        if (nextStock < 0) {
+          throw new Error(`Stock insuffisant pour cet ajustement — stock actuel : ${product.stock}.`);
+        }
+
+        await tx.product.update({
+          where: { id: product.id },
+          data: { stock: { increment: parsed.data.delta } },
+        });
+        await tx.stockMovement.create({
+          data: {
+            tenantId: tenant.id,
+            productId: product.id,
+            authorId: session.userId,
+            delta: parsed.data.delta,
+            reason: parsed.data.reason,
+            note: parsed.data.note || undefined,
+          },
+        });
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10000, timeout: 10000 }
+    );
+
+    revalidatePath("/admin/inventaire");
+    revalidatePath("/admin/tableau-de-bord");
+    revalidatePath("/admin/pos");
+    return { ok: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "";
+    const known =
+      message === "Produit introuvable." || message.startsWith("Stock insuffisant pour cet ajustement");
+    return { ok: false, error: known ? message : "Une erreur est survenue, réessayez." };
   }
 }
