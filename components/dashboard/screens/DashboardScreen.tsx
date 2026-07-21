@@ -29,7 +29,7 @@ export function DashboardScreen({
 
   const kpis = useMemo(() => {
     const describe = (delta: number | null) => ({
-      up: (delta ?? 0) >= 0,
+      tone: delta === null ? "neutral" : delta < 0 ? "down" : "up",
       delta: delta === null ? "—" : `${delta > 0 ? "+" : ""}${delta}%`,
       sub: delta === null ? "pas de vente hier" : "vs hier",
     });
@@ -116,17 +116,19 @@ export function DashboardScreen({
                 alignItems: "center",
                 gap: 5,
                 font: `600 12.5px ${fonts.ui}`,
-                color: k.up ? colors.fgSuccess : colors.fgDanger,
-                background: k.up ? colors.bgSuccess : colors.bgDanger,
+                color: k.tone === "neutral" ? colors.muted : (k.tone === "up" ? colors.fgSuccess : colors.fgDanger),
+                background: k.tone === "neutral" ? colors.bgInfo : (k.tone === "up" ? colors.bgSuccess : colors.bgDanger),
                 padding: "3px 8px",
                 borderRadius: 999,
               }}
             >
-              <Icon
-                path={k.up ? ICONS.arrowUpRight : ICONS.arrowDownRight}
-                size={13}
-                stroke={k.up ? colors.success : colors.danger}
-              />
+              {k.tone !== "neutral" && (
+                <Icon
+                  path={k.tone === "up" ? ICONS.arrowUpRight : ICONS.arrowDownRight}
+                  size={13}
+                  stroke={k.tone === "up" ? colors.success : colors.danger}
+                />
+              )}
               {k.delta} {k.sub}
             </div>
           </div>
