@@ -242,3 +242,23 @@ Fondation DB · Auth réelle · Catalogue & stock · Commandes & workflow · Cli
 2. `/admin/commandes` : valider `#TER-2708` (« Test Promo E2E ») → total confirmé 11 250, `usedCount` de TERANGA10 → 1, stock p1 décrémenté, fiche cliente créée avec 11 points.
 3. `/admin/pos` : vente avec code + points d'une cliente → récapitulatif 3 lignes de remise, ticket WhatsApp cohérent, solde de points débité/crédité en base.
 4. Supprimer les données d'essai si souhaité (`#TER-2708`, code `promo-e2e-1`).
+
+## Lot 4 — Finance, Marketing & Tableau de bord sur données réelles (2026-07-20)
+
+**Terminé** — spec `docs/superpowers/specs/2026-07-20-payments-promos-ticket-finance-design.md` (section Lot 4), plan `docs/superpowers/plans/2026-07-20-real-analytics-finance-marketing-dashboard.md`, branche `real-analytics` (depuis `9fa323a`). Méthode subagent-driven (4 tâches de contenu + vérification), 2 correctifs Important trouvés en revue de tâche — **les deux issus du plan lui-même**, pas d'une dérive d'implémentation.
+
+- **Module pur `lib/data/analytics.ts`** (20 tests) : source unique de l'arithmétique — `REVENUE_STATUSES`, bornes de journée UTC (fuseau boutique = Abidjan, UTC+0), fenêtres semi-ouvertes `[start, end[`, agrégats de période, `deltaPct` (null si période précédente vide), ventilation par mode, séries jour/semaine, top produits, dernière vente, produits dormants. Aucune I/O, `now` toujours en paramètre.
+- **Règle de CA unique** : comptent `confirmee` / `preparation` / `livree` ; exclues `nouvelle` (demande non validée) et `refusee`. Vérifié en base : 330 000 FCFA comptés sur 30 j, les 321 500 de commandes refusées et 23 750 de demandes en attente correctement écartés.
+- **Finance** (`lib/data/finance.server.ts`) : KPI du jour (CA, transactions, panier moyen, **remises accordées** = promo + points + remises de ligne), ventilation 30 j par mode de paiement avec « À encaisser » pour les commandes web validées non encaissées, journal réel (30 j, plafond 50). « Marge brute » / « Taux de marge » retirés (aucun prix de revient en base) ; bouton « Export » retiré. États vides FR.
+- **Marketing** (`lib/data/marketing.server.ts`) : produits stars = top 4 réels par quantité vendue sur 30 j avec CA réel ; produits dormants = produits en stock triés du plus dormant, distinguant « jamais vendu » de « N j sans vente » ; mini-KPI réels (taux de rachat = part des clientes à ≥ 2 commandes ; clientes actives = clientes distinctes ayant commandé sur 30 j). Les faux deltas (« +6 pts vs mois dernier ») remplacés par des sous-titres factuels. La partie codes promo (lot 3) est inchangée.
+- **Tableau de bord** (`lib/data/dashboard.server.ts`) : KPI du jour avec variation réelle vs hier, graphique 7 jours (un point/jour) et 30 jours (4 points hebdo), barre mise en avant = maximum réel (plus d'index en dur), aucune division par zéro sur une période sans vente.
+- **Correctifs de revue** (défauts du plan, corrigés) : (1) la carte « dormants » calculait la dernière vente sur la même fenêtre de 30 jours, donc un produit vendu il y a 45 jours s'affichait « jamais vendu » → requête dédiée non bornée dans le temps + test de régression ; (2) un delta absent (aucune vente hier) s'affichait en pastille verte avec flèche montante, lisible comme une hausse → troisième état neutre (fond info, texte atténué, sans flèche).
+- **230/230 tests, `typecheck` propre, `npx next build --webpack` réussit.** Vitrine publique vérifiée intacte (200), garde d'auth confirmée sur `/admin/finance`, `/admin/marketing`, `/admin/tableau-de-bord` (redirection vers la connexion), zéro erreur serveur.
+- Mineur consigné : dans `finance.server.ts`, le libellé de mode du journal duplique le helper `paymentLabel()` (nit DRY, hérité du plan).
+
+**Reste mocké — et pourquoi** : `HISTORY` dans `InventoryScreen.tsx` (historique des mouvements de stock du tiroir produit). Le rendre réel exige une **table dédiée** (`StockMovement`) et l'instrumentation de tous les chemins d'écriture de stock (POS, validation de commande, ajustement manuel) — c'est un chantier à part entière, pas un simple branchement de données. Tout le reste du back-office lit désormais Postgres.
+
+**Reste pour l'utilisateur** (session gérante requise, l'agent ne peut pas saisir de mot de passe) :
+1. `/admin/tableau-de-bord` : vérifier les 3 KPI et le graphique 7 j / 30 j (aujourd'hui sans vente → pastille neutre « — pas de vente hier », c'est le comportement attendu).
+2. `/admin/finance` : le total encaissé sur 30 j doit afficher 330 000 FCFA, dont une majorité « À encaisser » (commandes web validées, jamais encaissées au comptoir).
+3. `/admin/marketing` : produits stars et dormants cohérents avec les ventes réelles.
