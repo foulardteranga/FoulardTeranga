@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 import { compressImage, validateImageUpload, STOREFRONT_IMAGES_BUCKET } from "@/lib/images/imageUpload";
 import { productSchema, productImagesSchema, type ProductInput } from "@/lib/validators/product";
 import { stockAdjustmentSchema, type StockAdjustmentInput } from "@/lib/validators/stockMovement";
+import { getRecentStockMovements, type StockMovementView } from "@/lib/data/stockMovements.server";
 
 export async function createProduct(
   input: ProductInput
@@ -167,5 +168,24 @@ export async function adjustStock(
     const known =
       message === "Produit introuvable." || message.startsWith("Stock insuffisant pour cet ajustement");
     return { ok: false, error: known ? message : "Une erreur est survenue, réessayez." };
+  }
+}
+
+/**
+ * Lecture des mouvements de stock d'un produit, appelée depuis le tiroir
+ * produit (Client Component ouvert dynamiquement — pas de prop serveur par
+ * produit) : même pattern que `previewPosDiscount` dans PosScreen.tsx.
+ */
+export async function getProductStockMovements(
+  productId: string
+): Promise<{ ok: true; movements: StockMovementView[] } | { ok: false; error: string }> {
+  const { allowed } = await requireZone("dashboard");
+  if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+
+  try {
+    const movements = await getRecentStockMovements(productId);
+    return { ok: true, movements };
+  } catch {
+    return { ok: false, error: "Une erreur est survenue, réessayez." };
   }
 }
