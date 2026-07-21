@@ -10,7 +10,6 @@ import {
   dailySeries,
   weeklySeries,
   topSoldProducts,
-  lastSaleByProduct,
   dormantProducts,
   type RevenueOrder,
   type SoldLine,
@@ -162,16 +161,6 @@ describe("topSoldProducts", () => {
 
   it("respecte la limite demandée", () => {
     expect(topSoldProducts(lines, 1)).toHaveLength(1);
-  });
-});
-
-describe("lastSaleByProduct", () => {
-  it("retient la vente la plus récente par produit", () => {
-    const map = lastSaleByProduct([
-      { productId: "p1", soldAt: new Date("2026-07-10T00:00:00Z") },
-      { productId: "p1", soldAt: new Date("2026-07-15T00:00:00Z") },
-    ]);
-    expect(map.get("p1")?.toISOString()).toBe("2026-07-15T00:00:00.000Z");
   });
 });
 

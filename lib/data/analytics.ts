@@ -144,17 +144,6 @@ export function topSoldProducts(
     .slice(0, limit);
 }
 
-export function lastSaleByProduct(
-  lines: Array<Pick<SoldLine, "productId" | "soldAt">>
-): Map<string, Date> {
-  const map = new Map<string, Date>();
-  for (const l of lines) {
-    const current = map.get(l.productId);
-    if (!current || l.soldAt.getTime() > current.getTime()) map.set(l.productId, l.soldAt);
-  }
-  return map;
-}
-
 /**
  * Produits en stock qui dorment : jamais vendus (ancienneté comptée depuis leur
  * création) ou sans vente depuis au moins `thresholdDays` jours, du plus dormant
