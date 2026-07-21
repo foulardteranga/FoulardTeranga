@@ -7,10 +7,10 @@ import { NumericField } from "@/components/ui/NumericField";
 import { money } from "@/lib/format";
 import { useBackoffice } from "@/lib/store/useBackoffice";
 import { createPromoCode, setPromoCodeActive } from "@/lib/marketing/actions";
-import type { Product } from "@/lib/data/types";
 import type { PromoCodeView } from "@/lib/data/promos.server";
+import type { MarketingStats } from "@/lib/data/marketing.server";
 
-export function MarketingScreen({ products, promos }: { products: Product[]; promos: PromoCodeView[] }) {
+export function MarketingScreen({ promos, stats }: { promos: PromoCodeView[]; stats: MarketingStats }) {
   const showToast = useBackoffice((s) => s.showToast);
   const [form, setForm] = useState({
     code: "",
@@ -44,18 +44,6 @@ export function MarketingScreen({ products, promos }: { products: Product[]; pro
     setForm({ code: "", kind: "percent", value: "10", minTotal: "", startsAt: "", endsAt: "", vipOnly: false });
   }
 
-  const STARS = [
-    { p: products[4], sold: 128 },
-    { p: products[0], sold: 96 },
-    { p: products[6], sold: 74 },
-    { p: products[2], sold: 61 },
-  ];
-  const DORMANT = [
-    { p: products[9], days: 52 },
-    { p: products[5], days: 41 },
-    { p: products[7], days: 38 },
-    { p: products[10], days: 29 },
-  ];
   return (
     <div className="ft-pad" style={{ maxWidth: 1200 }}>
       <div className="ft-grid-2" style={{ marginBottom: 14 }}>
@@ -65,16 +53,19 @@ export function MarketingScreen({ products, promos }: { products: Product[]; pro
             <Icon path={ICONS.star} size={17} stroke={colors.gold} strokeWidth={1.9} />
             <span style={{ fontWeight: 600, fontSize: 14.5 }}>Produits stars</span>
           </div>
-          {STARS.map(({ p, sold }) => (
+          {stats.stars.length === 0 && (
+            <p style={{ padding: "12px 18px", fontSize: 13, color: colors.muted, margin: 0 }}>
+              Aucune vente sur les 30 derniers jours.
+            </p>
+          )}
+          {stats.stars.map((p) => (
             <div key={p.id} style={row}>
-              <span style={swatch(p.swatch)} />
+              <ProductThumb image={p.image} swatch={p.swatch} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: 13.5 }}>{p.name}</div>
-                <div style={{ fontSize: 12, color: colors.muted }}>{sold} vendus</div>
+                <div style={{ fontSize: 12, color: colors.muted }}>{p.qty} vendus · 30 j</div>
               </div>
-              <span style={{ fontWeight: 700, fontSize: 13.5, color: colors.fgSuccess }}>
-                {money(Math.round((sold * p.price) / 10))}
-              </span>
+              <span style={{ fontWeight: 700, fontSize: 13.5, color: colors.fgSuccess }}>{money(p.revenue)}</span>
             </div>
           ))}
         </div>
@@ -85,12 +76,19 @@ export function MarketingScreen({ products, promos }: { products: Product[]; pro
             <Icon path={ICONS.clock} size={17} stroke={colors.muted} strokeWidth={1.9} />
             <span style={{ fontWeight: 600, fontSize: 14.5 }}>Produits dormants</span>
           </div>
-          {DORMANT.map(({ p, days }) => (
+          {stats.dormant.length === 0 && (
+            <p style={{ padding: "12px 18px", fontSize: 13, color: colors.muted, margin: 0 }}>
+              Aucun produit en stock sans vente.
+            </p>
+          )}
+          {stats.dormant.map((p) => (
             <div key={p.id} style={row}>
-              <span style={swatch(p.swatch)} />
+              <ProductThumb image={p.image} swatch={p.swatch} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: 13.5 }}>{p.name}</div>
-                <div style={{ fontSize: 12, color: colors.muted }}>{days} sans vente</div>
+                <div style={{ fontSize: 12, color: colors.muted }}>
+                  {p.neverSold ? `Jamais vendu · ${p.days} j en catalogue` : `${p.days} j sans vente`}
+                </div>
               </div>
               <span style={{ fontWeight: 700, fontSize: 13.5, color: colors.fgDanger }}>{p.stock} en stock</span>
             </div>
@@ -101,8 +99,17 @@ export function MarketingScreen({ products, promos }: { products: Product[]; pro
       <div className="ft-grid-2">
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-            <MiniKpi label="Taux de rachat" value="42%" delta="+6 pts vs mois dernier" color={colors.primary} />
-            <MiniKpi label="Clientes actives" value="318" delta="+28 ce mois" />
+            <MiniKpi
+              label="Taux de rachat"
+              value={`${stats.repeatRate}%`}
+              delta={`${stats.totalCustomers} cliente${stats.totalCustomers > 1 ? "s" : ""} au total`}
+              color={colors.primary}
+            />
+            <MiniKpi
+              label="Clientes actives"
+              value={String(stats.activeCustomers)}
+              delta="sur 30 jours"
+            />
           </div>
           <div style={{ ...card, padding: "18px 20px" }}>
             <div style={{ fontWeight: 600, fontSize: 14.5, marginBottom: 14 }}>Codes promo actifs</div>
@@ -321,6 +328,13 @@ const row: React.CSSProperties = {
 };
 function swatch(bg: string): React.CSSProperties {
   return { width: 34, height: 34, borderRadius: 8, flex: "none", background: bg };
+}
+function ProductThumb({ image, swatch: bg }: { image: string | null; swatch: string }) {
+  if (image) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={image} alt="" style={{ width: 34, height: 34, borderRadius: 8, flex: "none", objectFit: "cover" }} />;
+  }
+  return <span style={swatch(bg)} />;
 }
 const fieldLabel: React.CSSProperties = { display: "block", font: `600 12.5px ${fonts.ui}`, marginBottom: 6 };
 const textField: React.CSSProperties = {
