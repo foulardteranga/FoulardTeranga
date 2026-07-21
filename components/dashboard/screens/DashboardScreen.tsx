@@ -5,23 +5,19 @@ import { useRouter } from "next/navigation";
 import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import type { Order, Product } from "@/lib/data/types";
-import { money } from "@/lib/format";
+import { money, fmt } from "@/lib/format";
 import { initials } from "@/lib/format";
+import type { DashboardStats } from "@/lib/data/dashboard.server";
 
-const KPIS = [
-  { label: "CA du jour", value: "248 000", unit: "FCFA", delta: "+18%", sub: "vs hier", up: true, icon: ICONS.trendUp },
-  { label: "Ventes", value: "32", unit: "", delta: "+5", sub: "vs hier", up: true, icon: ICONS.orders },
-  { label: "Panier moyen", value: "7 750", unit: "FCFA", delta: "+3%", sub: "", up: true, icon: ICONS.cart },
-];
-
-const T7: Array<[string, number]> = [
-  ["Lun", 180], ["Mar", 142], ["Mer", 210], ["Jeu", 168], ["Ven", 248], ["Sam", 300], ["Dim", 132],
-];
-const T30: Array<[string, number]> = [
-  ["S1", 940], ["S2", 1120], ["S3", 870], ["S4", 1340],
-];
-
-export function DashboardScreen({ products, orders }: { products: Product[]; orders: Order[] }) {
+export function DashboardScreen({
+  products,
+  orders,
+  stats,
+}: {
+  products: Product[];
+  orders: Order[];
+  stats: DashboardStats;
+}) {
   const router = useRouter();
   const [booting, setBooting] = useState(true);
   const [range, setRange] = useState<"7" | "30">("7");
@@ -31,15 +27,29 @@ export function DashboardScreen({ products, orders }: { products: Product[]; ord
     return () => clearTimeout(t);
   }, []);
 
+  const kpis = useMemo(() => {
+    const describe = (delta: number | null) => ({
+      up: (delta ?? 0) >= 0,
+      delta: delta === null ? "—" : `${delta > 0 ? "+" : ""}${delta}%`,
+      sub: delta === null ? "pas de vente hier" : "vs hier",
+    });
+    return [
+      { label: "CA du jour", value: fmt(stats.today.revenue), unit: "FCFA", icon: ICONS.trendUp, ...describe(stats.deltas.revenue) },
+      { label: "Ventes", value: String(stats.today.transactions), unit: "", icon: ICONS.orders, ...describe(stats.deltas.transactions) },
+      { label: "Panier moyen", value: fmt(stats.today.averageBasket), unit: "FCFA", icon: ICONS.cart, ...describe(stats.deltas.averageBasket) },
+    ];
+  }, [stats]);
+
   const trend = useMemo(() => {
-    const raw = range === "7" ? T7 : T30;
-    const max = Math.max(...raw.map((r) => r[1]));
+    const raw = range === "7" ? stats.series7 : stats.series30;
+    const max = Math.max(0, ...raw.map((r) => r.value));
+    const peak = raw.findIndex((r) => r.value === max && max > 0);
     return raw.map((r, i) => ({
-      label: r[0],
-      h: Math.round((r[1] / max) * 100) + "%",
-      fill: (range === "7" && i === 5) || (range === "30" && i === 3) ? colors.accent : colors.primary,
+      label: r.label,
+      h: max === 0 ? "0%" : Math.round((r.value / max) * 100) + "%",
+      fill: i === peak ? colors.accent : colors.primary,
     }));
-  }, [range]);
+  }, [range, stats]);
 
   const lowStockAlerts = products.filter((p) => p.stock <= 9);
   const lowStock = lowStockAlerts.slice(0, 4);
@@ -68,7 +78,7 @@ export function DashboardScreen({ products, orders }: { products: Product[]; ord
     <div className="ft-pad" style={{ maxWidth: 1240 }}>
       {/* KPI */}
       <div className="ft-grid-3" style={{ marginBottom: 18 }}>
-        {KPIS.map((k) => (
+        {kpis.map((k) => (
           <div
             key={k.label}
             style={{
