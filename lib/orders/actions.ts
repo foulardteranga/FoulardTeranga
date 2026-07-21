@@ -115,6 +115,9 @@ export async function confirmOrder(ref: string): Promise<{ ok: true } | { ok: fa
   const { allowed } = await requireZone("dashboard");
   if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
 
+  const session = await getSession();
+  if (!session) return { ok: false, error: "Une erreur est survenue, réessayez." };
+
   try {
     const tenant = await getCurrentTenant();
 
@@ -139,6 +142,15 @@ export async function confirmOrder(ref: string): Promise<{ ok: true } | { ok: fa
         const updated = await tx.product.update({
           where: { id: productId },
           data: { stock: { decrement: qty } },
+        });
+        await tx.stockMovement.create({
+          data: {
+            tenantId: tenant.id,
+            productId,
+            authorId: session.userId,
+            delta: -qty,
+            reason: "vente_web",
+          },
         });
         if (updated.stock <= LOW_STOCK_THRESHOLD) {
           lowStock.push({ name: nameAtOrder, stock: updated.stock });
