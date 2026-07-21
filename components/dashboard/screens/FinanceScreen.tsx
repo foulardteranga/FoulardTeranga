@@ -82,9 +82,9 @@ export function FinanceScreen({ snapshot }: { snapshot: FinanceSnapshot }) {
 
         {/* breakdown */}
         <div style={{ background: "#fff", border: "1px solid rgba(30,27,24,.08)", borderRadius: 14, padding: "18px 20px" }}>
-          <div style={{ fontWeight: 600, fontSize: 14.5, marginBottom: 16 }}>Encaissements par mode</div>
+          <div style={{ fontWeight: 600, fontSize: 14.5, marginBottom: 16 }}>Ventes par mode de règlement</div>
           {snapshot.breakdown.length === 0 && (
-            <p style={{ fontSize: 13, color: colors.muted, margin: "0 0 16px" }}>Aucun encaissement sur la période.</p>
+            <p style={{ fontSize: 13, color: colors.muted, margin: "0 0 16px" }}>Aucune vente sur la période.</p>
           )}
           {snapshot.breakdown.map((p) => (
             <div key={p.key} style={{ marginBottom: 16 }}>
@@ -100,8 +100,14 @@ export function FinanceScreen({ snapshot }: { snapshot: FinanceSnapshot }) {
           <div style={{ borderTop: `1px solid ${colors.borderSoft}`, marginTop: 6, paddingTop: 14 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
               <span style={{ fontWeight: 600, fontSize: 14 }}>Total encaissé</span>
-              <span style={{ fontFamily: fonts.display, fontWeight: 700, fontSize: 22, color: colors.primary }}>{money(snapshot.breakdownTotal)}</span>
+              <span style={{ fontFamily: fonts.display, fontWeight: 700, fontSize: 22, color: colors.primary }}>{money(snapshot.cashedTotal)}</span>
             </div>
+            {snapshot.pendingTotal > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 4 }}>
+                <span style={{ fontSize: 13.5, color: colors.muted }}>Reste à encaisser</span>
+                <span style={{ fontSize: 13.5, color: colors.muted, fontWeight: 600 }}>{money(snapshot.pendingTotal)}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>

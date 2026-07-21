@@ -1,10 +1,10 @@
 import { prisma } from "@/lib/db/client";
+import { Prisma } from "@/lib/generated/prisma/client";
 import { getCurrentTenant } from "@/lib/tenant";
 import {
   REVENUE_STATUSES,
   addDaysUtc,
   dormantProducts,
-  lastSaleByProduct,
   startOfDayUtc,
   topSoldProducts,
   type SoldLine,
@@ -48,8 +48,11 @@ export async function getMarketingStats(): Promise<MarketingStats> {
   const now = new Date();
   const windowStart = addDaysUtc(startOfDayUtc(now), -(WINDOW_DAYS - 1));
 
-  const [products, windowSoldRows, allSoldRows, customers, activeCustomerGroups] = await Promise.all([
-    prisma.product.findMany({ where: { tenantId: tenant.id } }),
+  const [products, windowSoldRows, lastSaleRows, customers, activeCustomerGroups] = await Promise.all([
+    prisma.product.findMany({
+      where: { tenantId: tenant.id },
+      select: { id: true, name: true, image: true, swatch: true, stock: true, createdAt: true },
+    }),
     prisma.orderLine.findMany({
       where: {
         order: {
@@ -60,14 +63,20 @@ export async function getMarketingStats(): Promise<MarketingStats> {
       },
       select: { productId: true, qty: true, lineTotal: true, order: { select: { createdAt: true } } },
     }),
-    // Sans borne de date : sert uniquement à dater la dernière vente de chaque
-    // produit. Si on la limitait à `windowStart`, un produit vendu il y a plus
-    // de 30 jours n'aurait aucune entrée et passerait à tort pour « jamais
-    // vendu » dans la carte « Produits dormants ».
-    prisma.orderLine.findMany({
-      where: { order: { tenantId: tenant.id, status: { in: [...REVENUE_STATUSES] } } },
-      select: { productId: true, order: { select: { createdAt: true } } },
-    }),
+    // Une dernière vente par produit, réduite côté base (GROUP BY) plutôt que
+    // de rapatrier toutes les lignes de commande jamais produites par la
+    // boutique. Sans borne de date : sert uniquement à dater la dernière vente
+    // de chaque produit. Si on la limitait à `windowStart`, un produit vendu
+    // il y a plus de 30 jours n'aurait aucune entrée et passerait à tort pour
+    // « jamais vendu » dans la carte « Produits dormants ».
+    prisma.$queryRaw<Array<{ productId: string; lastSale: Date }>>(Prisma.sql`
+      SELECT l."productId" AS "productId", MAX(o."createdAt") AS "lastSale"
+      FROM "OrderLine" l
+      JOIN "Order" o ON o.id = l."orderId"
+      WHERE o."tenantId" = ${tenant.id}
+        AND o.status IN (${Prisma.join([...REVENUE_STATUSES])})
+      GROUP BY l."productId"
+    `),
     prisma.customer.findMany({ where: { tenantId: tenant.id }, select: { ordersCount: true } }),
     prisma.order.findMany({
       where: {
@@ -88,6 +97,7 @@ export async function getMarketingStats(): Promise<MarketingStats> {
     soldAt: l.order.createdAt,
   }));
   const byId = new Map(products.map((p) => [p.id, p]));
+  const lastSale = new Map(lastSaleRows.map((r) => [r.productId, r.lastSale]));
 
   const stars: MarketingProductStat[] = topSoldProducts(windowLines, CARD_SIZE).flatMap((s) => {
     const p = byId.get(s.productId);
@@ -97,9 +107,10 @@ export async function getMarketingStats(): Promise<MarketingStats> {
 
   const dormant: MarketingDormantStat[] = dormantProducts(
     products.map((p) => ({ id: p.id, stock: p.stock, createdAt: p.createdAt })),
-    lastSaleByProduct(allSoldRows.map((l) => ({ productId: l.productId, soldAt: l.order.createdAt }))),
+    lastSale,
     now,
-    CARD_SIZE
+    CARD_SIZE,
+    WINDOW_DAYS
   ).flatMap((d) => {
     const p = byId.get(d.productId);
     if (!p) return [];

@@ -157,13 +157,17 @@ export function lastSaleByProduct(
 
 /**
  * Produits en stock qui dorment : jamais vendus (ancienneté comptée depuis leur
- * création) ou sans vente depuis longtemps, du plus dormant au moins dormant.
+ * création) ou sans vente depuis au moins `thresholdDays` jours, du plus dormant
+ * au moins dormant. Un produit vendu récemment (< seuil) n'est pas dormant —
+ * sans ce seuil, un produit vendu il y a 2 jours pourrait apparaître à la fois
+ * dans « Produits stars » et « Produits dormants ».
  */
 export function dormantProducts(
   products: Array<{ id: string; stock: number; createdAt: Date }>,
   lastSale: Map<string, Date>,
   now: Date,
-  limit: number
+  limit: number,
+  thresholdDays: number
 ): Array<{ productId: string; daysSinceLastSale: number; neverSold: boolean }> {
   return products
     .filter((p) => p.stock > 0)
@@ -176,6 +180,7 @@ export function dormantProducts(
         neverSold: sale === undefined,
       };
     })
+    .filter((d) => d.daysSinceLastSale >= thresholdDays)
     .sort((a, b) => b.daysSinceLastSale - a.daysSinceLastSale)
     .slice(0, limit);
 }

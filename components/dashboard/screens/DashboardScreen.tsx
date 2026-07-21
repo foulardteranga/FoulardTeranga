@@ -157,7 +157,9 @@ export function DashboardScreen({
         >
           <div>
             <div style={{ fontWeight: 600, fontSize: 15.5 }}>Tendance des ventes</div>
-            <div style={{ fontSize: 12.5, color: colors.muted }}>Chiffre d&apos;affaires quotidien</div>
+            <div style={{ fontSize: 12.5, color: colors.muted }}>
+              {range === "7" ? "Chiffre d'affaires quotidien" : "Chiffre d'affaires hebdomadaire"}
+            </div>
           </div>
           <div style={{ display: "flex", gap: 6, background: "#F1ECE2", padding: 3, borderRadius: 9 }}>
             {(["7", "30"] as const).map((r) => {
@@ -177,7 +179,7 @@ export function DashboardScreen({
                     color: on ? colors.primary : colors.muted,
                   }}
                 >
-                  {r} jours
+                  {r === "7" ? "7 jours" : "4 semaines"}
                 </button>
               );
             })}

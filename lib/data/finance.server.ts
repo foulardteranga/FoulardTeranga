@@ -29,7 +29,10 @@ export interface FinanceJournalRow {
 export interface FinanceSnapshot {
   today: { revenue: number; transactions: number; averageBasket: number; discounts: number };
   breakdown: Array<{ key: string; label: string; amount: number; pct: number }>;
-  breakdownTotal: number;
+  /** Somme des modes réellement encaissés (tous les buckets sauf « À encaisser »). */
+  cashedTotal: number;
+  /** Commandes web validées mais pas encore payées (bucket « À encaisser »), 0 si absent. */
+  pendingTotal: number;
   journal: FinanceJournalRow[];
 }
 
@@ -68,15 +71,16 @@ export async function getFinanceSnapshot(): Promise<FinanceSnapshot> {
   const today = summarizePeriod(orders.filter((o) => inWindow(o.createdAt, dayStart, dayEnd)));
 
   const breakdown = breakdownByPayment(orders).map((b) => ({ ...b, label: paymentLabel(b.key) }));
-  const breakdownTotal = breakdown.reduce((sum, b) => sum + b.amount, 0);
+  const cashedTotal = breakdown.filter((b) => b.key !== UNPAID_KEY).reduce((sum, b) => sum + b.amount, 0);
+  const pendingTotal = breakdown.find((b) => b.key === UNPAID_KEY)?.amount ?? 0;
 
   const journal: FinanceJournalRow[] = rows.slice(0, JOURNAL_LIMIT).map((r) => ({
     ref: r.ref,
     date: formatOrderDate(r.createdAt, now),
     channel: r.channel,
-    paymentLabel: r.paymentMethod ? PAYMENT_LABELS[r.paymentMethod] : "À encaisser",
+    paymentLabel: paymentLabel(r.paymentMethod ?? UNPAID_KEY),
     total: r.total,
   }));
 
-  return { today, breakdown, breakdownTotal, journal };
+  return { today, breakdown, cashedTotal, pendingTotal, journal };
 }

@@ -177,28 +177,45 @@ describe("lastSaleByProduct", () => {
 
 describe("dormantProducts", () => {
   const now = new Date("2026-07-20T00:00:00Z");
+  const threshold = 30;
   const products = [
-    { id: "p1", stock: 5, createdAt: new Date("2026-06-01T00:00:00Z") },
-    { id: "p2", stock: 3, createdAt: new Date("2026-07-01T00:00:00Z") },
-    { id: "p3", stock: 0, createdAt: new Date("2026-05-01T00:00:00Z") },
+    { id: "p1", stock: 5, createdAt: new Date("2026-06-01T00:00:00Z") }, // jamais vendu, 49 j en catalogue
+    { id: "p2", stock: 3, createdAt: new Date("2026-07-01T00:00:00Z") }, // vendu récemment
+    { id: "p3", stock: 0, createdAt: new Date("2026-05-01T00:00:00Z") }, // sans stock
+    { id: "p4", stock: 2, createdAt: new Date("2026-01-01T00:00:00Z") }, // vendu il y a longtemps
   ];
 
-  it("ignore les produits sans stock et trie du plus dormant au moins dormant", () => {
-    const map = new Map([["p1", new Date("2026-07-18T00:00:00Z")]]);
-    const result = dormantProducts(products, map, now, 4);
-    expect(result.map((d) => d.productId)).toEqual(["p2", "p1"]);
-    expect(result[0]).toEqual({ productId: "p2", daysSinceLastSale: 19, neverSold: true });
-    expect(result[1]).toEqual({ productId: "p1", daysSinceLastSale: 2, neverSold: false });
+  it("exclut un produit vendu dans la fenêtre du seuil (pas encore dormant)", () => {
+    const map = new Map([["p2", new Date("2026-07-18T00:00:00Z")]]); // 2 jours avant now
+    const result = dormantProducts(products, map, now, 10, threshold);
+    expect(result.map((d) => d.productId)).not.toContain("p2");
+  });
+
+  it("inclut un produit vendu il y a longtemps avec le bon nombre de jours et neverSold: false", () => {
+    const map = new Map([["p4", new Date("2026-05-20T00:00:00Z")]]); // 61 jours avant now
+    const result = dormantProducts(products, map, now, 10, threshold);
+    expect(result.find((d) => d.productId === "p4")).toEqual({
+      productId: "p4",
+      daysSinceLastSale: 61,
+      neverSold: false,
+    });
+  });
+
+  it("inclut un produit jamais vendu avec neverSold: true (ancienneté = date de création)", () => {
+    const result = dormantProducts(products, new Map(), now, 10, threshold);
+    expect(result.find((d) => d.productId === "p1")).toEqual({
+      productId: "p1",
+      daysSinceLastSale: 49,
+      neverSold: true,
+    });
+  });
+
+  it("ignore les produits sans stock", () => {
+    const result = dormantProducts(products, new Map(), now, 10, threshold);
+    expect(result.map((d) => d.productId)).not.toContain("p3");
   });
 
   it("respecte la limite demandée", () => {
-    expect(dormantProducts(products, new Map(), now, 1)).toHaveLength(1);
-  });
-
-  it("distingue un produit vendu il y a longtemps d'un produit jamais vendu", () => {
-    const map = new Map([["p1", new Date("2026-05-20T00:00:00Z")]]); // 61 jours
-    const result = dormantProducts(products, map, now, 4);
-    expect(result[0]).toEqual({ productId: "p1", daysSinceLastSale: 61, neverSold: false });
-    expect(result[1]).toEqual({ productId: "p2", daysSinceLastSale: 19, neverSold: true });
+    expect(dormantProducts(products, new Map(), now, 1, threshold)).toHaveLength(1);
   });
 });
