@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db/client";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { getCurrentTenant } from "@/lib/tenant";
-import { requireZone } from "@/lib/auth";
+import { requireZone, getSession } from "@/lib/auth";
 import { posSaleSchema, type PosSaleInput } from "@/lib/validators/pos";
 import { buildOrderLines } from "@/lib/orders/buildOrderLines";
 import { aggregateQtyByProduct } from "@/lib/orders/stockCheck";
@@ -30,6 +30,9 @@ export async function encaisserVente(
   const { allowed } = await requireZone("dashboard");
   if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
 
+  const session = await getSession();
+  if (!session) return { ok: false, error: "Une erreur est survenue, réessayez." };
+
   const parsed = posSaleSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Informations invalides." };
 
@@ -52,6 +55,15 @@ export async function encaisserVente(
       }
       for (const [productId, { qty }] of demand) {
         await tx.product.update({ where: { id: productId }, data: { stock: { decrement: qty } } });
+        await tx.stockMovement.create({
+          data: {
+            tenantId: tenant.id,
+            productId,
+            authorId: session.userId,
+            delta: -qty,
+            reason: "vente_pos",
+          },
+        });
       }
 
       // Cliente rattachée (facultative) — lue d'abord : ses points/statut VIP
