@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveZone, isPathAllowedForZone, dashboardPath } from "@/lib/proxy/zones";
+import { resolveZone, isPathAllowedForZone, dashboardPath, moduleForPath } from "@/lib/proxy/zones";
 
 describe("resolveZone — dev (localhost, path-prefixed)", () => {
   it("treats the root as storefront", () => {
@@ -99,5 +99,20 @@ describe("dashboardPath", () => {
 
   it("prefixes any dashboard path in dev, not just /connexion", () => {
     expect(dashboardPath("localhost:3000", "/pos")).toBe("/admin/pos");
+  });
+});
+
+describe("moduleForPath", () => {
+  it("résout un chemin exact vers son id de module", () => {
+    expect(moduleForPath("/finance")).toBe("fin");
+  });
+
+  it("résout un sous-chemin vers le même module que son parent", () => {
+    expect(moduleForPath("/inventaire/produit-1")).toBe("inv");
+  });
+
+  it("retourne null pour un chemin non gaté (équipe, connexion)", () => {
+    expect(moduleForPath("/equipe")).toBeNull();
+    expect(moduleForPath("/connexion")).toBeNull();
   });
 });
