@@ -38,7 +38,7 @@ export default async function DashboardLayout({
         <main className="ft-main" style={{ flex: 1, minWidth: 0, overflowX: "hidden" }}>
           {children}
         </main>
-        <MobileNav pendingCount={pendingCount} />
+        <MobileNav pendingCount={pendingCount} session={session} />
       </div>
 
       <Toast />

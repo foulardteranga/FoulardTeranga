@@ -8,7 +8,7 @@ import { Icon } from "@/components/ui/Icon";
 import { useBackoffice } from "@/lib/store/useBackoffice";
 import { initials } from "@/lib/format";
 import { signOut } from "@/lib/auth/actions";
-import type { Session } from "@/lib/auth";
+import { hasModuleAccess, type Session } from "@/lib/auth";
 
 const ROLE_LABELS: Record<Session["role"], string> = {
   owner: "Gérante",
@@ -21,6 +21,10 @@ export function Sidebar({ session, pendingCount }: { session: Session | null; pe
   const pathname = usePathname();
   const offline = useBackoffice((s) => s.offline);
   const toggleOffline = useBackoffice((s) => s.toggleOffline);
+
+  const visibleNav = NAV.filter((n) =>
+    n.id === "equipe" ? session?.role === "owner" : hasModuleAccess(session, n.id)
+  );
 
   return (
     <aside
@@ -74,7 +78,7 @@ export function Sidebar({ session, pendingCount }: { session: Session | null; pe
       </div>
 
       <nav style={{ display: "flex", flexDirection: "column", gap: 2, overflowY: "auto" }}>
-        {NAV.map((n) => {
+        {visibleNav.map((n) => {
           const active = pathname === n.href;
           const badge = n.ordersBadge ? pendingCount : 0;
           return (
