@@ -52,10 +52,11 @@ export async function proxy(request: NextRequest) {
           : true;
 
       if (!moduleAllowed) {
-        // Repli sur le premier module autorisé du profil (garanti non-vide :
-        // EmployeeRole exige au moins un module, cf. lib/validators/team.ts) ;
-        // sinon (état incohérent) repli sur /connexion, qui sort de ce bloc de
-        // contrôle et ne peut donc pas reboucler.
+        // Repli sur le premier module autorisé du profil. Peut être vide (ex.
+        // compte staff sans EmployeeRole assigné, cf. le test "defaults staff
+        // permissions to an empty array..." dans lib/auth/index.test.ts) — dans
+        // ce cas, repli sur /connexion, qui sort de ce bloc de contrôle et ne
+        // peut donc pas reboucler.
         const firstAllowedId = session?.permissions[0];
         const fallbackPath = firstAllowedId ? MODULE_ID_PATHS[firstAllowedId] : undefined;
         const redirectUrl = new URL(dashboardPath(hostname, fallbackPath ?? "/connexion"), request.url);
