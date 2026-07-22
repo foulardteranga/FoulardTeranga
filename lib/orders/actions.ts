@@ -17,15 +17,14 @@ import { validatePromo, applyDiscounts } from "@/lib/discounts/engine";
 import { getCustomerByProfileId } from "@/lib/data/customers.server";
 import { findPromoByCode } from "@/lib/data/promos.server";
 import { discountRequestSchema } from "@/lib/validators/discounts";
-
-/** Sous ce seuil de stock restant, une commande validée déclenche une alerte "stock bas". */
-const LOW_STOCK_THRESHOLD = 3;
+import { getOrderStatusHistory, type OrderStatusEventView } from "@/lib/data/orders.server";
+import { LOW_STOCK_THRESHOLD } from "@/lib/inventory/lowStockThreshold";
 
 export async function submitWebOrder(
   kyc: KycInput,
   cartLines: WebCartLineInput[],
   discounts?: { promoCode?: string; pointsRequested?: number }
-): Promise<{ ok: true; ref: string } | { ok: false; error: string }> {
+): Promise<{ ok: true; ref: string; id: string } | { ok: false; error: string }> {
   const parsedKyc = kycSchema.safeParse(kyc);
   if (!parsedKyc.success) {
     return { ok: false, error: "Informations invalides." };
@@ -76,7 +75,7 @@ export async function submitWebOrder(
         pointsBalance: customer?.points ?? 0,
       });
 
-      return tx.order.create({
+      const created = await tx.order.create({
         data: {
           tenantId: tenant.id,
           clientName: parsedKyc.data.name,
@@ -91,6 +90,11 @@ export async function submitWebOrder(
           lines: { create: built.lines },
         },
       });
+      // Premier événement du journal de statut : pas d'auteur (créée par la cliente, pas de staff).
+      await tx.orderStatusEvent.create({
+        data: { tenantId: tenant.id, orderId: created.id, status: "nouvelle" },
+      });
+      return created;
     }, { maxWait: 10000, timeout: 10000 });
 
     await createNotification({
@@ -103,7 +107,7 @@ export async function submitWebOrder(
 
     revalidatePath("/admin/commandes");
     revalidatePath("/admin/tableau-de-bord");
-    return { ok: true, ref: order.ref };
+    return { ok: true, ref: order.ref, id: order.id };
   } catch (err) {
     const message = err instanceof Error ? err.message : "";
     const known = message.startsWith("Produit introuvable") || message === "Quantité invalide." || message === "Le panier est vide.";
@@ -209,6 +213,9 @@ export async function confirmOrder(ref: string): Promise<{ ok: true } | { ok: fa
           pointsDiscount: d.pointsDiscount,
         },
       });
+      await tx.orderStatusEvent.create({
+        data: { tenantId: tenant.id, orderId: order.id, authorId: session.userId, status: "confirmee" },
+      });
 
       return { lowStock };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10000, timeout: 10000 });
@@ -271,17 +278,90 @@ export async function rejectOrder(ref: string): Promise<{ ok: true } | { ok: fal
   const { allowed } = await requireZone("dashboard");
   if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
 
+  const session = await getSession();
+  if (!session) return { ok: false, error: "Une erreur est survenue, réessayez." };
+
   try {
     const tenant = await getCurrentTenant();
-    const order = await prisma.order.findFirst({ where: { ref, tenantId: tenant.id } });
-    if (!order) return { ok: false, error: "Commande introuvable." };
-    if (order.status === "nouvelle") {
-      await prisma.order.update({ where: { id: order.id }, data: { status: "refusee" } });
-    }
+    await prisma.$transaction(async (tx) => {
+      const order = await tx.order.findFirst({ where: { ref, tenantId: tenant.id } });
+      if (!order) throw new Error("Commande introuvable.");
+      if (order.status !== "nouvelle") return; // idempotent : déjà traitée
+      await tx.order.update({ where: { id: order.id }, data: { status: "refusee" } });
+      await tx.orderStatusEvent.create({
+        data: { tenantId: tenant.id, orderId: order.id, authorId: session.userId, status: "refusee" },
+      });
+    });
     revalidatePath("/admin/commandes");
     revalidatePath("/admin/tableau-de-bord");
     return { ok: true };
-  } catch {
-    return { ok: false, error: "Une erreur est survenue, réessayez." };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "";
+    return { ok: false, error: message === "Commande introuvable." ? message : "Une erreur est survenue, réessayez." };
   }
+}
+
+/** Fait passer une commande confirmée en préparation (staff, après validation). */
+export async function markPreparing(ref: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { allowed } = await requireZone("dashboard");
+  if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+
+  const session = await getSession();
+  if (!session) return { ok: false, error: "Une erreur est survenue, réessayez." };
+
+  try {
+    const tenant = await getCurrentTenant();
+    await prisma.$transaction(async (tx) => {
+      const order = await tx.order.findFirst({ where: { ref, tenantId: tenant.id } });
+      if (!order) throw new Error("Commande introuvable.");
+      if (order.status !== "confirmee") return; // idempotent : déjà traitée / statut différent
+      await tx.order.update({ where: { id: order.id }, data: { status: "preparation" } });
+      await tx.orderStatusEvent.create({
+        data: { tenantId: tenant.id, orderId: order.id, authorId: session.userId, status: "preparation" },
+      });
+    });
+    revalidatePath("/admin/commandes");
+    return { ok: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "";
+    return { ok: false, error: message === "Commande introuvable." ? message : "Une erreur est survenue, réessayez." };
+  }
+}
+
+/** Fait passer une commande en préparation à livrée (staff). */
+export async function markDelivered(ref: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { allowed } = await requireZone("dashboard");
+  if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+
+  const session = await getSession();
+  if (!session) return { ok: false, error: "Une erreur est survenue, réessayez." };
+
+  try {
+    const tenant = await getCurrentTenant();
+    await prisma.$transaction(async (tx) => {
+      const order = await tx.order.findFirst({ where: { ref, tenantId: tenant.id } });
+      if (!order) throw new Error("Commande introuvable.");
+      if (order.status !== "preparation") return; // idempotent : déjà traitée / statut différent
+      await tx.order.update({ where: { id: order.id }, data: { status: "livree" } });
+      await tx.orderStatusEvent.create({
+        data: { tenantId: tenant.id, orderId: order.id, authorId: session.userId, status: "livree" },
+      });
+    });
+    revalidatePath("/admin/commandes");
+    revalidatePath("/confirmation");
+    return { ok: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "";
+    return { ok: false, error: message === "Commande introuvable." ? message : "Une erreur est survenue, réessayez." };
+  }
+}
+
+/** Wrapper client-callable (mirroring getProductStockMovements) : historique de statut d'une commande. */
+export async function getOrderStatusHistoryAction(
+  ref: string
+): Promise<{ ok: true; events: OrderStatusEventView[] } | { ok: false; error: string }> {
+  const { allowed } = await requireZone("dashboard");
+  if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+  const events = await getOrderStatusHistory(ref);
+  return { ok: true, events };
 }

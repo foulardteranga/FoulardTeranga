@@ -1,16 +1,17 @@
-import { getOrderByRef } from "@/lib/data/orders.server";
+import { getOrderByTrackingToken, getOrderStatusHistory } from "@/lib/data/orders.server";
 import { getTenantSettings } from "@/lib/data/tenant.server";
 import { ConfirmView } from "@/components/storefront/views/ConfirmView";
 
 export default async function ConfirmationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ref?: string }>;
+  searchParams: Promise<{ token?: string }>;
 }) {
-  const { ref } = await searchParams;
+  const { token } = await searchParams;
   const [order, tenant] = await Promise.all([
-    ref ? getOrderByRef(ref) : Promise.resolve(null),
+    token ? getOrderByTrackingToken(token) : Promise.resolve(null),
     getTenantSettings(),
   ]);
-  return <ConfirmView order={order} whatsappPhone={tenant.phone} />;
+  const events = order ? await getOrderStatusHistory(order.id) : [];
+  return <ConfirmView order={order} events={events} whatsappPhone={tenant.phone} />;
 }

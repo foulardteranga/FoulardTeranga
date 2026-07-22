@@ -22,10 +22,11 @@ export const NAV: NavDef[] = [
   { id: "fin", href: "/admin/finance", label: "Finance", short: "Finance", icon: ICONS.fin },
   { id: "theme", href: "/admin/personnalisation", label: "Personnalisation", short: "Thème", icon: ICONS.theme },
   { id: "vitrine", href: "/admin/vitrine", label: "Vitrine", short: "Vitrine", icon: ICONS.theme },
+  { id: "boutique", href: "/admin/boutique", label: "Boutique", short: "Boutique", icon: ICONS.inv },
 ];
 
 /** Routes accessibles via l'onglet « Plus » sur mobile. */
-export const MORE_ROUTES = ["cust", "mkt", "fin", "theme", "vitrine"];
+export const MORE_ROUTES = ["cust", "mkt", "fin", "theme", "vitrine", "boutique"];
 
 /** Titre & sous-titre d'écran par route (barre supérieure). */
 export const SCREEN_META: Record<string, [string, string]> = {
@@ -38,4 +39,5 @@ export const SCREEN_META: Record<string, [string, string]> = {
   "/admin/finance": ["Finance", "Transactions, encaissements et marges"],
   "/admin/personnalisation": ["Personnalisation", "Apparence de votre vitrine"],
   "/admin/vitrine": ["Éditeur de vitrine", "Modifiez le contenu de votre page d'accueil"],
+  "/admin/boutique": ["Boutique", "Aperçu et raccourcis vers votre boutique en ligne"],
 };

@@ -11,6 +11,7 @@ export const BLOCK_ICONS: Record<BlockId, string> = {
   hero: ICONS.image,
   cats: ICONS.dash,
   grid: ICONS.cart,
+  boutique: ICONS.inv,
   loyalty: ICONS.star,
   featured: ICONS.heart,
   story: ICONS.clock,

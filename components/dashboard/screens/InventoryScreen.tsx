@@ -13,6 +13,7 @@ import { MANUAL_STOCK_REASONS } from "@/lib/validators/stockMovement";
 import { ProductPhotosField } from "@/components/dashboard/ProductPhotosField";
 import { NumericField } from "@/components/ui/NumericField";
 import type { Product } from "@/lib/data/types";
+import { LOW_STOCK_THRESHOLD } from "@/lib/inventory/lowStockThreshold";
 
 function lvlDot(v: number, seuil: number): string {
   if (v <= Math.round(seuil * 0.5)) return colors.danger;
@@ -105,18 +106,13 @@ export function InventoryScreen({ products }: { products: Product[] }) {
               <tr style={{ background: colors.ivory, color: colors.muted, textAlign: "left" }}>
                 <th style={th("16px")}>Produit</th>
                 <th style={th("10px")}>Variante</th>
-                <th style={{ ...th("10px"), textAlign: "center" }}>Interne</th>
-                <th style={{ ...th("10px"), textAlign: "center" }}>Sous-traitance</th>
-                <th style={{ ...th("10px"), textAlign: "center" }}>Matériel</th>
+                <th style={{ ...th("10px"), textAlign: "center" }}>Stock</th>
                 <th style={{ ...th("10px"), textAlign: "right" }}>Prix</th>
                 <th style={{ ...th("16px"), textAlign: "right" }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((p, i) => {
-                const s1 = p.stock;
-                const s2 = Math.max(0, Math.round(p.stock * 0.4));
-                const s3 = Math.round(p.stock * 0.25) + 2;
                 return (
                   <tr
                     key={p.id}
@@ -139,9 +135,7 @@ export function InventoryScreen({ products }: { products: Product[] }) {
                       </div>
                     </td>
                     <td style={{ padding: 10, color: colors.muted }}>{p.variant}</td>
-                    <StockCell value={s1} dot={lvlDot(s1, 10)} />
-                    <StockCell value={s2} dot={lvlDot(s2, 6)} />
-                    <StockCell value={s3} dot={lvlDot(s3, 5)} />
+                    <StockCell value={p.stock} dot={lvlDot(p.stock, LOW_STOCK_THRESHOLD)} />
                     <td style={{ padding: 10, textAlign: "right", fontWeight: 600 }}>{money(p.price)}</td>
                     <td style={{ padding: "10px 16px", textAlign: "right" }}>
                       <span style={{ display: "inline-flex", alignItems: "center", gap: 6, font: `600 12px ${fonts.ui}`, color: colors.primary }}>
@@ -469,15 +463,6 @@ const textField: React.CSSProperties = {
 };
 
 function EditDrawer({ product: p, onClose }: { product: Product; onClose: () => void }) {
-  const s1 = p.stock;
-  const s2 = Math.round(p.stock * 0.4);
-  const s3 = Math.round(p.stock * 0.25) + 2;
-  const stocks = [
-    { label: "Stock interne (boutique)", qty: s1, seuil: 10, dot: lvlDot(s1, 10) },
-    { label: "Sous-traitance (atelier)", qty: s2, seuil: 6, dot: lvlDot(s2, 6) },
-    { label: "Matériel & fournitures", qty: s3, seuil: 5, dot: colors.success },
-  ];
-
   const router = useRouter();
   const showToast = useBackoffice((s) => s.showToast);
   const [photos, setPhotos] = useState({ image: p.image ?? "", gallery: p.gallery });
@@ -598,21 +583,18 @@ function EditDrawer({ product: p, onClose }: { product: Product; onClose: () => 
             )}
           </div>
 
-          <div style={sectionLabel}>Stock par emplacement</div>
+          <div style={sectionLabel}>Stock</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 22 }}>
-            {stocks.map((st) => (
-              <div
-                key={st.label}
-                style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", border: `1px solid ${colors.borderSoft}`, borderRadius: 12 }}
-              >
-                <span style={{ width: 9, height: 9, borderRadius: 999, background: st.dot, flex: "none" }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: 13.5 }}>{st.label}</div>
-                  <div style={{ fontSize: 11.5, color: colors.muted }}>Seuil d&apos;alerte {st.seuil}</div>
-                </div>
-                <span style={{ fontFamily: fonts.display, fontWeight: 700, fontSize: 22, color: st.dot }}>{st.qty}</span>
+            <div
+              style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", border: `1px solid ${colors.borderSoft}`, borderRadius: 12 }}
+            >
+              <span style={{ width: 9, height: 9, borderRadius: 999, background: lvlDot(p.stock, LOW_STOCK_THRESHOLD), flex: "none" }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600, fontSize: 13.5 }}>Stock actuel</div>
+                <div style={{ fontSize: 11.5, color: colors.muted }}>Seuil d&apos;alerte {LOW_STOCK_THRESHOLD}</div>
               </div>
-            ))}
+              <span style={{ fontFamily: fonts.display, fontWeight: 700, fontSize: 22, color: lvlDot(p.stock, LOW_STOCK_THRESHOLD) }}>{p.stock}</span>
+            </div>
           </div>
 
           <div style={sectionLabel}>Mouvement de stock</div>

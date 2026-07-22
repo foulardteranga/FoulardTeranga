@@ -12,6 +12,7 @@ export type BlockId =
   | "hero"
   | "cats"
   | "grid"
+  | "boutique"
   | "loyalty"
   | "featured"
   | "story"
@@ -20,13 +21,14 @@ export type BlockId =
   | "contact";
 
 export const DEFAULT_BLOCK_ORDER: BlockId[] = [
-  "hero", "cats", "grid", "loyalty", "featured", "story", "look", "news", "contact",
+  "hero", "cats", "grid", "boutique", "loyalty", "featured", "story", "look", "news", "contact",
 ];
 
 export const DEFAULT_BLOCK_NAMES: Record<BlockId, string> = {
   hero: "Bandeau Hero",
   cats: "Vignettes catégories",
   grid: "Nouveautés & best-sellers",
+  boutique: "Bandeau boutique",
   loyalty: "Bandeau fidélité",
   featured: "Produit vedette",
   story: "Notre histoire",

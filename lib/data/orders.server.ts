@@ -4,15 +4,22 @@ import { fmt, money } from "@/lib/format";
 import { formatOrderAgo, formatOrderDate } from "./orderStatus";
 import { validatePromo } from "@/lib/discounts/engine";
 import type { Prisma, PromoCode } from "@/lib/generated/prisma/client";
-import type { Order } from "./types";
+import type { Order, OrderStatus } from "./types";
 
 type PrismaOrderWithLines = Prisma.OrderGetPayload<{ include: { lines: true } }>;
+
+export interface OrderStatusEventView {
+  status: OrderStatus;
+  date: string;
+  authorName: string | null;
+}
 
 /** Convertit une commande Prisma (+ lignes) vers le type applicatif `Order`. */
 function toOrder(row: PrismaOrderWithLines, promoValidity: Map<string, boolean>): Order {
   const items = row.lines.reduce((sum, l) => sum + l.qty, 0);
   return {
     id: row.ref,
+    trackingToken: row.id,
     cid: row.customerId ?? "web",
     client: row.clientName,
     place: row.place,
@@ -78,16 +85,35 @@ export async function getOrders(): Promise<Order[]> {
   return rows.map((row) => toOrder(row, promoValidity));
 }
 
-/** Lit une commande par sa référence affichée (« #TER-XXXX »). `null` si absente. */
-export async function getOrderByRef(ref: string): Promise<Order | null> {
+/** Lit une commande par son jeton de suivi (cuid interne, non devinable) — seul
+ *  identifiant utilisable pour un accès public (suivi client sans compte). */
+export async function getOrderByTrackingToken(token: string): Promise<Order | null> {
   const tenant = await getCurrentTenant();
   const row = await prisma.order.findFirst({
-    where: { ref, tenantId: tenant.id },
+    where: { id: token, tenantId: tenant.id },
     include: { lines: true },
   });
   if (!row) return null;
   const promoValidity = await buildPromoValidityMap(tenant.id, [row]);
   return toOrder(row, promoValidity);
+}
+
+/** Historique des changements de statut d'une commande, du plus ancien au plus récent. */
+export async function getOrderStatusHistory(ref: string): Promise<OrderStatusEventView[]> {
+  const tenant = await getCurrentTenant();
+  const order = await prisma.order.findFirst({ where: { ref, tenantId: tenant.id } });
+  if (!order) return [];
+  const now = new Date();
+  const rows = await prisma.orderStatusEvent.findMany({
+    where: { orderId: order.id, tenantId: tenant.id },
+    include: { author: { select: { name: true } } },
+    orderBy: { createdAt: "asc" },
+  });
+  return rows.map((r) => ({
+    status: r.status,
+    date: formatOrderDate(r.createdAt, now),
+    authorName: r.author?.name ?? null,
+  }));
 }
 
 /** Nombre de commandes encore « à valider » (statut `nouvelle`). */

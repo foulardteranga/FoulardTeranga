@@ -71,6 +71,8 @@ export type OrderChannel = "Web" | "WhatsApp" | "Boutique";
 
 export interface Order {
   id: string;
+  /** Identifiant non devinable (cuid interne) utilisé dans les liens de suivi public — jamais `ref`, séquentiel. */
+  trackingToken: string;
   cid: string;
   client: string;
   place: string;

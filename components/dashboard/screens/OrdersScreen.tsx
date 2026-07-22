@@ -1,13 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { statusMeta } from "@/lib/data/orderStatus";
 import { initials, money, whatsappLink } from "@/lib/format";
 import { useBackoffice } from "@/lib/store/useBackoffice";
-import { confirmOrder, rejectOrder, updateOrder } from "@/lib/orders/actions";
+import { storefrontOrigin } from "@/lib/storefront/origin";
+import {
+  confirmOrder, rejectOrder, updateOrder, markPreparing, markDelivered, getOrderStatusHistoryAction,
+} from "@/lib/orders/actions";
+import { OrderStatusTimeline } from "@/components/orders/OrderStatusTimeline";
+import type { OrderStatusEventView } from "@/lib/data/orders.server";
 import type { Order, OrderStatus } from "@/lib/data/types";
 
 const FILTERS: Array<[string, string, OrderStatus | null]> = [
@@ -23,6 +28,7 @@ export function OrdersScreen({ orders, initialSel }: { orders: Order[]; initialS
   const [filter, setFilter] = useState<string>("toValidate");
   const [selId, setSelId] = useState<string | null>(initialSel ?? null);
   const [editing, setEditing] = useState(false);
+  const [historyVersion, setHistoryVersion] = useState(0);
   const router = useRouter();
 
   const showToast = useBackoffice((s) => s.showToast);
@@ -189,15 +195,30 @@ export function OrdersScreen({ orders, initialSel }: { orders: Order[]; initialS
             <OrderDetail
               order={selected}
               status={selected.status}
+              historyVersion={historyVersion}
               onValidate={async () => {
                 const result = await confirmOrder(selected.id);
                 if (!result.ok) { showToast(result.error, "error"); return; }
                 showToast("Commande validée — stock déduit", "success");
+                setHistoryVersion((v) => v + 1);
               }}
               onRefuse={async () => {
                 const result = await rejectOrder(selected.id);
                 if (!result.ok) { showToast(result.error, "error"); return; }
                 showToast("Commande refusée", "error");
+                setHistoryVersion((v) => v + 1);
+              }}
+              onMarkPreparing={async () => {
+                const result = await markPreparing(selected.id);
+                if (!result.ok) { showToast(result.error, "error"); return; }
+                showToast("Commande en préparation", "success");
+                setHistoryVersion((v) => v + 1);
+              }}
+              onMarkDelivered={async () => {
+                const result = await markDelivered(selected.id);
+                if (!result.ok) { showToast(result.error, "error"); return; }
+                showToast("Commande marquée livrée", "success");
+                setHistoryVersion((v) => v + 1);
               }}
               onEdit={() => setEditing(true)}
             />
@@ -243,20 +264,42 @@ function Badge({ meta }: { meta: (typeof statusMeta)[OrderStatus] }) {
 function OrderDetail({
   order: o,
   status,
+  historyVersion,
   onValidate,
   onRefuse,
+  onMarkPreparing,
+  onMarkDelivered,
   onEdit,
 }: {
   order: Order;
   status: OrderStatus;
+  historyVersion: number;
   onValidate: () => void;
   onRefuse: () => void;
+  onMarkPreparing: () => void;
+  onMarkDelivered: () => void;
   onEdit: () => void;
 }) {
   const meta = statusMeta[status];
   const actionable = status === "nouvelle";
-  const done = status === "livree" || status === "refusee" || status === "confirmee";
-  const doneWord = status === "refusee" ? "refusée" : status === "confirmee" ? "confirmée" : "livrée";
+  const canPrepare = status === "confirmee";
+  const canDeliver = status === "preparation";
+  const done = status === "livree" || status === "refusee";
+
+  const [events, setEvents] = useState<OrderStatusEventView[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    getOrderStatusHistoryAction(o.id).then((res) => {
+      if (!cancelled && res.ok) setEvents(res.events);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [o.id, historyVersion]);
+
+  // Calculé après montage : évite un mismatch d'hydratation (window absent au SSR).
+  const [origin, setOrigin] = useState("");
+  useEffect(() => setOrigin(storefrontOrigin()), []);
 
   return (
     <>
@@ -285,6 +328,12 @@ function OrderDetail({
       </div>
 
       <div style={{ padding: "16px 18px" }}>
+        {/* suivi de statut */}
+        <div style={kycLabel}>Suivi de la commande</div>
+        <div style={{ border: `1px solid ${colors.borderSoft}`, borderRadius: 12, padding: "13px 15px", marginBottom: 14 }}>
+          <OrderStatusTimeline status={status} events={events} showAuthor />
+        </div>
+
         {/* KYC */}
         <div style={{ background: colors.ivory, border: `1px solid ${colors.borderSoft}`, borderRadius: 12, padding: "13px 15px", marginBottom: 14 }}>
           <div style={kycLabel}>Mini-fiche cliente</div>
@@ -358,7 +407,10 @@ function OrderDetail({
 
         {o.phone && (
           <a
-            href={whatsappLink(o.phone, `Bonjour ${o.client}, à propos de votre commande ${o.id}…`)}
+            href={whatsappLink(
+              o.phone,
+              `Bonjour ${o.client}, à propos de votre commande ${o.id}… Suivez-la ici : ${origin}/confirmation?token=${o.trackingToken}`
+            )}
             target="_blank"
             rel="noopener noreferrer"
             className="ft-hover-surface"
@@ -413,10 +465,26 @@ function OrderDetail({
               Valider déduira le stock des articles.
             </div>
           </>
+        ) : canPrepare ? (
+          <button
+            onClick={onMarkPreparing}
+            className="ft-primary-btn"
+            style={{ width: "100%", height: 48, border: "none", borderRadius: 10, background: colors.primary, color: "#fff", font: `700 14px ${fonts.ui}`, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+          >
+            Passer en préparation
+          </button>
+        ) : canDeliver ? (
+          <button
+            onClick={onMarkDelivered}
+            className="ft-primary-btn"
+            style={{ width: "100%", height: 48, border: "none", borderRadius: 10, background: colors.primary, color: "#fff", font: `700 14px ${fonts.ui}`, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+          >
+            Marquer comme livrée
+          </button>
         ) : (
           done && (
             <div style={{ textAlign: "center", fontSize: 13, color: colors.muted, padding: 8 }}>
-              Commande {doneWord}. Stock à jour.
+              Commande {status === "refusee" ? "refusée" : "livrée"}. Stock à jour.
             </div>
           )
         )}

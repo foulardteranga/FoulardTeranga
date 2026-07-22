@@ -89,6 +89,27 @@ export const storyFields: FieldDescriptor[] = [
   { key: "image", label: "Photo atelier", kind: "image" },
 ];
 
+/* ---- boutique ---- */
+export const boutiqueSchema = z.object({
+  title: z.string(),
+  subtitle: z.string(),
+  ctaLabel: z.string(),
+  ctaLink: z.string(),
+});
+export type BoutiqueSettings = z.infer<typeof boutiqueSchema>;
+export const boutiqueDefaults: BoutiqueSettings = {
+  title: "Découvrez toute la boutique",
+  subtitle: "Foulards, turbans et accessoires — le catalogue complet, mis à jour en continu.",
+  ctaLabel: "Voir la boutique",
+  ctaLink: "/catalogue",
+};
+export const boutiqueFields: FieldDescriptor[] = [
+  { key: "title", label: "Titre", kind: "text" },
+  { key: "subtitle", label: "Sous-titre", kind: "textarea" },
+  { key: "ctaLabel", label: "Bouton — libellé", kind: "text" },
+  { key: "ctaLink", label: "Bouton — lien", kind: "url" },
+];
+
 /* ---- loyalty ---- */
 export const loyaltySchema = z.object({
   title: z.string(),
@@ -226,6 +247,7 @@ export type BlockSettingsMap = {
   hero: HeroSettings;
   cats: CatsSettings;
   grid: GridSettings;
+  boutique: BoutiqueSettings;
   loyalty: LoyaltySettings;
   featured: FeaturedSettings;
   story: StorySettings;
@@ -241,6 +263,7 @@ export const BLOCK_SETTINGS: Record<
   hero: { schema: heroSchema, defaults: heroDefaults, fields: heroFields },
   cats: { schema: catsSchema, defaults: catsDefaults, fields: catsFields },
   grid: { schema: gridSchema, defaults: gridDefaults, fields: gridFields },
+  boutique: { schema: boutiqueSchema, defaults: boutiqueDefaults, fields: boutiqueFields },
   loyalty: { schema: loyaltySchema, defaults: loyaltyDefaults, fields: loyaltyFields },
   featured: { schema: featuredSchema, defaults: featuredDefaults, fields: featuredFields },
   story: { schema: storySchema, defaults: storyDefaults, fields: storyFields },
@@ -260,6 +283,7 @@ export const BLOCK_LIBRARY: Record<BlockId, BlockLibraryEntry> = {
   hero: { label: "Bandeau Hero", description: "Grande image d'accueil avec titre et boutons." },
   cats: { label: "Vignettes catégories", description: "Accès rapide aux catégories de la boutique." },
   grid: { label: "Grille de produits", description: "Nouveautés et best-sellers du catalogue." },
+  boutique: { label: "Bandeau boutique", description: "Met en avant le catalogue complet avec un bouton vers la boutique." },
   loyalty: { label: "Bandeau fidélité", description: "Met en avant le programme de points." },
   featured: { label: "Produit vedette", description: "Zoom sur le produit marqué « vedette »." },
   story: { label: "Notre histoire", description: "Texte de présentation, photo et chiffres clés." },

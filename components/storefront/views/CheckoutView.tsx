@@ -85,7 +85,7 @@ export function CheckoutView() {
     }
     clearCart();
     resetKyc();
-    router.push(`/confirmation?ref=${encodeURIComponent(response.ref)}`);
+    router.push(`/confirmation?token=${encodeURIComponent(response.id)}`);
   };
 
   return (

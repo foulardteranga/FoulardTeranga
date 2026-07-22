@@ -83,14 +83,15 @@ model Tenant {
   domains       String[]
   createdAt     DateTime @default(now())
 
-  profiles        Profile[]
-  products        Product[]
-  customers       Customer[]
-  orders          Order[]
-  notifications   Notification[]
-  storefrontPages StorefrontPage[]
-  promoCodes      PromoCode[]
-  stockMovements  StockMovement[]
+  profiles          Profile[]
+  products          Product[]
+  customers         Customer[]
+  orders            Order[]
+  notifications     Notification[]
+  storefrontPages   StorefrontPage[]
+  promoCodes        PromoCode[]
+  stockMovements    StockMovement[]
+  orderStatusEvents OrderStatusEvent[]
 }
 
 model Profile {
@@ -100,9 +101,10 @@ model Profile {
   name      String
   createdAt DateTime @default(now())
 
-  tenant         Tenant          @relation(fields: [tenantId], references: [id])
-  customer       Customer?
-  stockMovements StockMovement[]
+  tenant            Tenant             @relation(fields: [tenantId], references: [id])
+  customer          Customer?
+  stockMovements    StockMovement[]
+  orderStatusEvents OrderStatusEvent[]
 
   @@index([tenantId])
 }
@@ -176,9 +178,10 @@ model Order {
   pointsDiscount Int            @default(0) // FCFA (= pointsUsed × 50 au taux du moment)
   createdAt      DateTime       @default(now())
 
-  tenant   Tenant      @relation(fields: [tenantId], references: [id])
-  customer Customer?   @relation(fields: [customerId], references: [id])
-  lines    OrderLine[]
+  tenant       Tenant             @relation(fields: [tenantId], references: [id])
+  customer     Customer?          @relation(fields: [customerId], references: [id])
+  lines        OrderLine[]
+  statusEvents OrderStatusEvent[]
 
   @@index([tenantId])
 }
@@ -249,6 +252,22 @@ model StockMovement {
   author  Profile @relation(fields: [authorId], references: [id])
 
   @@index([tenantId, productId, createdAt])
+}
+
+/** Journal append-only des changements de statut d'une commande (miroir de StockMovement). */
+model OrderStatusEvent {
+  id        String      @id @default(cuid())
+  tenantId  String
+  orderId   String
+  authorId  String?     @db.Uuid // null pour l'événement "nouvelle" (créé par la cliente, pas de staff)
+  status    OrderStatus
+  createdAt DateTime    @default(now())
+
+  tenant Tenant   @relation(fields: [tenantId], references: [id])
+  order  Order    @relation(fields: [orderId], references: [id])
+  author Profile? @relation(fields: [authorId], references: [id])
+
+  @@index([tenantId, orderId, createdAt])
 }
 
 model OrderLine {
