@@ -5,7 +5,7 @@ import { colors, fonts } from "@/lib/theme/tokens";
 import { NAV, MORE_ROUTES } from "@/lib/nav";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { useBackoffice } from "@/lib/store/useBackoffice";
-import { hasModuleAccess, type Session } from "@/lib/auth";
+import { hasModuleAccess, type Session } from "@/lib/auth/session";
 
 const TAB_IDS = ["pos", "dash", "orders", "inv"];
 

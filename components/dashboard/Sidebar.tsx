@@ -8,7 +8,7 @@ import { Icon } from "@/components/ui/Icon";
 import { useBackoffice } from "@/lib/store/useBackoffice";
 import { initials } from "@/lib/format";
 import { signOut } from "@/lib/auth/actions";
-import { hasModuleAccess, type Session } from "@/lib/auth";
+import { hasModuleAccess, type Session } from "@/lib/auth/session";
 
 const ROLE_LABELS: Record<Session["role"], string> = {
   owner: "Gérante",
