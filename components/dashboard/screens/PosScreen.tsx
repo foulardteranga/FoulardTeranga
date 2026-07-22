@@ -1,19 +1,30 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
-import { catalog, categories } from "@/lib/data/catalog";
+import { QtyStepper } from "@/components/ui/QtyStepper";
+import { NumericField } from "@/components/ui/NumericField";
+import { categories } from "@/lib/data/catalog";
 import { money } from "@/lib/format";
 import { useBackoffice, type CartLine } from "@/lib/store/useBackoffice";
+import { encaisserVente } from "@/lib/pos/actions";
+import { buildTicketMessage } from "@/lib/pos/ticketMessage";
+import { previewPosDiscount, type DiscountPreview } from "@/lib/discounts/actions";
+import { POINT_VALUE_FCFA } from "@/lib/customers/loyalty";
+import { PAYMENT_LABELS, type PosPaymentMethod } from "@/lib/payments/labels";
+import type { Customer, Product } from "@/lib/data/types";
 
-const PAY_DEF = [
+const PAY_DEF: ReadonlyArray<{ id: PosPaymentMethod; label: string; icon: string }> = [
   { id: "espece", label: "Espèces", icon: ICONS.cash },
-  { id: "mm", label: "Mobile M.", icon: ICONS.mobileMoney },
+  { id: "orange_money", label: "Orange M.", icon: ICONS.mobileMoney },
+  { id: "wave", label: "Wave", icon: ICONS.mobileMoney },
+  { id: "moov_money", label: "Moov M.", icon: ICONS.mobileMoney },
+  { id: "mtn_momo", label: "MTN MoMo", icon: ICONS.mobileMoney },
   { id: "mixte", label: "Mixte", icon: ICONS.mixte },
-] as const;
+];
 
-export function PosScreen() {
+export function PosScreen({ products, customers }: { products: Product[]; customers: Customer[] }) {
   const [query, setQuery] = useState("");
   const [cat, setCat] = useState<(typeof categories)[number]>("Tous");
 
@@ -22,19 +33,53 @@ export function PosScreen() {
   const showToast = useBackoffice((s) => s.showToast);
   const openCart = useBackoffice((s) => s.openCart);
   const closeCart = useBackoffice((s) => s.closeCart);
+  const client = useBackoffice((s) => s.client);
+
+  const [promoCode, setPromoCode] = useState("");
+  const [pointsReq, setPointsReq] = useState("0");
+  const [preview, setPreview] = useState<DiscountPreview | null>(null);
+
+  // Quand la cliente est détachée, on ne peut plus utiliser de points et on efface la prévisualisation.
+  useEffect(() => {
+    if (!client) {
+      setPointsReq("0");
+      setPreview(null);
+    }
+  }, [client]);
+
+  // Re-prévisualiser la remise à chaque changement pertinent (débouncé).
+  useEffect(() => {
+    const effectivePoints = client ? (Number(pointsReq) || 0) : 0;
+    const subtotal = cart.reduce((a, l) => a + (l.price - l.discount) * l.qty, 0);
+    if (subtotal === 0 || (!promoCode.trim() && effectivePoints === 0)) {
+      setPreview(null);
+      return;
+    }
+    const t = setTimeout(async () => {
+      const r = await previewPosDiscount({
+        subtotal,
+        promoCode: promoCode || undefined,
+        pointsRequested: effectivePoints,
+        customerId: client?.id ?? null,
+      });
+      setPreview(r.ok ? r.preview : null);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [cart, promoCode, pointsReq, client]);
 
   const q = query.trim().toLowerCase();
-  const products = useMemo(
+  const filtered = useMemo(
     () =>
-      catalog.filter(
+      products.filter(
         (p) => (cat === "Tous" || p.cat === cat) && (!q || p.name.toLowerCase().includes(q))
       ),
-    [cat, q]
+    [products, cat, q]
   );
 
   const sub = cart.reduce((a, l) => a + l.price * l.qty, 0);
   const disc = cart.reduce((a, l) => a + l.discount * l.qty, 0);
   const total = sub - disc;
+  const displayTotal = preview ? preview.total : total;
   const cartCount = cart.reduce((a, l) => a + l.qty, 0);
 
   return (
@@ -116,7 +161,7 @@ export function PosScreen() {
           })}
         </div>
 
-        {products.length === 0 ? (
+        {filtered.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 20px", color: colors.muted }}>
             <div
               style={{
@@ -139,7 +184,7 @@ export function PosScreen() {
           </div>
         ) : (
           <div className="ft-pos-grid">
-            {products.map((p) => (
+            {filtered.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}
           </div>
@@ -147,7 +192,19 @@ export function PosScreen() {
       </div>
 
       {/* cart desktop */}
-      <CartPanelDesktop total={total} sub={sub} disc={disc} />
+      <CartPanelDesktop
+        total={total}
+        sub={sub}
+        disc={disc}
+        customers={customers}
+        products={products}
+        promoCode={promoCode}
+        setPromoCode={setPromoCode}
+        pointsReq={pointsReq}
+        setPointsReq={setPointsReq}
+        preview={preview}
+        setPreview={setPreview}
+      />
 
       {/* mobile cart bar */}
       {cartCount > 0 && !cartOpen && (
@@ -190,13 +247,26 @@ export function PosScreen() {
             Voir le panier
           </span>
           <span style={{ fontFamily: fonts.display, fontWeight: 700, fontSize: 19 }}>
-            {money(total)}
+            {money(displayTotal)}
           </span>
         </div>
       )}
 
       {/* mobile cart sheet */}
-      {cartOpen && <CartSheetMobile total={total} onClose={closeCart} />}
+      {cartOpen && (
+        <CartSheetMobile
+          total={total}
+          onClose={closeCart}
+          customers={customers}
+          products={products}
+          promoCode={promoCode}
+          setPromoCode={setPromoCode}
+          pointsReq={pointsReq}
+          setPointsReq={setPointsReq}
+          preview={preview}
+          setPreview={setPreview}
+        />
+      )}
 
       {/* spacer to clear the fixed mobile cart bar */}
       {cartCount > 0 && <div className="ft-mobile-only" style={{ height: 60 }} aria-hidden />}
@@ -204,7 +274,7 @@ export function PosScreen() {
   );
 }
 
-function ProductCard({ product: p }: { product: (typeof catalog)[number] }) {
+function ProductCard({ product: p }: { product: Product }) {
   const addToCart = useBackoffice((s) => s.addToCart);
   return (
     <div
@@ -229,6 +299,10 @@ function ProductCard({ product: p }: { product: (typeof catalog)[number] }) {
           justifyContent: "center",
         }}
       >
+        {p.image && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={p.image} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+        )}
         <span style={{ fontFamily: "ui-monospace,monospace", fontSize: 10, color: "rgba(30,27,24,.35)" }}>
           {p.id.toUpperCase()}
         </span>
@@ -282,10 +356,12 @@ function ProductCard({ product: p }: { product: (typeof catalog)[number] }) {
 }
 
 /* ----- Client attach block (shared) ----- */
-function ClientBlock() {
+function ClientBlock({ customers }: { customers: Customer[] }) {
   const client = useBackoffice((s) => s.client);
   const attachClient = useBackoffice((s) => s.attachClient);
   const detachClient = useBackoffice((s) => s.detachClient);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [query, setQuery] = useState("");
 
   if (client) {
     return (
@@ -324,9 +400,76 @@ function ClientBlock() {
     );
   }
 
+  if (pickerOpen) {
+    const q = query.trim().toLowerCase();
+    const filtered = customers.filter(
+      (c) => !q || c.name.toLowerCase().includes(q) || c.phone.toLowerCase().includes(q)
+    );
+    return (
+      <div>
+        <input
+          autoFocus
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Rechercher nom ou téléphone…"
+          style={{
+            width: "100%",
+            height: 38,
+            padding: "0 12px",
+            border: `1.5px solid ${colors.borderField}`,
+            borderRadius: 10,
+            font: `400 13px ${fonts.ui}`,
+            outline: "none",
+          }}
+        />
+        <div style={{ maxHeight: 180, overflowY: "auto", marginTop: 8 }}>
+          {filtered.length === 0 ? (
+            <div style={{ fontSize: 12.5, color: colors.muted, padding: "8px 2px" }}>Aucune cliente trouvée.</div>
+          ) : (
+            filtered.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => {
+                  attachClient(c);
+                  setPickerOpen(false);
+                  setQuery("");
+                }}
+                style={{
+                  display: "flex",
+                  width: "100%",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 8,
+                  padding: "8px 4px",
+                  border: "none",
+                  borderBottom: `1px solid ${colors.faintLine}`,
+                  background: "none",
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
+              >
+                <span style={{ fontWeight: 600, fontSize: 13 }}>{c.name}</span>
+                <span style={{ fontSize: 11.5, color: colors.muted }}>{c.phone}</span>
+              </button>
+            ))
+          )}
+        </div>
+        <button
+          onClick={() => {
+            setPickerOpen(false);
+            setQuery("");
+          }}
+          style={{ marginTop: 6, font: `500 12px ${fonts.ui}`, color: colors.muted, background: "none", border: "none", cursor: "pointer" }}
+        >
+          Annuler
+        </button>
+      </div>
+    );
+  }
+
   return (
     <button
-      onClick={attachClient}
+      onClick={() => setPickerOpen(true)}
       style={{
         width: "100%",
         height: 42,
@@ -384,42 +527,221 @@ function PayMethods() {
   );
 }
 
-function PayButton({ total, big }: { total: number; big?: boolean }) {
+function PayButton({
+  total,
+  big,
+  promoCode,
+  pointsReq,
+  preview,
+  setPromoCode,
+  setPointsReq,
+  setPreview,
+}: {
+  total: number;
+  big?: boolean;
+  promoCode: string;
+  pointsReq: string;
+  preview: DiscountPreview | null;
+  setPromoCode: (v: string) => void;
+  setPointsReq: (v: string) => void;
+  setPreview: (v: DiscountPreview | null) => void;
+}) {
   const cart = useBackoffice((s) => s.cart);
+  const pay = useBackoffice((s) => s.pay);
+  const client = useBackoffice((s) => s.client);
   const offline = useBackoffice((s) => s.offline);
-  const encaisser = useBackoffice((s) => s.encaisser);
+  const showToast = useBackoffice((s) => s.showToast);
+  const showTicket = useBackoffice((s) => s.showTicket);
+  const [saving, setSaving] = useState(false);
   const has = cart.length > 0;
+  const canPay = has && !offline && !saving;
+  const displayTotal = preview ? preview.total : total;
+
+  async function handlePay() {
+    setSaving(true);
+    const result = await encaisserVente({
+      lines: cart.map((l) => ({ productId: l.id, qty: l.qty, discounted: l.discount > 0 })),
+      paymentMethod: pay,
+      customerId: client?.id ?? null,
+      promoCode: promoCode.trim() || undefined,
+      pointsRequested: Number(pointsReq) || 0,
+    });
+    setSaving(false);
+    if (!result.ok) {
+      showToast(result.error, "error");
+      return;
+    }
+    const message = buildTicketMessage({
+      shopName: result.ticket.shopName,
+      ref: result.ref,
+      date: new Date(),
+      lines: result.ticket.lines,
+      subtotal: result.ticket.subtotal,
+      discount: result.ticket.discount,
+      total: result.ticket.total,
+      payLabel: PAYMENT_LABELS[pay],
+      loyalty: result.ticket.loyalty,
+      promo: result.ticket.promo,
+      pointsUsed: result.ticket.pointsUsed,
+    });
+    showTicket({
+      ref: result.ref,
+      items: cart.reduce((a, l) => a + l.qty, 0),
+      pay: PAYMENT_LABELS[pay],
+      total: money(result.ticket.total),
+      lines: result.ticket.lines,
+      discount: result.ticket.discount,
+      subtotal: result.ticket.subtotal,
+      loyalty: result.ticket.loyalty,
+      waMessage: message,
+      customerPhone: result.ticket.customerPhone,
+      promo: result.ticket.promo,
+      pointsUsed: result.ticket.pointsUsed,
+    });
+    setPromoCode("");
+    setPointsReq("0");
+    setPreview(null);
+  }
+
   return (
     <button
-      onClick={encaisser}
-      disabled={!has}
+      onClick={handlePay}
+      disabled={!canPay}
       className="ft-primary-btn"
       style={{
         width: "100%",
         height: big ? 54 : 52,
         border: "none",
         borderRadius: 10,
-        background: has ? (offline ? colors.warning : colors.primary) : colors.disabled,
+        background: canPay ? colors.primary : colors.disabled,
         color: "#fff",
         font: `700 16px ${fonts.ui}`,
-        cursor: has ? "pointer" : "not-allowed",
+        cursor: canPay ? "pointer" : "not-allowed",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         gap: 10,
       }}
     >
-      {!big && <Icon path={ICONS.check} size={20} stroke="#fff" strokeWidth={2} />}
-      Encaisser {has ? `· ${money(total)}` : ""}
+      {!big && !saving && <Icon path={ICONS.check} size={20} stroke="#fff" strokeWidth={2} />}
+      {offline ? "Connexion requise" : saving ? "Encaissement…" : `Encaisser${has ? ` · ${money(displayTotal)}` : ""}`}
     </button>
   );
 }
 
+/* ----- Remises (code promo + points) — panneau partagé desktop/mobile ----- */
+function DiscountSection({
+  promoCode,
+  setPromoCode,
+  pointsReq,
+  setPointsReq,
+  preview,
+}: {
+  promoCode: string;
+  setPromoCode: (v: string) => void;
+  pointsReq: string;
+  setPointsReq: (v: string) => void;
+  preview: DiscountPreview | null;
+}) {
+  const client = useBackoffice((s) => s.client);
+  const pointsReqNum = Number(pointsReq) || 0;
+
+  return (
+    <div style={{ borderTop: `1px solid ${colors.borderSoft}`, paddingTop: 12, marginTop: 12 }}>
+      <label style={{ display: "block", font: `600 12.5px ${fonts.ui}`, marginBottom: 6 }}>Code promo</label>
+      <input
+        value={promoCode}
+        onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+        placeholder="Ex. TERANGA10"
+        style={{
+          width: "100%",
+          height: 40,
+          padding: "0 12px",
+          border: `1.5px solid ${preview?.promoError ? colors.danger : colors.borderField}`,
+          borderRadius: 9,
+          font: "600 13px ui-monospace,monospace",
+          letterSpacing: ".04em",
+          outline: "none",
+        }}
+      />
+      {preview?.promoError && (
+        <p style={{ font: `500 12px ${fonts.ui}`, color: colors.danger, margin: "6px 0 0" }}>{preview.promoError}</p>
+      )}
+      {client && (
+        <div style={{ marginTop: 10 }}>
+          <label style={{ display: "block", font: `600 12.5px ${fonts.ui}`, marginBottom: 6 }}>
+            Points de fidélité — solde {client.points} ({money(client.points * POINT_VALUE_FCFA)})
+          </label>
+          <NumericField mode="integer" value={pointsReq} onChange={setPointsReq} min={0} max={client.points} placeholder="0" />
+          {preview && preview.pointsUsed !== pointsReqNum && pointsReqNum > 0 && (
+            <p style={{ font: `500 12px ${fonts.ui}`, color: colors.muted, margin: "6px 0 0" }}>
+              Plafonné à {preview.pointsUsed} points sur cette vente.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const discountRowStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  fontSize: 13,
+  color: colors.fgSuccess,
+  marginBottom: 5,
+};
+
+/* ----- Lignes remise (code promo + points) dans le récapitulatif ----- */
+function DiscountRecapRows({ preview }: { preview: DiscountPreview | null }) {
+  return (
+    <>
+      {preview?.promo && (
+        <div style={discountRowStyle}>
+          <span>Code {preview.promo.code}</span>
+          <span>−{money(preview.promo.discount)}</span>
+        </div>
+      )}
+      {preview && preview.pointsUsed > 0 && (
+        <div style={discountRowStyle}>
+          <span>Points ({preview.pointsUsed})</span>
+          <span>−{money(preview.pointsDiscount)}</span>
+        </div>
+      )}
+    </>
+  );
+}
+
 /* ----- Desktop cart aside ----- */
-function CartPanelDesktop({ total, sub, disc }: { total: number; sub: number; disc: number }) {
+function CartPanelDesktop({
+  total,
+  sub,
+  disc,
+  customers,
+  products,
+  promoCode,
+  setPromoCode,
+  pointsReq,
+  setPointsReq,
+  preview,
+  setPreview,
+}: {
+  total: number;
+  sub: number;
+  disc: number;
+  customers: Customer[];
+  products: Product[];
+  promoCode: string;
+  setPromoCode: (v: string) => void;
+  pointsReq: string;
+  setPointsReq: (v: string) => void;
+  preview: DiscountPreview | null;
+  setPreview: (v: DiscountPreview | null) => void;
+}) {
   const cart = useBackoffice((s) => s.cart);
   const clearCart = useBackoffice((s) => s.clearCart);
   const cartCount = cart.reduce((a, l) => a + l.qty, 0);
+  const displayTotal = preview ? preview.total : total;
 
   return (
     <aside
@@ -457,19 +779,26 @@ function CartPanelDesktop({ total, sub, disc }: { total: number; sub: number; di
       </div>
 
       <div style={{ padding: "12px 18px", borderBottom: `1px solid ${colors.borderSoft}` }}>
-        <ClientBlock />
+        <ClientBlock customers={customers} />
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: "6px 0" }}>
         {cart.length === 0 ? (
           <EmptyCart />
         ) : (
-          cart.map((l) => <CartLineDesktop key={l.id} line={l} />)
+          cart.map((l) => <CartLineDesktop key={l.id} line={l} stock={products.find((p) => p.id === l.id)?.stock} />)
         )}
       </div>
 
       <div style={{ borderTop: `1px solid ${colors.borderSoft}`, padding: "14px 18px", background: colors.rowAlt }}>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: colors.muted, marginBottom: 5 }}>
+        <DiscountSection
+          promoCode={promoCode}
+          setPromoCode={setPromoCode}
+          pointsReq={pointsReq}
+          setPointsReq={setPointsReq}
+          preview={preview}
+        />
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: colors.muted, marginBottom: 5, marginTop: 12 }}>
           <span>Sous-total</span>
           <span>{money(sub)}</span>
         </div>
@@ -479,14 +808,23 @@ function CartPanelDesktop({ total, sub, disc }: { total: number; sub: number; di
             <span>−{money(disc)}</span>
           </div>
         )}
+        <DiscountRecapRows preview={preview} />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "8px 0 12px" }}>
           <span style={{ fontWeight: 600, fontSize: 15 }}>Total</span>
           <span style={{ fontFamily: fonts.display, fontWeight: 700, fontSize: 26, color: colors.primary }}>
-            {money(total)}
+            {money(displayTotal)}
           </span>
         </div>
         <PayMethods />
-        <PayButton total={total} />
+        <PayButton
+          total={total}
+          promoCode={promoCode}
+          pointsReq={pointsReq}
+          preview={preview}
+          setPromoCode={setPromoCode}
+          setPointsReq={setPointsReq}
+          setPreview={setPreview}
+        />
       </div>
     </aside>
   );
@@ -515,7 +853,7 @@ function EmptyCart() {
   );
 }
 
-function CartLineDesktop({ line: l }: { line: CartLine }) {
+function CartLineDesktop({ line: l, stock }: { line: CartLine; stock?: number }) {
   const incLine = useBackoffice((s) => s.incLine);
   const rmLine = useBackoffice((s) => s.rmLine);
   const toggleDiscount = useBackoffice((s) => s.toggleDiscount);
@@ -539,7 +877,7 @@ function CartLineDesktop({ line: l }: { line: CartLine }) {
         </button>
       </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Stepper qty={l.qty} onDec={() => incLine(l.id, -1)} onInc={() => incLine(l.id, 1)} />
+        <QtyStepper qty={l.qty} onChange={(qty) => incLine(l.id, qty - l.qty)} max={stock} />
         <div style={{ textAlign: "right" }}>
           {l.discount > 0 && (
             <div style={{ fontSize: 11, color: "#9a8f7d", textDecoration: "line-through" }}>
@@ -559,47 +897,34 @@ function CartLineDesktop({ line: l }: { line: CartLine }) {
   );
 }
 
-function Stepper({ qty, onDec, onInc, big }: { qty: number; onDec: () => void; onInc: () => void; big?: boolean }) {
-  const w = big ? 38 : 34;
-  const h = big ? 38 : 34;
-  return (
-    <div
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        height: h,
-        border: `1.5px solid ${colors.borderField}`,
-        borderRadius: 9,
-        overflow: "hidden",
-      }}
-    >
-      <button onClick={onDec} style={stepBtn(w)} aria-label="Diminuer">
-        −
-      </button>
-      <span style={{ width: big ? 36 : 38, textAlign: "center", font: `600 14px ${fonts.ui}` }}>{qty}</span>
-      <button onClick={onInc} style={stepBtn(w)} aria-label="Augmenter">
-        +
-      </button>
-    </div>
-  );
-}
-
-function stepBtn(w: number): React.CSSProperties {
-  return {
-    width: w,
-    height: "100%",
-    border: "none",
-    background: colors.ivory,
-    fontSize: w >= 38 ? 18 : 17,
-    color: colors.primary,
-    cursor: "pointer",
-  };
-}
-
 /* ----- Mobile cart sheet ----- */
-function CartSheetMobile({ total, onClose }: { total: number; onClose: () => void }) {
+function CartSheetMobile({
+  total,
+  onClose,
+  customers,
+  products,
+  promoCode,
+  setPromoCode,
+  pointsReq,
+  setPointsReq,
+  preview,
+  setPreview,
+}: {
+  total: number;
+  onClose: () => void;
+  customers: Customer[];
+  products: Product[];
+  promoCode: string;
+  setPromoCode: (v: string) => void;
+  pointsReq: string;
+  setPointsReq: (v: string) => void;
+  preview: DiscountPreview | null;
+  setPreview: (v: DiscountPreview | null) => void;
+}) {
   const cart = useBackoffice((s) => s.cart);
   const incLine = useBackoffice((s) => s.incLine);
+  const rmLine = useBackoffice((s) => s.rmLine);
+  const displayTotal = preview ? preview.total : total;
 
   return (
     <>
@@ -639,7 +964,7 @@ function CartSheetMobile({ total, onClose }: { total: number; onClose: () => voi
         </div>
 
         <div style={{ padding: "12px 18px", borderBottom: `1px solid ${colors.borderSoft}` }}>
-          <ClientBlock />
+          <ClientBlock customers={customers} />
         </div>
 
         <div style={{ flex: 1, overflowY: "auto" }}>
@@ -666,10 +991,17 @@ function CartSheetMobile({ total, onClose }: { total: number; onClose: () => voi
                   <div style={{ fontSize: 12, color: colors.muted }}>{money(l.price)}</div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <Stepper qty={l.qty} big onDec={() => incLine(l.id, -1)} onInc={() => incLine(l.id, 1)} />
+                  <QtyStepper qty={l.qty} size="md" onChange={(qty) => incLine(l.id, qty - l.qty)} max={products.find((p) => p.id === l.id)?.stock} />
                   <div style={{ fontWeight: 700, fontSize: 14, minWidth: 70, textAlign: "right" }}>
                     {money((l.price - l.discount) * l.qty)}
                   </div>
+                  <button
+                    onClick={() => rmLine(l.id)}
+                    aria-label="Retirer l'article"
+                    style={{ border: "none", background: "none", cursor: "pointer", color: "#B6AEA1", fontSize: 18, flex: "none", padding: "0 2px" }}
+                  >
+                    ×
+                  </button>
                 </div>
               </div>
             ))
@@ -677,14 +1009,31 @@ function CartSheetMobile({ total, onClose }: { total: number; onClose: () => voi
         </div>
 
         <div style={{ borderTop: `1px solid ${colors.borderSoft}`, padding: "14px 18px 22px", background: colors.rowAlt }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
+          <DiscountSection
+            promoCode={promoCode}
+            setPromoCode={setPromoCode}
+            pointsReq={pointsReq}
+            setPointsReq={setPointsReq}
+            preview={preview}
+          />
+          <DiscountRecapRows preview={preview} />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "12px 0" }}>
             <span style={{ fontWeight: 600, fontSize: 15 }}>Total</span>
             <span style={{ fontFamily: fonts.display, fontWeight: 700, fontSize: 26, color: colors.primary }}>
-              {money(total)}
+              {money(displayTotal)}
             </span>
           </div>
           <PayMethods />
-          <PayButton total={total} big />
+          <PayButton
+            total={total}
+            big
+            promoCode={promoCode}
+            pointsReq={pointsReq}
+            preview={preview}
+            setPromoCode={setPromoCode}
+            setPointsReq={setPointsReq}
+            setPreview={setPreview}
+          />
         </div>
       </div>
     </>

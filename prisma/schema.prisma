@@ -1,0 +1,288 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  super_admin
+  owner
+  staff
+  customer
+}
+
+enum ProductCategory {
+  Foulards
+  Turbans
+  Tissus
+  Accessoires
+}
+
+enum CustomerSegment {
+  VIP
+  Fidele
+  Nouvelle
+}
+
+enum OrderStatus {
+  nouvelle
+  confirmee
+  preparation
+  livree
+  refusee
+}
+
+enum OrderChannel {
+  Web
+  WhatsApp
+  Boutique
+}
+
+enum PaymentMethod {
+  espece
+  mm // legacy : ventes historiques uniquement, affiché « Mobile Money »
+  orange_money
+  wave
+  moov_money
+  mtn_momo
+  mixte
+}
+
+enum NotificationType {
+  nouvelle_commande
+  stock_bas
+  paiement_recu
+}
+
+enum StockMovementReason {
+  vente_pos
+  vente_web
+  reception
+  perte
+  correction
+}
+
+enum PromoKind {
+  percent
+  amount
+}
+
+model Tenant {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  name          String
+  tagline       String   @default("")
+  primaryColor  String
+  accentColor   String
+  font          String   @default("Playfair Display")
+  logoText      String
+  whatsappPhone String?
+  domains       String[]
+  createdAt     DateTime @default(now())
+
+  profiles          Profile[]
+  products          Product[]
+  customers         Customer[]
+  orders            Order[]
+  notifications     Notification[]
+  storefrontPages   StorefrontPage[]
+  promoCodes        PromoCode[]
+  stockMovements    StockMovement[]
+  orderStatusEvents OrderStatusEvent[]
+}
+
+model Profile {
+  id        String   @id @db.Uuid
+  tenantId  String
+  role      Role
+  name      String
+  createdAt DateTime @default(now())
+
+  tenant            Tenant             @relation(fields: [tenantId], references: [id])
+  customer          Customer?
+  stockMovements    StockMovement[]
+  orderStatusEvents OrderStatusEvent[]
+
+  @@index([tenantId])
+}
+
+model Product {
+  id          String          @id @default(cuid())
+  tenantId    String
+  category    ProductCategory
+  name        String
+  variant     String
+  price       Int
+  stock       Int
+  swatch      String
+  colors      String[]
+  motif       String
+  lengths     String[]
+  description String
+  oldPrice    Int?
+  badge       String?
+  featured    Boolean         @default(false)
+  image       String?
+  gallery     String[]        @default([])
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id])
+  orderLines     OrderLine[]
+  stockMovements StockMovement[]
+
+  @@index([tenantId])
+}
+
+model Customer {
+  id          String          @id @default(cuid())
+  tenantId    String
+  profileId   String?         @unique @db.Uuid
+  name        String
+  initials    String
+  phone       String
+  place       String
+  points      Int             @default(0)
+  ordersCount Int             @default(0)
+  totalSpent  Int             @default(0)
+  vip         Boolean         @default(false)
+  segment     CustomerSegment
+  createdAt   DateTime        @default(now())
+
+  tenant  Tenant   @relation(fields: [tenantId], references: [id])
+  profile Profile? @relation(fields: [profileId], references: [id])
+  orders  Order[]
+
+  @@index([tenantId])
+}
+
+model Order {
+  id             String         @id @default(cuid())
+  tenantId       String
+  ref            String         @unique @default(dbgenerated("('#TER-' || nextval('orders_ref_seq'))"))
+  customerId     String?
+  clientName     String
+  place          String
+  phone          String
+  channel        OrderChannel
+  paymentMethod  PaymentMethod?
+  status         OrderStatus    @default(nouvelle)
+  vipAtOrder     Boolean        @default(false)
+  total          Int
+  promoCode      String? // copie texte du code appliqué (historique stable)
+  promoDiscount  Int            @default(0) // FCFA
+  pointsUsed     Int            @default(0) // nb de points débités
+  pointsDiscount Int            @default(0) // FCFA (= pointsUsed × 50 au taux du moment)
+  createdAt      DateTime       @default(now())
+
+  tenant       Tenant             @relation(fields: [tenantId], references: [id])
+  customer     Customer?          @relation(fields: [customerId], references: [id])
+  lines        OrderLine[]
+  statusEvents OrderStatusEvent[]
+
+  @@index([tenantId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  tenantId  String
+  type      NotificationType
+  title     String
+  body      String
+  href      String
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+}
+
+model StorefrontPage {
+  id          String    @id @default(cuid())
+  tenantId    String
+  slug        String    @default("home")
+  draft       Json
+  published   Json
+  publishedAt DateTime?
+  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime  @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+}
+
+model PromoCode {
+  id        String    @id @default(cuid())
+  tenantId  String
+  code      String // stocké en MAJUSCULES, normalisé à la saisie
+  kind      PromoKind
+  value     Int // % (1-100) si percent, FCFA si amount
+  minTotal  Int? // achat minimum en FCFA
+  startsAt  DateTime?
+  endsAt    DateTime?
+  vipOnly   Boolean   @default(false)
+  active    Boolean   @default(true)
+  usedCount Int       @default(0)
+  createdAt DateTime  @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+}
+
+model StockMovement {
+  id        String              @id @default(cuid())
+  tenantId  String
+  productId String
+  authorId  String              @db.Uuid
+  delta     Int
+  reason    StockMovementReason
+  note      String?
+  createdAt DateTime            @default(now())
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+  author  Profile @relation(fields: [authorId], references: [id])
+
+  @@index([tenantId, productId, createdAt])
+}
+
+/** Journal append-only des changements de statut d'une commande (miroir de StockMovement). */
+model OrderStatusEvent {
+  id        String      @id @default(cuid())
+  tenantId  String
+  orderId   String
+  authorId  String?     @db.Uuid // null pour l'événement "nouvelle" (créé par la cliente, pas de staff)
+  status    OrderStatus
+  createdAt DateTime    @default(now())
+
+  tenant Tenant   @relation(fields: [tenantId], references: [id])
+  order  Order    @relation(fields: [orderId], references: [id])
+  author Profile? @relation(fields: [authorId], references: [id])
+
+  @@index([tenantId, orderId, createdAt])
+}
+
+model OrderLine {
+  id          String @id @default(cuid())
+  orderId     String
+  productId   String
+  nameAtOrder String
+  qty         Int
+  unitPrice   Int
+  discount    Int    @default(0)
+  lineTotal   Int
+
+  order   Order   @relation(fields: [orderId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+}

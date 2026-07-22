@@ -1,4 +1,4 @@
-export type ProductCategory = "Foulards" | "Tissus" | "Accessoires";
+export type ProductCategory = "Foulards" | "Turbans" | "Tissus" | "Accessoires";
 
 export interface Product {
   id: string;
@@ -9,6 +9,24 @@ export interface Product {
   stock: number;
   /** Motif de fond servant de vignette produit (mock, sans image). */
   swatch: string;
+  /** Couleurs disponibles (hex) ; la première sert de teinte principale pour le dégradé vignette. */
+  colors: string[];
+  /** Motif textile (Wax, Bazin, Uni, Kente…) — utilisé par les filtres vitrine. */
+  motif: string;
+  /** Longueurs/tailles disponibles (ex. ["90 × 90 cm", "Sur-mesure"] ou ["Taille unique"]). */
+  lengths: string[];
+  /** Description longue affichée sur la fiche produit. */
+  description: string;
+  /** Prix barré éventuel (ex. article en promotion). */
+  oldPrice?: number;
+  /** Étiquette courte affichée sur la vignette ("Nouveau", "★ VIP"…). */
+  badge?: string;
+  /** Marque ce produit comme le "produit vedette" de la Home. Un seul produit devrait le porter. */
+  featured?: boolean;
+  /** Photo principale (URL publique Supabase Storage) ; absente = repli sur le dégradé `swatch`. */
+  image?: string;
+  /** Photos secondaires affichées dans la galerie de la fiche produit. */
+  gallery: string[];
 }
 
 export type CustomerSegment = "VIP" | "Fidèle" | "Nouvelle";
@@ -26,6 +44,13 @@ export interface Customer {
   seg: CustomerSegment;
 }
 
+/** Une ligne de l'historique d'achats affiché sur une fiche cliente (dashboard) ou la page Compte (vitrine). */
+export interface CustomerOrderHistoryEntry {
+  ref: string;
+  date: string;
+  total: string;
+}
+
 export type OrderStatus =
   | "nouvelle"
   | "confirmee"
@@ -38,12 +63,16 @@ export interface OrderLine {
   qty: number;
   price: string;
   total: string;
+  /** Référence catalogue de l'article — nécessaire pour déduire le stock à la validation. */
+  productId: string;
 }
 
 export type OrderChannel = "Web" | "WhatsApp" | "Boutique";
 
 export interface Order {
   id: string;
+  /** Identifiant non devinable (cuid interne) utilisé dans les liens de suivi public — jamais `ref`, séquentiel. */
+  trackingToken: string;
   cid: string;
   client: string;
   place: string;
@@ -56,4 +85,12 @@ export interface Order {
   status: OrderStatus;
   vip: boolean;
   lines: OrderLine[];
+  /** Σ lineTotal, formaté — affiché quand une remise existe. */
+  subtotal: string;
+  promoCode: string | null;
+  promoDiscount: number;
+  pointsUsed: number;
+  pointsDiscount: number;
+  /** false SEULEMENT pour une commande `nouvelle` dont le code ne passe plus (écart à afficher). */
+  promoStillValid: boolean;
 }

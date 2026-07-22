@@ -31,6 +31,17 @@ yarn-error.log*
 # vercel
 .vercel
 
+# prisma
+/lib/generated/prisma
+
 # editor
 .idea
 .vscode
+
+# claude code (user-local)
+.claude/settings.local.json
+.claude/worktrees/
+.mcp.json
+
+# macos
+* alias

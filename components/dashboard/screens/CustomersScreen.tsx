@@ -3,18 +3,29 @@
 import { useState } from "react";
 import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
-import { clients, customerHistory } from "@/lib/data/clients";
+import type { Customer, CustomerOrderHistoryEntry } from "@/lib/data/types";
 
 const SEGMENTS = ["Toutes", "VIP", "Fidèle", "Nouvelle"] as const;
 
-export function CustomersScreen() {
+export function CustomersScreen({
+  customers,
+  historyByCustomerId,
+}: {
+  customers: Customer[];
+  historyByCustomerId: Record<string, CustomerOrderHistoryEntry[]>;
+}) {
   const [seg, setSeg] = useState<(typeof SEGMENTS)[number]>("Toutes");
-  const [selId, setSelId] = useState<string>("c1");
+  const [query, setQuery] = useState("");
+  const [selId, setSelId] = useState<string>(customers[0]?.id ?? "");
 
-  const list = clients.filter(
-    (c) => seg === "Toutes" || c.seg === seg || (seg === "VIP" && c.vip)
+  const q = query.trim().toLowerCase();
+  const list = customers.filter(
+    (c) =>
+      (seg === "Toutes" || c.seg === seg || (seg === "VIP" && c.vip)) &&
+      (!q || c.name.toLowerCase().includes(q) || c.phone.toLowerCase().includes(q))
   );
-  const cd = clients.find((c) => c.id === selId) ?? clients[0];
+  const cd = customers.find((c) => c.id === selId) ?? customers[0];
+  const history = cd ? historyByCustomerId[cd.id] ?? [] : [];
 
   return (
     <div className="ft-pad">
@@ -24,7 +35,12 @@ export function CustomersScreen() {
           <div style={{ padding: "13px 16px", borderBottom: `1px solid ${colors.borderSoft}`, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             <div style={{ flex: 1, minWidth: 140, display: "flex", alignItems: "center", height: 38, padding: "0 12px", border: `1.5px solid ${colors.borderField}`, borderRadius: 10, gap: 8 }}>
               <Icon path={ICONS.search} size={16} stroke={colors.muted} />
-              <input placeholder="Rechercher une cliente…" style={{ flex: 1, border: "none", outline: "none", font: `400 13px ${fonts.ui}`, background: "transparent" }} />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Rechercher une cliente…"
+                style={{ flex: 1, border: "none", outline: "none", font: `400 13px ${fonts.ui}`, background: "transparent" }}
+              />
             </div>
           </div>
           <div style={{ display: "flex", gap: 7, padding: "11px 16px", borderBottom: "1px solid #F1ECE2", flexWrap: "wrap" }}>
@@ -51,7 +67,12 @@ export function CustomersScreen() {
             })}
           </div>
           <div style={{ maxHeight: 520, overflowY: "auto" }}>
-            {list.map((c) => (
+            {list.length === 0 ? (
+              <div style={{ padding: "24px 16px", textAlign: "center", color: colors.muted, fontSize: 13 }}>
+                Aucune cliente ne correspond à cette recherche.
+              </div>
+            ) : (
+            list.map((c) => (
               <div
                 key={c.id}
                 onClick={() => setSelId(c.id)}
@@ -94,13 +115,20 @@ export function CustomersScreen() {
                 </div>
                 <span style={{ font: `600 12.5px ${fonts.ui}`, color: colors.gold }}>★ {c.points}</span>
               </div>
-            ))}
+            ))
+            )}
           </div>
         </div>
 
         {/* detail + loyalty */}
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <div style={{ background: "#fff", border: "1px solid rgba(30,27,24,.08)", borderRadius: 14, padding: "18px 20px" }}>
+          {!cd ? (
+            <div style={{ background: "#fff", border: "1px solid rgba(30,27,24,.08)", borderRadius: 14, padding: "40px 20px", textAlign: "center", color: colors.muted, fontSize: 13.5 }}>
+              Aucune cliente enregistrée pour l&apos;instant.
+            </div>
+          ) : (
+            <>
+              <div style={{ background: "#fff", border: "1px solid rgba(30,27,24,.08)", borderRadius: 14, padding: "18px 20px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
               <span
                 style={{
@@ -134,15 +162,24 @@ export function CustomersScreen() {
               <StatBox label="Dépensé" value={cd.spent} />
               <StatBox label="Commandes" value={cd.orders} />
             </div>
-            <div style={sectionLabel}>Historique d&apos;achats</div>
-            {customerHistory.map((h) => (
-              <div key={h.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: `1px solid ${colors.faintLine}`, fontSize: 13 }}>
-                <div>
-                  <span style={{ fontWeight: 600 }}>{h.id}</span> <span style={{ color: colors.muted }}>· {h.date}</span>
-                </div>
-                <span style={{ fontWeight: 600 }}>{h.total}</span>
-              </div>
-            ))}
+                <div style={sectionLabel}>Historique d&apos;achats</div>
+                {history.length === 0 ? (
+                  <div style={{ padding: "9px 0", fontSize: 13, color: colors.muted }}>
+                    Aucune commande confirmée pour l&apos;instant.
+                  </div>
+                ) : (
+                  history.map((h) => (
+                    <div
+                      key={h.ref}
+                      style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: `1px solid ${colors.faintLine}`, fontSize: 13 }}
+                    >
+                      <div>
+                        <span style={{ fontWeight: 600 }}>{h.ref}</span> <span style={{ color: colors.muted }}>· {h.date}</span>
+                      </div>
+                      <span style={{ fontWeight: 600 }}>{h.total}</span>
+                    </div>
+                  ))
+                )}
           </div>
 
           {/* loyalty config */}
@@ -171,7 +208,9 @@ export function CustomersScreen() {
               </span>
               <span style={{ fontSize: 13.5 }}>Promo d&apos;anniversaire automatique (−15%)</span>
             </label>
-          </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

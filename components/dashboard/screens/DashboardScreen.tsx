@@ -4,50 +4,72 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
-import { catalog } from "@/lib/data/catalog";
-import { orders } from "@/lib/data/orders";
-import { effStatus } from "@/lib/data/orderStatus";
-import { money } from "@/lib/format";
+import type { Order, Product } from "@/lib/data/types";
+import { money, fmt } from "@/lib/format";
 import { initials } from "@/lib/format";
-import { useBackoffice } from "@/lib/store/useBackoffice";
+import type { DashboardStats } from "@/lib/data/dashboard.server";
 
-const KPIS = [
-  { label: "CA du jour", value: "248 000", unit: "FCFA", delta: "+18%", sub: "vs hier", up: true, icon: ICONS.trendUp },
-  { label: "Ventes", value: "32", unit: "", delta: "+5", sub: "vs hier", up: true, icon: ICONS.orders },
-  { label: "Panier moyen", value: "7 750", unit: "FCFA", delta: "+3%", sub: "", up: true, icon: ICONS.cart },
-];
-
-const T7: Array<[string, number]> = [
-  ["Lun", 180], ["Mar", 142], ["Mer", 210], ["Jeu", 168], ["Ven", 248], ["Sam", 300], ["Dim", 132],
-];
-const T30: Array<[string, number]> = [
-  ["S1", 940], ["S2", 1120], ["S3", 870], ["S4", 1340],
-];
-
-export function DashboardScreen() {
+export function DashboardScreen({
+  products,
+  orders,
+  stats,
+}: {
+  products: Product[];
+  orders: Order[];
+  stats: DashboardStats;
+}) {
   const router = useRouter();
   const [booting, setBooting] = useState(true);
   const [range, setRange] = useState<"7" | "30">("7");
-  const overrides = useBackoffice((s) => s.orderStatus);
 
   useEffect(() => {
     const t = setTimeout(() => setBooting(false), 750);
     return () => clearTimeout(t);
   }, []);
 
-  const trend = useMemo(() => {
-    const raw = range === "7" ? T7 : T30;
-    const max = Math.max(...raw.map((r) => r[1]));
-    return raw.map((r, i) => ({
-      label: r[0],
-      h: Math.round((r[1] / max) * 100) + "%",
-      fill: (range === "7" && i === 5) || (range === "30" && i === 3) ? colors.accent : colors.primary,
-    }));
-  }, [range]);
+  const kpis = useMemo(() => {
+    const describe = (delta: number | null) => ({
+      tone: delta === null ? "neutral" : delta < 0 ? "down" : "up",
+      delta: delta === null ? "—" : `${delta > 0 ? "+" : ""}${delta}%`,
+      sub: delta === null ? "pas de vente hier" : "vs hier",
+    });
+    return [
+      { label: "CA du jour", value: fmt(stats.today.revenue), unit: "FCFA", icon: ICONS.trendUp, ...describe(stats.deltas.revenue) },
+      { label: "Ventes", value: String(stats.today.transactions), unit: "", icon: ICONS.orders, ...describe(stats.deltas.transactions) },
+      { label: "Panier moyen", value: fmt(stats.today.averageBasket), unit: "FCFA", icon: ICONS.cart, ...describe(stats.deltas.averageBasket) },
+    ];
+  }, [stats]);
 
-  const lowStock = catalog.filter((p) => p.stock <= 9).slice(0, 4);
-  const lowStockCount = catalog.filter((p) => p.stock <= 9).length;
-  const nouvelles = orders.filter((o) => effStatus(o, overrides) === "nouvelle");
+  const trend = useMemo(() => {
+    const raw = range === "7" ? stats.series7 : stats.series30;
+    const max = Math.max(0, ...raw.map((r) => r.value));
+    const peak = raw.findIndex((r) => r.value === max && max > 0);
+    return raw.map((r, i) => ({
+      label: r.label,
+      h: max === 0 ? "0%" : Math.round((r.value / max) * 100) + "%",
+      fill: i === peak ? colors.accent : colors.primary,
+    }));
+  }, [range, stats]);
+
+  const channelSplit = useMemo(() => {
+    const { inStore, online } = stats.channelSplit;
+    const total = inStore + online;
+    if (total === 0) {
+      return { inStorePct: 100, onlinePct: 0, hasData: false, inStore: 0, online: 0 };
+    }
+    return {
+      inStorePct: Math.round((inStore / total) * 100),
+      onlinePct: Math.round((online / total) * 100),
+      hasData: true,
+      inStore,
+      online,
+    };
+  }, [stats]);
+
+  const lowStockAlerts = products.filter((p) => p.stock <= 9);
+  const lowStock = lowStockAlerts.slice(0, 4);
+  const lowStockCount = lowStockAlerts.length;
+  const nouvelles = orders.filter((o) => o.status === "nouvelle");
   const toValidate = nouvelles.slice(0, 3);
 
   if (booting) {
@@ -71,7 +93,7 @@ export function DashboardScreen() {
     <div className="ft-pad" style={{ maxWidth: 1240 }}>
       {/* KPI */}
       <div className="ft-grid-3" style={{ marginBottom: 18 }}>
-        {KPIS.map((k) => (
+        {kpis.map((k) => (
           <div
             key={k.label}
             style={{
@@ -109,17 +131,19 @@ export function DashboardScreen() {
                 alignItems: "center",
                 gap: 5,
                 font: `600 12.5px ${fonts.ui}`,
-                color: k.up ? colors.fgSuccess : colors.fgDanger,
-                background: k.up ? colors.bgSuccess : colors.bgDanger,
+                color: k.tone === "neutral" ? colors.muted : (k.tone === "up" ? colors.fgSuccess : colors.fgDanger),
+                background: k.tone === "neutral" ? colors.bgInfo : (k.tone === "up" ? colors.bgSuccess : colors.bgDanger),
                 padding: "3px 8px",
                 borderRadius: 999,
               }}
             >
-              <Icon
-                path={k.up ? ICONS.arrowUpRight : ICONS.arrowDownRight}
-                size={13}
-                stroke={k.up ? colors.success : colors.danger}
-              />
+              {k.tone !== "neutral" && (
+                <Icon
+                  path={k.tone === "up" ? ICONS.arrowUpRight : ICONS.arrowDownRight}
+                  size={13}
+                  stroke={k.tone === "up" ? colors.success : colors.danger}
+                />
+              )}
               {k.delta} {k.sub}
             </div>
           </div>
@@ -148,7 +172,9 @@ export function DashboardScreen() {
         >
           <div>
             <div style={{ fontWeight: 600, fontSize: 15.5 }}>Tendance des ventes</div>
-            <div style={{ fontSize: 12.5, color: colors.muted }}>Chiffre d&apos;affaires quotidien</div>
+            <div style={{ fontSize: 12.5, color: colors.muted }}>
+              {range === "7" ? "Chiffre d'affaires quotidien" : "Chiffre d'affaires hebdomadaire"}
+            </div>
           </div>
           <div style={{ display: "flex", gap: 6, background: "#F1ECE2", padding: 3, borderRadius: 9 }}>
             {(["7", "30"] as const).map((r) => {
@@ -168,7 +194,7 @@ export function DashboardScreen() {
                     color: on ? colors.primary : colors.muted,
                   }}
                 >
-                  {r} jours
+                  {r === "7" ? "7 jours" : "4 semaines"}
                 </button>
               );
             })}
@@ -226,7 +252,7 @@ export function DashboardScreen() {
             </div>
           ))}
           <div style={{ padding: "11px 18px" }}>
-            <button onClick={() => router.push("/inventaire")} style={linkBtn}>
+            <button onClick={() => router.push("/admin/inventaire")} style={linkBtn}>
               Voir l&apos;inventaire →
             </button>
           </div>
@@ -242,7 +268,7 @@ export function DashboardScreen() {
           {toValidate.map((o) => (
             <div
               key={o.id}
-              onClick={() => router.push(`/commandes?sel=${encodeURIComponent(o.id)}`)}
+              onClick={() => router.push(`/admin/commandes?sel=${encodeURIComponent(o.id)}`)}
               className="ft-hover-surface"
               style={{ ...rowStyle, cursor: "pointer" }}
             >
@@ -259,7 +285,7 @@ export function DashboardScreen() {
             </div>
           ))}
           <div style={{ padding: "11px 18px" }}>
-            <button onClick={() => router.push("/commandes")} style={linkBtn}>
+            <button onClick={() => router.push("/admin/commandes")} style={linkBtn}>
               Traiter les commandes →
             </button>
           </div>
@@ -271,12 +297,18 @@ export function DashboardScreen() {
         <div style={{ fontWeight: 600, fontSize: 14.5, marginBottom: 4 }}>Physique vs En ligne</div>
         <div style={{ fontSize: 12.5, color: colors.muted, marginBottom: 16 }}>Répartition du CA aujourd&apos;hui</div>
         <div style={{ display: "flex", height: 16, borderRadius: 999, overflow: "hidden", marginBottom: 14 }}>
-          <div style={{ width: "62%", background: colors.primary }} />
-          <div style={{ width: "38%", background: colors.accent }} />
+          {channelSplit.hasData ? (
+            <>
+              <div style={{ width: `${channelSplit.inStorePct}%`, background: colors.primary }} />
+              <div style={{ width: `${channelSplit.onlinePct}%`, background: colors.accent }} />
+            </>
+          ) : (
+            <div style={{ width: "100%", background: colors.borderSoft }} />
+          )}
         </div>
         <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
-          <Legend color={colors.primary} label="Boutique physique" value={money(153760)} />
-          <Legend color={colors.accent} label="En ligne" value={money(94240)} />
+          <Legend color={colors.primary} label="Boutique physique" value={money(channelSplit.inStore)} />
+          <Legend color={colors.accent} label="En ligne" value={money(channelSplit.online)} />
         </div>
       </div>
     </div>

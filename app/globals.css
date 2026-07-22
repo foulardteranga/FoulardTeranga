@@ -280,3 +280,213 @@ textarea {
   animation: ft-pulse 1.4s ease-in-out infinite;
   border-radius: 8px;
 }
+
+/* ============================================================
+   Vitrine (storefront) — densité confortable (DESIGN.md §14)
+   Breakpoint partagé avec le back-office : 860px.
+   ============================================================ */
+
+.ft-store-header-pad {
+  padding: 14px 20px;
+}
+.ft-store-logo {
+  font-size: 23px;
+}
+.ft-store-section {
+  padding: 40px 20px;
+}
+.ft-store-section-tight {
+  padding: 12px 20px;
+}
+.ft-store-page {
+  padding: 32px 20px 48px;
+}
+.ft-store-h1 {
+  font-size: 36px;
+}
+.ft-store-h2 {
+  font-size: 30px;
+}
+.ft-store-hero {
+  border-radius: 22px;
+  min-height: 520px;
+}
+.ft-store-hero-text {
+  padding: 44px 48px 48px;
+}
+.ft-store-hero-title {
+  font-size: 52px;
+}
+.ft-store-hero-sub {
+  font-size: 16px;
+}
+.ft-store-cats {
+  grid-template-columns: repeat(3, 1fr);
+}
+.ft-store-home-grid {
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+.ft-store-catalog-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+.ft-store-promo {
+  padding: 32px 40px;
+}
+.ft-store-promo-title {
+  font-size: 25px;
+}
+.ft-store-feat {
+  grid-template-columns: 1fr 1fr;
+}
+.ft-store-feat-img {
+  min-height: 420px;
+}
+.ft-store-feat-pad {
+  padding: 44px 48px;
+}
+.ft-store-feat-title {
+  font-size: 34px;
+}
+.ft-store-story {
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+}
+.ft-store-story-img {
+  min-height: 400px;
+}
+.ft-store-look-grid {
+  grid-template-columns: repeat(4, 1fr);
+}
+.ft-store-contact {
+  grid-template-columns: 1fr 1.2fr;
+}
+.ft-store-catalog-layout {
+  grid-template-columns: 260px 1fr;
+}
+.ft-store-detail {
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+}
+.ft-store-cart-layout {
+  grid-template-columns: 1fr 320px;
+}
+.ft-store-checkout-layout {
+  grid-template-columns: 1.4fr 1fr;
+}
+.ft-store-account-grid {
+  grid-template-columns: 1fr 1fr;
+}
+.ft-store-conf-pad {
+  padding: 44px 40px;
+}
+.ft-store-toast {
+  bottom: 28px;
+}
+
+@media (max-width: 859.98px) {
+  .ft-store-header-pad {
+    padding: 10px 16px;
+  }
+  .ft-store-logo {
+    font-size: 20px;
+  }
+  .ft-store-section {
+    padding: 20px 16px;
+  }
+  .ft-store-section-tight {
+    padding: 8px 16px;
+  }
+  .ft-store-page {
+    padding: 18px 16px 32px;
+  }
+  .ft-store-h1 {
+    font-size: 28px;
+  }
+  .ft-store-h2 {
+    font-size: 24px;
+  }
+  .ft-store-hero {
+    border-radius: 18px;
+    min-height: 440px;
+  }
+  .ft-store-hero-text {
+    padding: 22px 20px 26px;
+  }
+  .ft-store-hero-title {
+    font-size: 36px;
+  }
+  .ft-store-hero-sub {
+    font-size: 14px;
+  }
+  .ft-store-cats {
+    grid-template-columns: 1fr;
+  }
+  .ft-store-home-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .ft-store-catalog-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .ft-store-promo {
+    padding: 24px 20px;
+  }
+  .ft-store-promo-title {
+    font-size: 21px;
+  }
+  .ft-store-feat {
+    grid-template-columns: 1fr;
+  }
+  .ft-store-feat-img {
+    min-height: 300px;
+  }
+  .ft-store-feat-pad {
+    padding: 26px 22px;
+  }
+  .ft-store-feat-title {
+    font-size: 26px;
+  }
+  .ft-store-story {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .ft-store-story-img {
+    min-height: 260px;
+  }
+  .ft-store-look-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .ft-store-contact {
+    grid-template-columns: 1fr;
+  }
+  .ft-store-catalog-layout {
+    grid-template-columns: 1fr;
+  }
+  .ft-store-detail {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .ft-store-cart-layout {
+    grid-template-columns: 1fr;
+  }
+  .ft-store-checkout-layout {
+    grid-template-columns: 1fr;
+  }
+  .ft-store-account-grid {
+    grid-template-columns: 1fr;
+  }
+  .ft-store-conf-pad {
+    padding: 32px 22px;
+  }
+  .ft-store-toast {
+    bottom: 80px;
+  }
+}
+
+/* Éditeur vitrine : deux colonnes (canevas + réglages), empilées sur mobile. */
+@media (max-width: 859.98px) {
+  .ft-editor-cols {
+    grid-template-columns: 1fr !important;
+  }
+}

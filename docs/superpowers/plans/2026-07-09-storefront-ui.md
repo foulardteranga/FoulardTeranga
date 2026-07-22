@@ -14,7 +14,7 @@
 - Order totals are **always recomputed** by `useShop.submitWebOrder` — the checkout view sends line items, never a client-computed total. (CLAUDE.md §9)
 - The shop is based in **Abidjan, Côte d'Ivoire (+225)**, but the KYC phone field accepts free international input — no hardcoded country prefix in any input UI (a real bug in the source design mockup, already corrected in Plan 1's validator; don't reintroduce it here).
 - TypeScript `strict`; **never** use `any`.
-- Product-facing copy in French; code identifiers in English.
+- Product-facing copy in French; code identifiers and commit messages in English. Comments follow the existing codebase convention (French) — do not flag French comments.
 - **Server Components by default** — add `"use client"` only when the component uses a hook (`useStorefront`, `useShop`, `useState`, `useSearchParams`, `useRouter`) or an event handler.
 - Responsive behavior (860px breakpoint) is CSS-only (`.ft-desktop-only` / `.ft-mobile-only` and the new `.ft-store-*` classes) — no `window.innerWidth` state, to keep server and client render identical on first paint.
 - Reuse existing shared primitives: `colors`/`fonts` from `lib/theme/tokens.ts`, `Icon`/`ICONS` from `components/ui/Icon.tsx`, `fmt`/`money`/`initials` from `lib/format.ts`. Add to these registries rather than duplicating them.

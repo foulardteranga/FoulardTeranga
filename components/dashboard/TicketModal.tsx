@@ -3,6 +3,7 @@
 import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { useBackoffice } from "@/lib/store/useBackoffice";
+import { money, whatsappLink, whatsappShareLink } from "@/lib/format";
 
 export function TicketModal() {
   const ticket = useBackoffice((s) => s.ticket);
@@ -57,8 +58,25 @@ export function TicketModal() {
           </div>
         </div>
         <div style={{ padding: "20px 24px" }}>
+          <Row label="Référence" value={ticket.ref} strong />
           <Row label="Articles" value={String(ticket.items)} />
           <Row label="Mode de paiement" value={ticket.pay} strong />
+          <div style={{ borderTop: `1px solid ${colors.borderSoft}`, margin: "10px 0", paddingTop: 10 }}>
+            {ticket.lines.map((l, i) => (
+              <div key={`${l.name}-${i}`} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, padding: "3px 0", color: colors.ink }}>
+                <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.name} × {l.qty}</span>
+                <span style={{ fontWeight: 600 }}>{money(l.lineTotal)}</span>
+              </div>
+            ))}
+          </div>
+          {(ticket.discount > 0 || ticket.promo || ticket.pointsUsed) && (
+            <Row label="Sous-total" value={money(ticket.subtotal)} />
+          )}
+          {ticket.discount > 0 && <Row label="Remise" value={`−${money(ticket.discount)}`} />}
+          {ticket.promo && <Row label={`Code ${ticket.promo.code}`} value={`−${money(ticket.promo.discount)}`} />}
+          {ticket.pointsUsed && (
+            <Row label={`Points (${ticket.pointsUsed.points})`} value={`−${money(ticket.pointsUsed.discount)}`} />
+          )}
           <div
             style={{
               display: "flex",
@@ -81,42 +99,76 @@ export function TicketModal() {
               {ticket.total}
             </span>
           </div>
-          <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+          {ticket.loyalty && (
+            <Row
+              label="Points gagnés"
+              value={`+${ticket.loyalty.pointsEarned} · solde ${ticket.loyalty.newBalance}`}
+            />
+          )}
+          <div style={{ marginTop: 20 }}>
             <button
-              onClick={closeTicket}
-              style={{
-                flex: 1,
-                height: 46,
-                border: `1.5px solid ${colors.borderField}`,
-                borderRadius: 10,
-                background: "#fff",
-                color: colors.primary,
-                font: `600 14px ${fonts.ui}`,
-                cursor: "pointer",
+              onClick={() => {
+                const url = ticket.customerPhone
+                  ? whatsappLink(ticket.customerPhone, ticket.waMessage)
+                  : whatsappShareLink(ticket.waMessage);
+                window.open(url, "_blank", "noopener");
               }}
-            >
-              Nouvelle vente
-            </button>
-            <button
-              onClick={closeTicket}
               style={{
-                flex: 1,
+                width: "100%",
                 height: 46,
                 border: "none",
                 borderRadius: 10,
-                background: colors.primary,
+                background: "#25D366",
                 color: "#fff",
                 font: `600 14px ${fonts.ui}`,
                 cursor: "pointer",
+                marginBottom: 10,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 7,
               }}
             >
-              <Icon path={ICONS.print} size={16} stroke="#fff" strokeWidth={1.9} />
-              Imprimer
+              {ICONS.whatsapp && <Icon path={ICONS.whatsapp} size={16} stroke="#fff" strokeWidth={1.9} />}
+              Envoyer sur WhatsApp
             </button>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={closeTicket}
+                style={{
+                  flex: 1,
+                  height: 46,
+                  border: `1.5px solid ${colors.borderField}`,
+                  borderRadius: 10,
+                  background: "#fff",
+                  color: colors.primary,
+                  font: `600 14px ${fonts.ui}`,
+                  cursor: "pointer",
+                }}
+              >
+                Nouvelle vente
+              </button>
+              <button
+                onClick={() => window.print()}
+                style={{
+                  flex: 1,
+                  height: 46,
+                  border: "none",
+                  borderRadius: 10,
+                  background: colors.primary,
+                  color: "#fff",
+                  font: `600 14px ${fonts.ui}`,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 7,
+                }}
+              >
+                <Icon path={ICONS.print} size={16} stroke="#fff" strokeWidth={1.9} />
+                Imprimer
+              </button>
+            </div>
           </div>
         </div>
       </div>

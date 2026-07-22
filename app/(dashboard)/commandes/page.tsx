@@ -1,3 +1,4 @@
+import { getOrders } from "@/lib/data/orders.server";
 import { OrdersScreen } from "@/components/dashboard/screens/OrdersScreen";
 
 export default async function OrdersPage({
@@ -6,5 +7,6 @@ export default async function OrdersPage({
   searchParams: Promise<{ sel?: string }>;
 }) {
   const { sel } = await searchParams;
-  return <OrdersScreen initialSel={sel} />;
+  const orders = await getOrders();
+  return <OrdersScreen orders={orders} initialSel={sel} />;
 }

@@ -1,12 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
-import { orders } from "@/lib/data/orders";
-import { effStatus, statusMeta } from "@/lib/data/orderStatus";
-import { initials } from "@/lib/format";
+import { statusMeta } from "@/lib/data/orderStatus";
+import { initials, money, whatsappLink } from "@/lib/format";
 import { useBackoffice } from "@/lib/store/useBackoffice";
+import { storefrontOrigin } from "@/lib/storefront/origin";
+import {
+  confirmOrder, rejectOrder, updateOrder, markPreparing, markDelivered, getOrderStatusHistoryAction,
+} from "@/lib/orders/actions";
+import { OrderStatusTimeline } from "@/components/orders/OrderStatusTimeline";
+import type { OrderStatusEventView } from "@/lib/data/orders.server";
 import type { Order, OrderStatus } from "@/lib/data/types";
 
 const FILTERS: Array<[string, string, OrderStatus | null]> = [
@@ -18,24 +24,23 @@ const FILTERS: Array<[string, string, OrderStatus | null]> = [
   ["all", "Toutes", null],
 ];
 
-export function OrdersScreen({ initialSel }: { initialSel?: string }) {
+export function OrdersScreen({ orders, initialSel }: { orders: Order[]; initialSel?: string }) {
   const [filter, setFilter] = useState<string>("toValidate");
   const [selId, setSelId] = useState<string | null>(initialSel ?? null);
+  const [editing, setEditing] = useState(false);
+  const [historyVersion, setHistoryVersion] = useState(0);
+  const router = useRouter();
 
-  const overrides = useBackoffice((s) => s.orderStatus);
-  const autoValidate = useBackoffice((s) => s.autoValidate);
-  const toggleAuto = useBackoffice((s) => s.toggleAuto);
-  const setOrderStatus = useBackoffice((s) => s.setOrderStatus);
   const showToast = useBackoffice((s) => s.showToast);
 
   const cur = FILTERS.find((f) => f[0] === filter)!;
-  const list = orders.filter((o) => (filter === "all" ? true : effStatus(o, overrides) === cur[2]));
+  const list = orders.filter((o) => (filter === "all" ? true : o.status === cur[2]));
 
   const selected: Order | undefined =
     orders.find((o) => o.id === selId) ?? list[0] ?? orders[0];
 
   const count = (st: OrderStatus | null) =>
-    st === null ? orders.length : orders.filter((o) => effStatus(o, overrides) === st).length;
+    st === null ? orders.length : orders.filter((o) => o.status === st).length;
 
   return (
     <div className="ft-pad">
@@ -56,36 +61,8 @@ export function OrdersScreen({ initialSel }: { initialSel?: string }) {
       >
         <Icon path={ICONS.info} size={18} stroke={colors.primary} strokeWidth={1.8} style={{ flex: "none" }} />
         <span style={{ flex: 1 }}>
-          Le stock n&apos;est déduit qu&apos;à la <strong>validation</strong> d&apos;une commande.{" "}
+          Le stock n&apos;est déduit qu&apos;à la <strong>validation</strong> d&apos;une commande.
         </span>
-        <label style={{ display: "flex", alignItems: "center", gap: 9, cursor: "pointer", flex: "none" }}>
-          <span style={{ fontWeight: 600, fontSize: 12.5 }}>Validation auto</span>
-          <span
-            onClick={toggleAuto}
-            style={{
-              width: 44,
-              height: 26,
-              borderRadius: 999,
-              position: "relative",
-              background: autoValidate ? colors.success : colors.borderField,
-              transition: "background .15s",
-            }}
-          >
-            <span
-              style={{
-                position: "absolute",
-                top: 3,
-                width: 20,
-                height: 20,
-                borderRadius: 999,
-                background: "#fff",
-                boxShadow: "0 1px 2px rgba(0,0,0,.2)",
-                transition: "left .15s",
-                left: autoValidate ? 21 : 3,
-              }}
-            />
-          </span>
-        </label>
       </div>
 
       {/* filter tabs */}
@@ -165,7 +142,7 @@ export function OrdersScreen({ initialSel }: { initialSel?: string }) {
             </div>
           ) : (
             list.map((o) => {
-              const st = statusMeta[effStatus(o, overrides)];
+              const st = statusMeta[o.status];
               return (
                 <div
                   key={o.id}
@@ -217,20 +194,48 @@ export function OrdersScreen({ initialSel }: { initialSel?: string }) {
           >
             <OrderDetail
               order={selected}
-              status={effStatus(selected, overrides)}
-              onValidate={() => {
-                setOrderStatus(selected.id, "confirmee");
+              status={selected.status}
+              historyVersion={historyVersion}
+              onValidate={async () => {
+                const result = await confirmOrder(selected.id);
+                if (!result.ok) { showToast(result.error, "error"); return; }
                 showToast("Commande validée — stock déduit", "success");
+                setHistoryVersion((v) => v + 1);
               }}
-              onRefuse={() => {
-                setOrderStatus(selected.id, "refusee");
+              onRefuse={async () => {
+                const result = await rejectOrder(selected.id);
+                if (!result.ok) { showToast(result.error, "error"); return; }
                 showToast("Commande refusée", "error");
+                setHistoryVersion((v) => v + 1);
               }}
-              onEdit={() => showToast("Édition de la commande…", "success")}
+              onMarkPreparing={async () => {
+                const result = await markPreparing(selected.id);
+                if (!result.ok) { showToast(result.error, "error"); return; }
+                showToast("Commande en préparation", "success");
+                setHistoryVersion((v) => v + 1);
+              }}
+              onMarkDelivered={async () => {
+                const result = await markDelivered(selected.id);
+                if (!result.ok) { showToast(result.error, "error"); return; }
+                showToast("Commande marquée livrée", "success");
+                setHistoryVersion((v) => v + 1);
+              }}
+              onEdit={() => setEditing(true)}
             />
           </div>
         )}
       </div>
+
+      {editing && selected && (
+        <EditOrderModal
+          order={selected}
+          onClose={() => setEditing(false)}
+          onSaved={() => {
+            setEditing(false);
+            router.refresh();
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -259,20 +264,42 @@ function Badge({ meta }: { meta: (typeof statusMeta)[OrderStatus] }) {
 function OrderDetail({
   order: o,
   status,
+  historyVersion,
   onValidate,
   onRefuse,
+  onMarkPreparing,
+  onMarkDelivered,
   onEdit,
 }: {
   order: Order;
   status: OrderStatus;
+  historyVersion: number;
   onValidate: () => void;
   onRefuse: () => void;
+  onMarkPreparing: () => void;
+  onMarkDelivered: () => void;
   onEdit: () => void;
 }) {
   const meta = statusMeta[status];
   const actionable = status === "nouvelle";
-  const done = status === "livree" || status === "refusee" || status === "confirmee";
-  const doneWord = status === "refusee" ? "refusée" : status === "confirmee" ? "confirmée" : "livrée";
+  const canPrepare = status === "confirmee";
+  const canDeliver = status === "preparation";
+  const done = status === "livree" || status === "refusee";
+
+  const [events, setEvents] = useState<OrderStatusEventView[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    getOrderStatusHistoryAction(o.id).then((res) => {
+      if (!cancelled && res.ok) setEvents(res.events);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [o.id, historyVersion]);
+
+  // Calculé après montage : évite un mismatch d'hydratation (window absent au SSR).
+  const [origin, setOrigin] = useState("");
+  useEffect(() => setOrigin(storefrontOrigin()), []);
 
   return (
     <>
@@ -301,6 +328,12 @@ function OrderDetail({
       </div>
 
       <div style={{ padding: "16px 18px" }}>
+        {/* suivi de statut */}
+        <div style={kycLabel}>Suivi de la commande</div>
+        <div style={{ border: `1px solid ${colors.borderSoft}`, borderRadius: 12, padding: "13px 15px", marginBottom: 14 }}>
+          <OrderStatusTimeline status={status} events={events} showAuthor />
+        </div>
+
         {/* KYC */}
         <div style={{ background: colors.ivory, border: `1px solid ${colors.borderSoft}`, borderRadius: 12, padding: "13px 15px", marginBottom: 14 }}>
           <div style={kycLabel}>Mini-fiche cliente</div>
@@ -339,33 +372,69 @@ function OrderDetail({
               <span style={{ fontWeight: 600, fontSize: 13 }}>{li.total}</span>
             </div>
           ))}
-          <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 13px", background: colors.rowAlt }}>
-            <span style={{ fontWeight: 600, fontSize: 14 }}>Total</span>
-            <span style={{ fontFamily: fonts.display, fontWeight: 700, fontSize: 19, color: colors.primary }}>{o.total}</span>
+          <div style={{ padding: "12px 13px", background: colors.rowAlt }}>
+            {(o.promoDiscount > 0 || o.pointsUsed > 0) && (
+              <>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
+                  <span style={{ color: colors.muted }}>Sous-total</span>
+                  <span style={{ fontWeight: 600 }}>{o.subtotal}</span>
+                </div>
+                {o.promoDiscount > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
+                    <span style={{ color: colors.muted }}>Code {o.promoCode}</span>
+                    <span style={{ fontWeight: 600, color: colors.fgSuccess }}>−{money(o.promoDiscount)}</span>
+                  </div>
+                )}
+                {o.pointsUsed > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
+                    <span style={{ color: colors.muted }}>Points ({o.pointsUsed})</span>
+                    <span style={{ fontWeight: 600, color: colors.fgSuccess }}>−{money(o.pointsDiscount)}</span>
+                  </div>
+                )}
+              </>
+            )}
+            {!o.promoStillValid && o.status === "nouvelle" && (
+              <div style={{ background: colors.bgWarning, color: colors.fgWarning, borderRadius: 8, padding: "8px 10px", font: `500 12.5px ${fonts.ui}`, marginBottom: 8 }}>
+                Le code {o.promoCode} n&apos;est plus valide — valider appliquera le total sans cette remise.
+              </div>
+            )}
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span style={{ fontWeight: 600, fontSize: 14 }}>Total</span>
+              <span style={{ fontFamily: fonts.display, fontWeight: 700, fontSize: 19, color: colors.primary }}>{o.total}</span>
+            </div>
           </div>
         </div>
 
-        <button
-          className="ft-hover-surface"
-          style={{
-            width: "100%",
-            height: 44,
-            border: `1.5px solid ${colors.success}`,
-            borderRadius: 10,
-            background: colors.bgSuccess,
-            color: colors.fgSuccess,
-            font: `600 13.5px ${fonts.ui}`,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 9,
-            marginBottom: 14,
-          }}
-        >
-          <Icon path={ICONS.whatsapp} size={17} stroke={colors.success} strokeWidth={1.9} />
-          Contacter la cliente (WhatsApp / appel)
-        </button>
+        {o.phone && (
+          <a
+            href={whatsappLink(
+              o.phone,
+              `Bonjour ${o.client}, à propos de votre commande ${o.id}… Suivez-la ici : ${origin}/confirmation?token=${o.trackingToken}`
+            )}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ft-hover-surface"
+            style={{
+              width: "100%",
+              height: 44,
+              border: `1.5px solid ${colors.success}`,
+              borderRadius: 10,
+              background: colors.bgSuccess,
+              color: colors.fgSuccess,
+              font: `600 13.5px ${fonts.ui}`,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 9,
+              marginBottom: 14,
+              textDecoration: "none",
+            }}
+          >
+            <Icon path={ICONS.whatsapp} size={17} stroke={colors.success} strokeWidth={1.9} />
+            Contacter la cliente (WhatsApp / appel)
+          </a>
+        )}
 
         {actionable ? (
           <>
@@ -396,10 +465,26 @@ function OrderDetail({
               Valider déduira le stock des articles.
             </div>
           </>
+        ) : canPrepare ? (
+          <button
+            onClick={onMarkPreparing}
+            className="ft-primary-btn"
+            style={{ width: "100%", height: 48, border: "none", borderRadius: 10, background: colors.primary, color: "#fff", font: `700 14px ${fonts.ui}`, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+          >
+            Passer en préparation
+          </button>
+        ) : canDeliver ? (
+          <button
+            onClick={onMarkDelivered}
+            className="ft-primary-btn"
+            style={{ width: "100%", height: 48, border: "none", borderRadius: 10, background: colors.primary, color: "#fff", font: `700 14px ${fonts.ui}`, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+          >
+            Marquer comme livrée
+          </button>
         ) : (
           done && (
             <div style={{ textAlign: "center", fontSize: 13, color: colors.muted, padding: 8 }}>
-              Commande {doneWord}. Stock à jour.
+              Commande {status === "refusee" ? "refusée" : "livrée"}. Stock à jour.
             </div>
           )
         )}
@@ -407,6 +492,82 @@ function OrderDetail({
     </>
   );
 }
+
+function EditOrderModal({ order, onClose, onSaved }: { order: Order; onClose: () => void; onSaved: () => void }) {
+  const [clientName, setClientName] = useState(order.client);
+  const [place, setPlace] = useState(order.place);
+  const [phone, setPhone] = useState(order.phone);
+  const [saving, setSaving] = useState(false);
+  const showToast = useBackoffice((s) => s.showToast);
+
+  async function submit() {
+    setSaving(true);
+    const result = await updateOrder(order.id, { clientName, place, phone });
+    setSaving(false);
+    if (!result.ok) {
+      showToast(result.error, "error");
+      return;
+    }
+    showToast("Commande mise à jour", "success");
+    onSaved();
+  }
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(30,27,24,.4)", zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{ background: "#fff", borderRadius: 16, width: 420, maxWidth: "92vw", padding: "22px 24px", boxShadow: "0 20px 50px rgba(30,27,24,.24)" }}
+        >
+          <div style={{ fontFamily: fonts.display, fontWeight: 600, fontSize: 18, marginBottom: 4 }}>Modifier la commande</div>
+          <div style={{ fontSize: 12.5, color: colors.muted, marginBottom: 18 }}>{order.id}</div>
+
+          <label style={modalLabel}>Nom de la cliente</label>
+          <input value={clientName} onChange={(e) => setClientName(e.target.value)} style={modalField} />
+
+          <label style={modalLabel}>Lieu de livraison</label>
+          <input value={place} onChange={(e) => setPlace(e.target.value)} style={modalField} />
+
+          <label style={modalLabel}>Téléphone</label>
+          <input value={phone} onChange={(e) => setPhone(e.target.value)} style={modalField} />
+
+          <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
+            <button
+              onClick={onClose}
+              disabled={saving}
+              style={{ flex: 1, height: 46, border: `1.5px solid ${colors.borderField}`, borderRadius: 10, background: "#fff", color: colors.primary, font: `600 14px ${fonts.ui}`, cursor: saving ? "default" : "pointer" }}
+            >
+              Annuler
+            </button>
+            <button
+              onClick={submit}
+              disabled={saving || !clientName || !place || !phone}
+              style={{ flex: 2, height: 46, border: "none", borderRadius: 10, background: colors.primary, color: "#fff", font: `600 14px ${fonts.ui}`, cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1 }}
+            >
+              {saving ? "Enregistrement…" : "Enregistrer"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+const modalLabel: React.CSSProperties = {
+  display: "block",
+  font: `600 12px ${fonts.ui}`,
+  color: colors.muted,
+  marginTop: 12,
+  marginBottom: 6,
+};
+const modalField: React.CSSProperties = {
+  width: "100%",
+  height: 42,
+  padding: "0 13px",
+  border: `1.5px solid ${colors.borderField}`,
+  borderRadius: 10,
+  font: `400 14px ${fonts.ui}`,
+};
 
 const kycLabel: React.CSSProperties = {
   font: `600 11px ${fonts.ui}`,

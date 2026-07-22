@@ -1,7 +1,6 @@
 import { create } from "zustand";
-import type { Customer, OrderStatus, Product } from "@/lib/data/types";
-import { clients } from "@/lib/data/clients";
-import { money } from "@/lib/format";
+import type { Customer, Product } from "@/lib/data/types";
+import type { PosPaymentMethod } from "@/lib/payments/labels";
 
 export interface CartLine {
   id: string;
@@ -11,33 +10,41 @@ export interface CartLine {
   qty: number;
   /** Remise unitaire en FCFA (0 = aucune). */
   discount: number;
+  image?: string;
 }
 
 export type ToastType = "success" | "warning" | "error";
 
 export interface Ticket {
+  ref: string;
   items: number;
   pay: string;
   total: string;
+  lines: Array<{ name: string; qty: number; lineTotal: number }>;
+  /** Remises par ligne agrégées en FCFA (0 = aucune). */
+  discount: number;
+  subtotal: number;
+  loyalty: { pointsEarned: number; newBalance: number } | null;
+  promo: { code: string; discount: number } | null;
+  pointsUsed: { points: number; discount: number } | null;
+  /** Message WhatsApp pré-construit (buildTicketMessage). */
+  waMessage: string;
+  customerPhone: string | null;
 }
 
 interface BackofficeState {
   // POS
   cart: CartLine[];
   client: Customer | null;
-  pay: "espece" | "mm" | "mixte";
+  pay: PosPaymentMethod;
   cartOpen: boolean;
   // Global UI
   offline: boolean;
   queued: number;
   notifOpen: boolean;
-  notifCount: number;
   moreOpen: boolean;
   toast: { msg: string; type: ToastType } | null;
   ticket: Ticket | null;
-  // Commandes — surcharges de statut (persistées entre écrans)
-  orderStatus: Record<string, OrderStatus>;
-  autoValidate: boolean;
 
   // Actions
   addToCart: (p: Product) => void;
@@ -46,9 +53,9 @@ interface BackofficeState {
   toggleDiscount: (id: string) => void;
   clearCart: () => void;
   setPay: (pay: BackofficeState["pay"]) => void;
-  attachClient: () => void;
+  attachClient: (customer: Customer) => void;
   detachClient: () => void;
-  encaisser: () => void;
+  showTicket: (ticket: Ticket) => void;
   openCart: () => void;
   closeCart: () => void;
 
@@ -59,9 +66,6 @@ interface BackofficeState {
   closeMore: () => void;
   showToast: (msg: string, type?: ToastType) => void;
   closeTicket: () => void;
-
-  setOrderStatus: (id: string, status: OrderStatus) => void;
-  toggleAuto: () => void;
 }
 
 let toastTimer: ReturnType<typeof setTimeout> | null = null;
@@ -74,12 +78,9 @@ export const useBackoffice = create<BackofficeState>((set, get) => ({
   offline: false,
   queued: 0,
   notifOpen: false,
-  notifCount: 3,
   moreOpen: false,
   toast: null,
   ticket: null,
-  orderStatus: {},
-  autoValidate: false,
 
   addToCart: (p) =>
     set((s) => {
@@ -88,7 +89,7 @@ export const useBackoffice = create<BackofficeState>((set, get) => ({
       if (ex) {
         ex.qty += 1;
       } else {
-        cart.push({ id: p.id, name: p.name, variant: p.variant, price: p.price, qty: 1, discount: 0 });
+        cart.push({ id: p.id, name: p.name, variant: p.variant, price: p.price, qty: 1, discount: 0, image: p.image });
       }
       return { cart };
     }),
@@ -116,32 +117,10 @@ export const useBackoffice = create<BackofficeState>((set, get) => ({
 
   setPay: (pay) => set({ pay }),
 
-  attachClient: () => set({ client: clients[0] }),
+  attachClient: (customer) => set({ client: customer }),
   detachClient: () => set({ client: null }),
 
-  encaisser: () => {
-    const s = get();
-    if (!s.cart.length) return;
-    const sub = s.cart.reduce((a, l) => a + l.price * l.qty, 0);
-    const disc = s.cart.reduce((a, l) => a + l.discount * l.qty, 0);
-    const items = s.cart.reduce((a, l) => a + l.qty, 0);
-    const payLabels: Record<BackofficeState["pay"], string> = {
-      espece: "Espèces",
-      mm: "Mobile Money",
-      mixte: "Mixte",
-    };
-    if (s.offline) {
-      set({ queued: s.queued + 1, cart: [], client: null, cartOpen: false });
-      get().showToast("Vente mise en file — à resynchroniser", "warning");
-      return;
-    }
-    set({
-      ticket: { items, pay: payLabels[s.pay], total: money(sub - disc) },
-      cart: [],
-      client: null,
-      cartOpen: false,
-    });
-  },
+  showTicket: (ticket) => set({ ticket, cart: [], client: null, cartOpen: false }),
 
   openCart: () => set({ cartOpen: true }),
   closeCart: () => set({ cartOpen: false }),
@@ -168,8 +147,4 @@ export const useBackoffice = create<BackofficeState>((set, get) => ({
   },
 
   closeTicket: () => set({ ticket: null }),
-
-  setOrderStatus: (id, status) =>
-    set((s) => ({ orderStatus: { ...s.orderStatus, [id]: status } })),
-  toggleAuto: () => set((s) => ({ autoValidate: !s.autoValidate })),
 }));
