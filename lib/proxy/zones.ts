@@ -24,8 +24,21 @@ export interface ZoneResolution {
   rewrittenPathname: string;
 }
 
+// En dev (localhost) ou sur les URLs Vercel sans domaine custom (*.vercel.app),
+// la zone est portée par un préfixe de chemin (/admin, /platform).
+// Sur un domaine custom, elle est portée par le sous-domaine (admin.*).
+function usesPathRouting(hostname: string): boolean {
+  return (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname.endsWith(".local") ||
+    hostname.endsWith(".vercel.app")
+  );
+}
+
+/** @deprecated Use usesPathRouting */
 function isLocalHost(hostname: string): boolean {
-  return hostname === "localhost" || hostname === "127.0.0.1" || hostname.endsWith(".local");
+  return usesPathRouting(hostname);
 }
 
 function stripPrefix(pathname: string, prefix: string, fallback: string): string {
@@ -42,7 +55,7 @@ function stripPrefix(pathname: string, prefix: string, fallback: string): string
 export function resolveZone(hostname: string, pathname: string): ZoneResolution {
   const host = hostname.split(":")[0].toLowerCase();
 
-  if (isLocalHost(host)) {
+  if (usesPathRouting(host)) {
     if (pathname === "/admin" || pathname.startsWith("/admin/")) {
       return { zone: "dashboard", rewrittenPathname: stripPrefix(pathname, "/admin", "/pos") };
     }
@@ -75,7 +88,7 @@ export function resolveZone(hostname: string, pathname: string): ZoneResolution 
  */
 export function dashboardPath(hostname: string, path: string): string {
   const host = hostname.split(":")[0].toLowerCase();
-  return isLocalHost(host) ? `/admin${path}` : path;
+  return usesPathRouting(host) ? `/admin${path}` : path;
 }
 
 export function isPathAllowedForZone(zone: Zone, pathname: string): boolean {
