@@ -110,41 +110,49 @@ export async function createEmployee(
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Informations invalides." };
   }
 
-  const tenant = await getCurrentTenant();
-  const role = await prisma.employeeRole.findFirst({
-    where: { id: parsed.data.employeeRoleId, tenantId: tenant.id },
-  });
-  if (!role) return { ok: false, error: "Profil d'accès introuvable." };
-
-  const admin = createAdminClient();
-  const { data: created, error: createError } = await admin.auth.admin.createUser({
-    email: parsed.data.email,
-    password: parsed.data.password,
-    email_confirm: true,
-  });
-  if (createError || !created.user) {
-    if (createError?.code === "email_exists") return { ok: false, error: "Cet email est déjà utilisé." };
-    return { ok: false, error: "Une erreur est survenue, réessayez." };
-  }
-
   try {
-    await prisma.profile.create({
-      data: {
-        id: created.user.id,
-        tenantId: tenant.id,
-        role: "staff",
-        name: parsed.data.name,
-        email: parsed.data.email,
-        employeeRoleId: role.id,
-      },
+    const tenant = await getCurrentTenant();
+    const role = await prisma.employeeRole.findFirst({
+      where: { id: parsed.data.employeeRoleId, tenantId: tenant.id },
     });
+    if (!role) return { ok: false, error: "Profil d'accès introuvable." };
+
+    const admin = createAdminClient();
+    const { data: created, error: createError } = await admin.auth.admin.createUser({
+      email: parsed.data.email,
+      password: parsed.data.password,
+      email_confirm: true,
+    });
+    if (createError || !created.user) {
+      if (createError?.code === "email_exists") return { ok: false, error: "Cet email est déjà utilisé." };
+      return { ok: false, error: "Une erreur est survenue, réessayez." };
+    }
+
+    try {
+      await prisma.profile.create({
+        data: {
+          id: created.user.id,
+          tenantId: tenant.id,
+          role: "staff",
+          name: parsed.data.name,
+          email: parsed.data.email,
+          employeeRoleId: role.id,
+        },
+      });
+    } catch {
+      try {
+        await admin.auth.admin.deleteUser(created.user.id);
+      } catch {
+        // Rollback is best-effort; the orphaned auth user cannot be surfaced meaningfully here.
+      }
+      return { ok: false, error: "Une erreur est survenue, réessayez." };
+    }
+
+    revalidatePath("/equipe");
+    return { ok: true };
   } catch {
-    await admin.auth.admin.deleteUser(created.user.id);
     return { ok: false, error: "Une erreur est survenue, réessayez." };
   }
-
-  revalidatePath("/equipe");
-  return { ok: true };
 }
 
 export async function setEmployeeActive(
