@@ -121,11 +121,6 @@ export function LoginView() {
             </div>
           </div>
         </div>
-
-        {/* Footer Panneau */}
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", zIndex: 1 }}>
-          v1.0 · Dakar & Abidjan
-        </div>
       </div>
 
       {/* Panneau de Droite : Formulaire */}
