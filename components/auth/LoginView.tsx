@@ -42,6 +42,40 @@ export function LoginView() {
           overflow: "hidden",
         }}
       >
+        {/* Vidéo d'arrière-plan avec fallback fond dégradé */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="metadata"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            zIndex: 0,
+          }}
+        >
+          <source src="/videos/login-bg.mp4" type="video/mp4" />
+        </video>
+
+        {/* Masque de superposition Indigo pour le contraste du texte */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: `linear-gradient(135deg, rgba(38, 50, 107, 0.85) 0%, rgba(23, 31, 69, 0.92) 100%)`,
+            zIndex: 1,
+            pointerEvents: "none",
+          }}
+        />
+
         {/* Lueur d'accentuation en fond */}
         <div
           style={{
@@ -55,6 +89,7 @@ export function LoginView() {
             filter: "blur(120px)",
             opacity: 0.25,
             pointerEvents: "none",
+            zIndex: 1,
           }}
         />
 
