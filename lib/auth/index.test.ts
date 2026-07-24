@@ -1,10 +1,15 @@
 import { describe, it, expect } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { isRoleAllowedForZone, resolveSession } from "@/lib/auth";
+import { isRoleAllowedForZone, resolveSession, hasModuleAccess, type Session } from "@/lib/auth";
 
 function fakeSupabase(
   user: { id: string } | null,
-  profile: { role: string; name: string } | null
+  profile: {
+    role: string;
+    name: string;
+    active?: boolean;
+    employeeRole?: { permissions: string[] } | null;
+  } | null
 ): SupabaseClient {
   return {
     auth: {
@@ -46,6 +51,26 @@ describe("isRoleAllowedForZone", () => {
   });
 });
 
+describe("hasModuleAccess", () => {
+  it("grants owner access to every module, including ones not in MODULE_IDS", () => {
+    const owner: Session = { userId: "u1", name: "N", role: "owner", permissions: [] };
+    expect(hasModuleAccess(owner, "fin")).toBe(true);
+    expect(hasModuleAccess(owner, "equipe")).toBe(true);
+  });
+
+  it("grants staff access only to modules listed in their permissions", () => {
+    const staff: Session = { userId: "u1", name: "N", role: "staff", permissions: ["pos", "orders"] };
+    expect(hasModuleAccess(staff, "pos")).toBe(true);
+    expect(hasModuleAccess(staff, "fin")).toBe(false);
+  });
+
+  it("denies customer sessions and null sessions", () => {
+    expect(hasModuleAccess(null, "pos")).toBe(false);
+    const customer: Session = { userId: "u1", name: "N", role: "customer", permissions: [] };
+    expect(hasModuleAccess(customer, "pos")).toBe(false);
+  });
+});
+
 describe("resolveSession", () => {
   it("returns null when there is no authenticated user", async () => {
     const session = await resolveSession(fakeSupabase(null, null));
@@ -61,6 +86,29 @@ describe("resolveSession", () => {
     const session = await resolveSession(
       fakeSupabase({ id: "u1" }, { role: "owner", name: "Aïcha Koné" })
     );
-    expect(session).toEqual({ userId: "u1", name: "Aïcha Koné", role: "owner" });
+    expect(session).toEqual({ userId: "u1", name: "Aïcha Koné", role: "owner", permissions: [] });
+  });
+
+  it("returns null when the profile has been deactivated", () => {
+    return resolveSession(
+      fakeSupabase({ id: "u1" }, { role: "staff", name: "Awa", active: false, employeeRole: { permissions: ["pos"] } })
+    ).then((session) => expect(session).toBeNull());
+  });
+
+  it("loads the staff member's module permissions from their EmployeeRole", async () => {
+    const session = await resolveSession(
+      fakeSupabase(
+        { id: "u1" },
+        { role: "staff", name: "Awa", active: true, employeeRole: { permissions: ["pos", "orders"] } }
+      )
+    );
+    expect(session).toEqual({ userId: "u1", name: "Awa", role: "staff", permissions: ["pos", "orders"] });
+  });
+
+  it("defaults staff permissions to an empty array when no EmployeeRole is assigned", async () => {
+    const session = await resolveSession(
+      fakeSupabase({ id: "u1" }, { role: "staff", name: "Awa", active: true, employeeRole: null })
+    );
+    expect(session).toEqual({ userId: "u1", name: "Awa", role: "staff", permissions: [] });
   });
 });

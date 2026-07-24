@@ -11,6 +11,7 @@ export const DASHBOARD_PATHS = [
   "/personnalisation",
   "/vitrine",
   "/boutique",
+  "/equipe",
   "/connexion",
 ] as const;
 
@@ -98,4 +99,33 @@ export function isPathAllowedForZone(zone: Zone, pathname: string): boolean {
   if (zone === "dashboard") return isDashboardPath;
   if (zone === "admin") return isAdminPath;
   return !isDashboardPath && !isAdminPath;
+}
+
+/**
+ * Mapping chemin dashboard → id de module (cf. MODULE_IDS dans lib/nav.ts).
+ * "/equipe" et "/connexion" sont volontairement absents : "/equipe" a sa
+ * propre garde (owner uniquement, pas un module de EmployeeRole.permissions)
+ * et "/connexion" n'est jamais soumis au contrôle de module dans proxy.ts.
+ */
+export const PATH_MODULE_IDS: Record<string, string> = {
+  "/pos": "pos",
+  "/tableau-de-bord": "dash",
+  "/commandes": "orders",
+  "/inventaire": "inv",
+  "/clientes": "cust",
+  "/marketing": "mkt",
+  "/finance": "fin",
+  "/personnalisation": "theme",
+  "/vitrine": "vitrine",
+  "/boutique": "boutique",
+};
+
+export const MODULE_ID_PATHS: Record<string, string> = Object.fromEntries(
+  Object.entries(PATH_MODULE_IDS).map(([path, id]) => [id, path])
+);
+
+/** Résout l'id de module pour un chemin dashboard (avec ses sous-chemins), ou null si non gated (ex. "/equipe", "/connexion"). */
+export function moduleForPath(pathname: string): string | null {
+  const entry = Object.entries(PATH_MODULE_IDS).find(([p]) => pathname === p || pathname.startsWith(`${p}/`));
+  return entry ? entry[1] : null;
 }

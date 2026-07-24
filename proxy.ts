@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { resolveZone, isPathAllowedForZone, dashboardPath } from "@/lib/proxy/zones";
+import {
+  resolveZone,
+  isPathAllowedForZone,
+  dashboardPath,
+  moduleForPath,
+  MODULE_ID_PATHS,
+} from "@/lib/proxy/zones";
 import { resolveTenantFromHost } from "@/lib/tenant/registry";
-import { resolveSession, isRoleAllowedForZone } from "@/lib/auth";
+import { resolveSession, isRoleAllowedForZone, hasModuleAccess } from "@/lib/auth";
 import { createMiddlewareClient } from "@/lib/supabase/middleware";
 
 export async function proxy(request: NextRequest) {
@@ -31,6 +37,33 @@ export async function proxy(request: NextRequest) {
       const redirect = NextResponse.redirect(redirectUrl);
       authDraft.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie));
       return redirect;
+    }
+
+    // Contrôle d'accès par module (profils d'accès personnalisés, cf. design
+    // 2026-07-22). "/equipe" a sa propre garde : owner uniquement, jamais un
+    // module coché dans un EmployeeRole (escalade de privilèges).
+    if (zone === "dashboard") {
+      const isEquipePath = rewrittenPathname === "/equipe" || rewrittenPathname.startsWith("/equipe/");
+      const moduleId = moduleForPath(rewrittenPathname);
+      const moduleAllowed = isEquipePath
+        ? session?.role === "owner"
+        : moduleId
+          ? hasModuleAccess(session, moduleId)
+          : true;
+
+      if (!moduleAllowed) {
+        // Repli sur le premier module autorisé du profil. Peut être vide (ex.
+        // compte staff sans EmployeeRole assigné, cf. le test "defaults staff
+        // permissions to an empty array..." dans lib/auth/index.test.ts) — dans
+        // ce cas, repli sur /connexion, qui sort de ce bloc de contrôle et ne
+        // peut donc pas reboucler.
+        const firstAllowedId = session?.permissions[0];
+        const fallbackPath = firstAllowedId ? MODULE_ID_PATHS[firstAllowedId] : undefined;
+        const redirectUrl = new URL(dashboardPath(hostname, fallbackPath ?? "/connexion"), request.url);
+        const redirect = NextResponse.redirect(redirectUrl);
+        authDraft.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie));
+        return redirect;
+      }
     }
   }
 

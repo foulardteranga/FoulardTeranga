@@ -5,18 +5,24 @@ import { colors, fonts } from "@/lib/theme/tokens";
 import { NAV, MORE_ROUTES } from "@/lib/nav";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { useBackoffice } from "@/lib/store/useBackoffice";
+import { hasModuleAccess, type Session } from "@/lib/auth/session";
 
 const TAB_IDS = ["pos", "dash", "orders", "inv"];
 
-export function MobileNav({ pendingCount }: { pendingCount: number }) {
+export function MobileNav({ pendingCount, session }: { pendingCount: number; session: Session | null }) {
   const router = useRouter();
   const pathname = usePathname();
   const moreOpen = useBackoffice((s) => s.moreOpen);
   const openMore = useBackoffice((s) => s.openMore);
   const closeMore = useBackoffice((s) => s.closeMore);
 
-  const tabs = TAB_IDS.map((id) => NAV.find((n) => n.id === id)!);
-  const moreItems = MORE_ROUTES.map((id) => NAV.find((n) => n.id === id)!);
+  const visibleIds = new Set(
+    NAV.filter((n) => (n.id === "equipe" ? session?.role === "owner" : hasModuleAccess(session, n.id))).map(
+      (n) => n.id
+    )
+  );
+  const tabs = TAB_IDS.filter((id) => visibleIds.has(id)).map((id) => NAV.find((n) => n.id === id)!);
+  const moreItems = MORE_ROUTES.filter((id) => visibleIds.has(id)).map((id) => NAV.find((n) => n.id === id)!);
   const moreActive = moreOpen || moreItems.some((m) => m.href === pathname);
 
   const go = (href: string) => {

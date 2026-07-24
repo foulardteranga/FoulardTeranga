@@ -92,20 +92,40 @@ model Tenant {
   promoCodes        PromoCode[]
   stockMovements    StockMovement[]
   orderStatusEvents OrderStatusEvent[]
+  employeeRoles     EmployeeRole[]
 }
 
 model Profile {
-  id        String   @id @db.Uuid
-  tenantId  String
-  role      Role
-  name      String
-  createdAt DateTime @default(now())
+  id             String   @id @db.Uuid
+  tenantId       String
+  role           Role
+  name           String
+  email          String?
+  employeeRoleId String?
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
 
   tenant            Tenant             @relation(fields: [tenantId], references: [id])
+  employeeRole      EmployeeRole?      @relation(fields: [employeeRoleId], references: [id])
   customer          Customer?
   stockMovements    StockMovement[]
   orderStatusEvents OrderStatusEvent[]
 
+  @@index([tenantId])
+  @@index([employeeRoleId])
+}
+
+model EmployeeRole {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  permissions String[] @default([])
+  createdAt   DateTime @default(now())
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id])
+  profiles Profile[]
+
+  @@unique([tenantId, name])
   @@index([tenantId])
 }
 

@@ -1,5 +1,9 @@
 import { ICONS } from "@/components/ui/Icon";
 
+/** Modules du dashboard qu'un profil d'accès personnalisé peut autoriser (cf. EmployeeRole.permissions). "equipe" n'en fait PAS partie : toujours réservé à owner. */
+export const MODULE_IDS = ["pos", "dash", "orders", "inv", "cust", "mkt", "fin", "theme", "vitrine", "boutique"] as const;
+export type ModuleId = (typeof MODULE_IDS)[number];
+
 /** Définition de la navigation back-office : route → libellé + icône. */
 export interface NavDef {
   id: string;
@@ -23,10 +27,11 @@ export const NAV: NavDef[] = [
   { id: "theme", href: "/admin/personnalisation", label: "Personnalisation", short: "Thème", icon: ICONS.theme },
   { id: "vitrine", href: "/admin/vitrine", label: "Vitrine", short: "Vitrine", icon: ICONS.theme },
   { id: "boutique", href: "/admin/boutique", label: "Boutique", short: "Boutique", icon: ICONS.inv },
+  { id: "equipe", href: "/admin/equipe", label: "Équipe", short: "Équipe", icon: ICONS.personPlus },
 ];
 
 /** Routes accessibles via l'onglet « Plus » sur mobile. */
-export const MORE_ROUTES = ["cust", "mkt", "fin", "theme", "vitrine", "boutique"];
+export const MORE_ROUTES = ["cust", "mkt", "fin", "theme", "vitrine", "boutique", "equipe"];
 
 /** Titre & sous-titre d'écran par route (barre supérieure). */
 export const SCREEN_META: Record<string, [string, string]> = {
@@ -40,4 +45,5 @@ export const SCREEN_META: Record<string, [string, string]> = {
   "/admin/personnalisation": ["Personnalisation", "Apparence de votre vitrine"],
   "/admin/vitrine": ["Éditeur de vitrine", "Modifiez le contenu de votre page d'accueil"],
   "/admin/boutique": ["Boutique", "Aperçu et raccourcis vers votre boutique en ligne"],
+  "/admin/equipe": ["Équipe", "Profils d'accès et employés"],
 };
