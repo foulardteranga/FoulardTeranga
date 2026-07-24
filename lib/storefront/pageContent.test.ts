@@ -142,19 +142,21 @@ describe("réducteurs", () => {
 
 describe("addBlock / duplicateBlock / removeBlock / reorderBlocks", () => {
   it("addBlock insère en fin avec les réglages par défaut et un id unique", () => {
+    const defaultLen = defaultPage().blocks.length;
     const { page, id } = addBlock(defaultPage(), "hero");
-    expect(page.blocks).toHaveLength(10);
-    const added = page.blocks[9];
+    expect(page.blocks).toHaveLength(defaultLen + 1);
+    const added = page.blocks[defaultLen];
     expect(added.id).toBe(id);
     expect(added.type).toBe("hero");
     expect(added.visible).toBe(true);
     expect(added.settings).toEqual(defaultPage().blocks[0].settings);
-    expect(new Set(page.blocks.map((b) => b.id)).size).toBe(10);
+    expect(new Set(page.blocks.map((b) => b.id)).size).toBe(defaultLen + 1);
   });
 
   it("addBlock suffixe le nom quand le type existe déjà", () => {
+    const defaultLen = defaultPage().blocks.length;
     const { page } = addBlock(defaultPage(), "hero");
-    expect(page.blocks[9].name).toBe("Bandeau Hero 2");
+    expect(page.blocks[defaultLen].name).toBe("Bandeau Hero 2");
   });
 
   it("addBlock garde le nom de base sur une page qui n'a pas ce type", () => {
@@ -164,9 +166,10 @@ describe("addBlock / duplicateBlock / removeBlock / reorderBlocks", () => {
   });
 
   it("duplicateBlock clone en profondeur juste sous l'original", () => {
+    const defaultLen = defaultPage().blocks.length;
     const base = defaultPage();
     const { page, id } = duplicateBlock(base, "hero");
-    expect(page.blocks).toHaveLength(10);
+    expect(page.blocks).toHaveLength(defaultLen + 1);
     expect(page.blocks[1].id).toBe(id);
     expect(page.blocks[1].type).toBe("hero");
     expect(page.blocks[1].name).toBe("Bandeau Hero (copie)");
@@ -182,9 +185,10 @@ describe("addBlock / duplicateBlock / removeBlock / reorderBlocks", () => {
   });
 
   it("removeBlock supprime l'instance visée", () => {
+    const defaultLen = defaultPage().blocks.length;
     const page = removeBlock(defaultPage(), "news");
     expect(page.blocks.map((b) => b.id)).not.toContain("news");
-    expect(page.blocks).toHaveLength(8);
+    expect(page.blocks).toHaveLength(defaultLen - 1);
   });
 
   it("removeBlock refuse de vider la page (dernier bloc conservé)", () => {
