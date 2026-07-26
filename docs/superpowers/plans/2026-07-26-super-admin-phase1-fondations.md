@@ -991,8 +991,17 @@ le reste du composant est inchangé.
 
 La suppression de `DEFAULT_TENANT` casse deux fichiers hors de `lib/tenant`.
 
-Dans `app/(storefront)/produit/[id]/page.tsx`, remplacer l'import de
-`DEFAULT_TENANT` par celui de `getCurrentTenant`, puis remplacer la ligne 10 :
+**Piège à éviter ici** : la ligne 10 est à l'intérieur de `generateStaticParams()`,
+qui s'exécute **au build, hors requête HTTP** — `headers()` (et donc
+`getCurrentTenant()`, qui en dépend) **n'y est pas disponible et lèverait une
+exception**. C'est exactement pour cette raison que `getCatalog` accepte un
+`tenantId` explicite optionnel (voir son docstring dans
+`lib/data/catalog.server.ts`) : ne pas remplacer ce littéral par un appel à
+`getCurrentTenant()`, seulement par l'id littéral qui remplace `DEFAULT_TENANT`.
+
+Dans `app/(storefront)/produit/[id]/page.tsx`, supprimer l'import de
+`DEFAULT_TENANT` (`import { DEFAULT_TENANT } from "@/lib/tenant/registry";`),
+puis remplacer la ligne 10 :
 
 ```tsx
   const products = await getCatalog(DEFAULT_TENANT.id);
@@ -1001,9 +1010,16 @@ Dans `app/(storefront)/produit/[id]/page.tsx`, remplacer l'import de
 par :
 
 ```tsx
-  const tenant = await getCurrentTenant();
-  const products = await getCatalog(tenant.id);
+  // Littéral volontaire : generateStaticParams() s'exécute au build, hors
+  // requête HTTP, donc headers() (et getCurrentTenant()) n'y est pas
+  // disponible. getCatalog() accepte justement un tenantId explicite pour ce
+  // cas (v1 mono-boutique). ProductPage plus bas, qui s'exécute par requête,
+  // continue d'appeler getCatalog() sans argument, inchangé.
+  const products = await getCatalog("foulard-teranga");
 ```
+
+Le reste du fichier (la fonction `ProductPage`, qui appelle déjà
+`getCatalog()` sans argument) est inchangé.
 
 Dans `lib/store/useStorefront.ts`, la valeur sert de préfixe de clé
 `localStorage` dans un store client, qui ne peut pas résoudre le tenant côté
