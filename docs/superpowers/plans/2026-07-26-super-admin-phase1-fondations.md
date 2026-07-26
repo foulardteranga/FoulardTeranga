@@ -16,7 +16,12 @@
 - **Résultats typés** `{ ok: true } | { ok: false; error: string }`, jamais d'exception silencieuse. Messages utilisateur en français.
 - **Jamais de `service_role` côté client**, jamais de contournement de RLS depuis le navigateur.
 - **`unstable_cache` et non `use cache`** : `cacheTag()` lève une erreur sans `cacheComponents: true` dans `next.config.ts`, et activer ce drapeau changerait la sémantique de cache de toute l'application — hors périmètre de cette phase.
-- **Commandes** : tests `npx vitest run <fichier>`, typecheck `npm run typecheck`, migrations `npx prisma migrate dev`.
+- **Commandes** : tests `npx vitest run <fichier>`, typecheck `npm run typecheck`.
+- **Migrations — `npx prisma migrate dev` est inutilisable dans ce projet, ne jamais l'invoquer.** Vérifié en pratique (Task 1) : cette commande rejoue tout l'historique dans une base de calque (« shadow database ») vierge que Prisma crée elle-même, laquelle n'a pas le schéma `auth` de Supabase — la première migration RLS (`auth.uid()`) y échoue systématiquement avec `schema "auth" does not exist`. Confirmation supplémentaire : la table `_prisma_migrations` **n'existe pas** sur le projet réel (vérifié par `execute_sql`) — aucune migration de ce dépôt n'a jamais transité par le moteur de migration Prisma. Le vrai flux, utilisé par toutes les migrations existantes (`list_migrations` via Supabase MCP en fait foi) :
+  1. Écrire à la main le fichier `prisma/migrations/<timestamp>_<name>/migration.sql` (le contenu exact est donné dans chaque tâche — aucune génération requise).
+  2. L'appliquer à la vraie base avec l'outil MCP **`mcp__supabase__apply_migration`** (`name`, `query`) — jamais avec la CLI Prisma.
+  3. Vérifier avec `npx prisma db execute --stdin` (sans danger : exécute du SQL direct sur `DIRECT_URL`, ne touche à aucune base de calque) ou avec `mcp__supabase__execute_sql` pour une lecture seule.
+  4. `npx prisma generate` (déjà relancé par `postinstall` à chaque `npm install`) resynchronise le client typé sur `schema.prisma` — cette étape ne dépend d'aucune base et fonctionne normalement.
 - **Commits** : Conventional Commits, une préoccupation par commit.
 - **Le fichier de proxy s'appelle `proxy.ts`** (convention Next.js 16) — ne jamais créer `middleware.ts`.
 
@@ -85,16 +90,37 @@ Puis dans `model Tenant`, après `createdAt DateTime @default(now())` :
   archivedAt      DateTime?
 ```
 
-- [ ] **Step 2: Générer la migration sans l'appliquer**
+- [ ] **Step 2: Créer le dossier de migration**
 
-Run: `npx prisma migrate dev --create-only --name tenant_lifecycle_modules`
-Expected: création du dossier `prisma/migrations/<timestamp>_tenant_lifecycle_modules/` contenant `migration.sql`, sans application en base.
+`npx prisma migrate dev` est inutilisable dans ce projet (cf. Global
+Constraints) : créer le fichier à la main, en suivant la convention de nommage
+des migrations existantes (`ls prisma/migrations/` pour le format).
 
-- [ ] **Step 3: Compléter la migration avec le backfill et la contrainte**
+Run:
+```bash
+mkdir -p "prisma/migrations/$(date -u +%Y%m%d%H%M%S)_tenant_lifecycle_modules"
+```
+Note le chemin exact créé (avec l'horodatage réel) — il sera réutilisé aux
+étapes suivantes.
 
-Prisma ne sait pas exprimer une contrainte `CHECK`. Ajouter **à la fin** du `migration.sql` généré :
+- [ ] **Step 3: Écrire la migration complète (DDL + backfill + contrainte)**
+
+Créer `migration.sql` dans le dossier créé à l'étape précédente, avec ce
+contenu complet — le DDL correspondant aux champs ajoutés à l'étape 1, suivi
+du backfill et de la contrainte :
 
 ```sql
+create type "TenantStatus" as enum ('active', 'suspended', 'archived');
+create type "TenantPlan" as enum ('essentiel', 'pro');
+
+alter table "Tenant"
+  add column "status" "TenantStatus" not null default 'active',
+  add column "plan" "TenantPlan" not null default 'essentiel',
+  add column "enabledModules" text[] not null default array['pos','dash','orders','inv','cust','theme','vitrine','boutique'],
+  add column "suspendedAt" timestamp(3),
+  add column "suspendedReason" text,
+  add column "archivedAt" timestamp(3);
+
 -- Les boutiques existantes précèdent la notion de périmètre : elles avaient
 -- accès à tout. On les aligne sur le palier complet avant d'imposer le socle,
 -- sinon la contrainte ci-dessous échouerait sur des lignes à tableau vide.
@@ -111,10 +137,19 @@ alter table "Tenant" add constraint tenant_min_modules
   check ('dash' = any("enabledModules"));
 ```
 
-- [ ] **Step 4: Appliquer la migration**
+- [ ] **Step 4: Appliquer la migration via Supabase MCP**
 
-Run: `npx prisma migrate dev`
-Expected: `Your database is now in sync with your schema.` et le client Prisma régénéré.
+Appliquer le contenu exact du `migration.sql` créé à l'étape 3 avec l'outil MCP
+`mcp__supabase__apply_migration`, paramètres `name: "tenant_lifecycle_modules"`
+et `query` = le contenu complet du fichier. S'il apparaît différé, charger
+d'abord son schéma via ToolSearch (`select:mcp__supabase__apply_migration`).
+
+Expected : l'outil confirme l'application sans erreur.
+
+Puis régénérer le client Prisma sur le schéma mis à jour :
+
+Run: `npx prisma generate`
+Expected : `Generated Prisma Client` sans erreur.
 
 - [ ] **Step 5: Vérifier le backfill et la contrainte en base**
 
@@ -172,16 +207,23 @@ et plus bas, la relation :
   tenant            Tenant?            @relation(fields: [tenantId], references: [id])
 ```
 
-- [ ] **Step 2: Générer la migration sans l'appliquer**
+- [ ] **Step 2: Créer le dossier de migration**
 
-Run: `npx prisma migrate dev --create-only --name profile_tenant_nullable`
-Expected: dossier de migration créé, non appliqué.
+`npx prisma migrate dev` est inutilisable dans ce projet (cf. Global
+Constraints) : créer le fichier à la main.
 
-- [ ] **Step 3: Ajouter la contrainte de cohérence**
+Run:
+```bash
+mkdir -p "prisma/migrations/$(date -u +%Y%m%d%H%M%S)_profile_tenant_nullable"
+```
 
-À la fin du `migration.sql` généré :
+- [ ] **Step 3: Écrire la migration (colonne optionnelle + contrainte de cohérence)**
+
+Créer `migration.sql` dans le dossier créé à l'étape précédente :
 
 ```sql
+alter table "Profile" alter column "tenantId" drop not null;
+
 -- Un compte plateforme (super_admin) n'appartient à aucune boutique ; tout
 -- autre rôle en a obligatoirement une. Exprimé en base pour que l'incohérence
 -- soit impossible plutôt que seulement déconseillée (spec §1).
@@ -190,10 +232,12 @@ alter table "Profile" add constraint profile_tenant_role_coherent
       or (role <> 'super_admin' and "tenantId" is not null));
 ```
 
-- [ ] **Step 4: Appliquer la migration**
+- [ ] **Step 4: Appliquer la migration via Supabase MCP**
 
-Run: `npx prisma migrate dev`
-Expected: succès. Les lignes existantes (un `owner` avec `tenantId` renseigné, créé par `20260713210000_seed_owner_profile`) satisfont la contrainte.
+Appliquer avec `mcp__supabase__apply_migration`, `name: "profile_tenant_nullable"`,
+`query` = le contenu complet du fichier ci-dessus. Puis `npx prisma generate`.
+Expected : succès. Les lignes existantes (un `owner` avec `tenantId` renseigné,
+créé par la migration `seed_owner_profile`) satisfont la contrainte.
 
 - [ ] **Step 5: Vérifier que la contrainte rejette une incohérence**
 
@@ -271,16 +315,46 @@ model PlatformAuditLog {
 }
 ```
 
-- [ ] **Step 2: Générer la migration sans l'appliquer**
+- [ ] **Step 2: Créer le dossier de migration**
 
-Run: `npx prisma migrate dev --create-only --name platform_audit_log`
-Expected: dossier de migration créé, non appliqué.
+`npx prisma migrate dev` est inutilisable dans ce projet (cf. Global
+Constraints) : créer le fichier à la main.
 
-- [ ] **Step 3: Ajouter la RLS à la migration**
+Run:
+```bash
+mkdir -p "prisma/migrations/$(date -u +%Y%m%d%H%M%S)_platform_audit_log"
+```
 
-À la fin du `migration.sql` généré :
+- [ ] **Step 3: Écrire la migration complète (DDL + RLS)**
+
+Créer `migration.sql` dans le dossier créé à l'étape précédente. Le type
+`jsonb` (minuscules) et le style suivent la convention déjà en place dans
+`prisma/migrations/20260715120000_storefront_page/migration.sql` pour les
+colonnes `Json` de ce projet :
 
 ```sql
+create type "PlatformAction" as enum (
+  'tenant_created', 'tenant_updated', 'tenant_suspended', 'tenant_reactivated',
+  'tenant_archived', 'tenant_deleted', 'modules_changed', 'owner_created',
+  'owner_password_reset', 'employee_role_edited', 'impersonation_started',
+  'impersonation_write_unlocked', 'impersonation_ended', 'data_exported',
+  'announcement_sent'
+);
+
+create table "PlatformAuditLog" (
+  "id"        text not null,
+  "actorId"   uuid not null,
+  "action"    "PlatformAction" not null,
+  "tenantId"  text,
+  "targetId"  text,
+  "metadata"  jsonb not null default '{}',
+  "createdAt" timestamp(3) not null default current_timestamp,
+  constraint "PlatformAuditLog_pkey" primary key ("id")
+);
+
+create index "PlatformAuditLog_tenantId_createdAt_idx" on "PlatformAuditLog"("tenantId", "createdAt");
+create index "PlatformAuditLog_actorId_createdAt_idx" on "PlatformAuditLog"("actorId", "createdAt");
+
 -- Journal réservé au prestataire : ni owner, ni staff, ni customer n'y accèdent.
 alter table "PlatformAuditLog" enable row level security;
 
@@ -289,10 +363,11 @@ create policy "platform_audit_all_super_admin" on "PlatformAuditLog"
   with check (public.current_role() = 'super_admin');
 ```
 
-- [ ] **Step 4: Appliquer la migration**
+- [ ] **Step 4: Appliquer la migration via Supabase MCP**
 
-Run: `npx prisma migrate dev`
-Expected: succès, client Prisma régénéré avec `prisma.platformAuditLog`.
+Appliquer avec `mcp__supabase__apply_migration`, `name: "platform_audit_log"`,
+`query` = le contenu complet du fichier ci-dessus. Puis `npx prisma generate`.
+Expected : succès, client Prisma régénéré avec `prisma.platformAuditLog`.
 
 - [ ] **Step 5: Écrire le test RLS**
 
@@ -390,10 +465,14 @@ Créer `prisma/migrations/<timestamp>_drop_tenants_update_owner/migration.sql` �
 drop policy "tenants_update_owner" on "Tenant";
 ```
 
-- [ ] **Step 3: Appliquer la migration**
+- [ ] **Step 3: Appliquer la migration via Supabase MCP**
 
-Run: `npx prisma migrate dev`
-Expected: succès.
+`npx prisma migrate dev` est inutilisable dans ce projet (cf. Global
+Constraints). Appliquer avec `mcp__supabase__apply_migration`,
+`name: "drop_tenants_update_owner"`, `query` = le contenu complet du fichier
+ci-dessus. Aucun changement de schéma Prisma dans cette tâche (RLS pure), donc
+pas de `prisma generate` à relancer.
+Expected : succès.
 
 - [ ] **Step 4: Étendre le test RLS**
 
