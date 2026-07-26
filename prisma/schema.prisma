@@ -81,6 +81,24 @@ enum TenantPlan {
   pro
 }
 
+enum PlatformAction {
+  tenant_created
+  tenant_updated
+  tenant_suspended
+  tenant_reactivated
+  tenant_archived
+  tenant_deleted
+  modules_changed
+  owner_created
+  owner_password_reset
+  employee_role_edited
+  impersonation_started
+  impersonation_write_unlocked
+  impersonation_ended
+  data_exported
+  announcement_sent
+}
+
 model Tenant {
   id            String   @id @default(cuid())
   slug          String   @unique
@@ -322,4 +340,20 @@ model OrderLine {
 
   @@index([orderId])
   @@index([productId])
+}
+
+/// Journal des actions du prestataire. Volontairement sans clé étrangère vers
+/// Tenant ni Profile : la trace doit survivre à la suppression définitive
+/// d'une boutique, or une FK la ferait disparaître en cascade (spec §1).
+model PlatformAuditLog {
+  id        String         @id @default(cuid())
+  actorId   String         @db.Uuid
+  action    PlatformAction
+  tenantId  String?
+  targetId  String?
+  metadata  Json           @default("{}")
+  createdAt DateTime       @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([actorId, createdAt])
 }
