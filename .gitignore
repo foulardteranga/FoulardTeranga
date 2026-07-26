@@ -42,6 +42,7 @@ yarn-error.log*
 .claude/settings.local.json
 .claude/worktrees/
 .mcp.json
+.superpowers/
 
 # macos
 * alias
