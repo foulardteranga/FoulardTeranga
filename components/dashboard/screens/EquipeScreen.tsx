@@ -22,7 +22,16 @@ const MODULE_LABELS: Record<string, string> = Object.fromEntries(
 const EMPTY_ROLE_FORM = { id: null as string | null, name: "", permissions: [] as string[] };
 const EMPTY_EMPLOYEE_FORM = { name: "", email: "", password: "", employeeRoleId: "" };
 
-export function EquipeScreen({ roles, employees }: { roles: EmployeeRoleView[]; employees: EmployeeView[] }) {
+export function EquipeScreen({
+  roles,
+  employees,
+  enabledModules,
+}: {
+  roles: EmployeeRoleView[];
+  employees: EmployeeView[];
+  /** Modules activés pour la boutique : seuls ceux-ci sont configurables. */
+  enabledModules: string[];
+}) {
   const showToast = useBackoffice((s) => s.showToast);
   const [roleForm, setRoleForm] = useState(EMPTY_ROLE_FORM);
   const [roleSaving, setRoleSaving] = useState(false);
@@ -131,7 +140,7 @@ export function EquipeScreen({ roles, employees }: { roles: EmployeeRoleView[]; 
               <div>
                 <label style={fieldLabel}>Modules accessibles</label>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {MODULE_IDS.map((id) => (
+                  {MODULE_IDS.filter((id) => enabledModules.includes(id)).map((id) => (
                     <label key={id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13.5 }}>
                       <input type="checkbox" checked={roleForm.permissions.includes(id)} onChange={() => toggleModule(id)} />
                       {MODULE_LABELS[id]}
