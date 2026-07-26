@@ -317,20 +317,96 @@ boutique.
 pas un module cochable, pour la raison d'escalade de privilèges déjà documentée
 dans le design du 2026-07-22.
 
+### Deux garde-fous rendus nécessaires par ce changement
+
+**1. Un socle minimal non désactivable.** Rien n'empêcherait sinon de décocher
+tous les modules d'une boutique. La gérante se connecterait alors sans aucun
+écran accessible : `proxy.ts` se replie sur `session.permissions[0]`, vide pour
+un `owner`, donc sur `/connexion` — elle atterrirait, authentifiée, sur sa
+propre page de connexion, sans issue ni explication.
+
+`enabledModules` doit donc toujours contenir **`dash`** (tableau de bord).
+Contrainte imposée à deux niveaux : le validateur Zod de l'écran Modules refuse
+de le décocher, et une contrainte en base garantit l'invariant même si une
+écriture passe à côté du validateur :
+
+```sql
+alter table "Tenant" add constraint tenant_min_modules
+  check ('dash' = any("enabledModules"));
+```
+
+**2. L'écran Équipe de la gérante est filtré sur `enabledModules`.** Sans cela,
+elle coche `fin` dans un profil d'accès, l'employé ne voit toujours pas la
+Finance, et rien n'explique pourquoi — l'intersection le refuse en amont. La
+liste des modules proposés à la création d'un `EmployeeRole`
+(`app/(dashboard)/equipe`) ne présente donc que les modules activés pour la
+boutique. Un module désactivé au niveau boutique n'apparaît nulle part chez la
+gérante, ni en navigation ni en configuration : il n'existe pas pour elle,
+plutôt que d'exister sous forme d'onglet grisé et frustrant.
+
+Conséquence à traiter à l'implémentation : retirer un module à une boutique dont
+un `EmployeeRole` le référence déjà laisse une permission orpheline dans
+`permissions`. Elle est **sans effet** (l'intersection la neutralise) et doit
+être conservée telle quelle, non purgée — réactiver le module plus tard doit
+restaurer l'accès des employés sans reconfiguration.
+
 ## 5. Sécurité & RLS
 
-### Trou existant à refermer
+### Trou existant à refermer : la policy `tenants_update_owner`
 
 La migration `20260715093000_rls_tenant_owner_notifications_customer_self` a
-ouvert à `owner` le droit de modifier **sa propre ligne `Tenant`**. Dès que
-`status`, `plan` et `enabledModules` s'y ajoutent, cette policy laisserait une
-gérante s'octroyer des modules ou se désuspendre elle-même.
+créé cette policy :
 
-La RLS Postgres ne sait pas restreindre par colonne dans une policy. La
-solution est un trigger `BEFORE UPDATE` sur `Tenant` qui rejette toute
-modification de `status`, `plan`, `enabledModules`, `suspendedAt` ou
-`archivedAt` lorsque `public.current_role() <> 'super_admin'`. La gérante garde
-son thème, son nom et son WhatsApp ; elle ne touche pas à son périmètre.
+```sql
+create policy "tenants_update_owner" on "Tenant"
+  for update using (id = public.current_tenant_id() and public.current_role() = 'owner')
+  with check  (id = public.current_tenant_id() and public.current_role() = 'owner');
+```
+
+Elle autorise un `owner` à modifier **toutes les colonnes** de sa propre ligne
+`Tenant` — y compris `slug` et `domains` aujourd'hui, et demain `status`,
+`plan` et `enabledModules`.
+
+**Portée réelle de l'exposition.** Le chemin applicatif est sain :
+`updateTenantTheme` (`lib/tenant/actions.ts`) est une Server Action qui n'écrit
+que six colonnes de thème, jamais `slug` ni `domains`. Mais la policy ouvre un
+**second chemin d'écriture par PostgREST**, atteignable avec la clé anonyme
+(publique par nature) et le JWT d'une gérante authentifiée. Une requête `PATCH`
+directe sur `/rest/v1/Tenant` permet donc d'écrire n'importe quelle colonne.
+
+Le risque concret : `domains` est un tableau libre, et `resolveTenantFromHost`
+résout un hôte par correspondance dans ce tableau. **Une gérante peut y inscrire
+le domaine personnalisé d'une autre boutique et détourner son trafic vitrine.**
+Aujourd'hui l'impact est théorique (une seule boutique existe) ; il devient réel
+au moment précis où ce projet introduit la seconde.
+
+**Correction retenue : supprimer la policy, plutôt que d'ajouter un trigger.**
+
+Le commentaire de la migration affirme que la policy est « nécessaire pour que
+l'écran Personnalisation persiste ». C'est **inexact**. `current_role()` est
+défini par `select role from "Profile" where id = auth.uid()`, donc dépend du
+JWT Supabase ; or Prisma se connecte en direct via `DATABASE_URL` avec
+l'adaptateur `PrismaPg`, sans JWT, et aucune migration ne pose
+`FORCE ROW LEVEL SECURITY`. Si Prisma était soumis à la RLS, `auth.uid()`
+vaudrait `NULL`, `current_role()` aussi, et **toutes les écritures de
+l'application échoueraient**. L'application fonctionne : Prisma contourne donc
+la RLS en tant que propriétaire de table, et la policy ne sert aucun besoin
+applicatif.
+
+```sql
+drop policy "tenants_update_owner" on "Tenant";
+```
+
+La supprimer referme la classe entière de problème d'un coup, sans trigger de
+protection par colonne à écrire ni à maintenir. Une gérante conserve toutes ses
+capacités réelles, qui transitent par Server Actions ; elle perd seulement un
+chemin d'écriture direct dont l'application ne se sert pas.
+
+**Vérification préalable obligatoire** avant d'appliquer cette suppression :
+confirmer qu'aucun client Supabase navigateur n'écrit sur `Tenant`. L'audit
+mené à la rédaction de ce spec n'a trouvé qu'un seul écrivain,
+`lib/tenant/actions.ts`, marqué `"use server"`. Conformément à `CLAUDE.md` §12,
+ce changement de policy RLS demande une confirmation explicite avant exécution.
 
 ### Policies nouvelles
 
@@ -546,7 +622,12 @@ Cas traités explicitement :
 - **Test de couverture des gardes** : énumère les exports de
   `lib/**/actions.ts` et échoue si une action d'écriture n'appelle aucun garde.
 - Validateurs Zod : format de slug et de domaine, ids de modules
-  obligatoirement dans `MODULE_IDS`, correspondance palier → modules.
+  obligatoirement dans `MODULE_IDS`, correspondance palier → modules, refus de
+  décocher `dash` (socle minimal, §4).
+- Filtrage de l'écran Équipe : les modules proposés pour un `EmployeeRole` se
+  limitent aux `enabledModules` de la boutique ; une permission orpheline
+  laissée par la désactivation d'un module reste stockée, sans effet, et
+  redevient active si le module est réactivé.
 - Transitions d'état de §9, y compris les deux refus.
 - `resolveTenantFromHost` en version DB : correspondance par slug, par domaine,
   hôte inconnu.
@@ -569,14 +650,19 @@ Conformément à `CLAUDE.md` §12 (toute nouvelle table → migration + policy +
 
 - `PlatformAuditLog` illisible pour `owner`, `staff` et `customer` ; lisible
   pour `super_admin`.
-- Trigger de `Tenant` : une gérante tentant d'écrire `enabledModules` ou
-  `status` est rejetée, tout en pouvant modifier son thème.
+- **Suppression de `tenants_update_owner`** : avec un JWT de gérante, un
+  `PATCH` PostgREST sur sa propre ligne `Tenant` est refusé (`domains` et
+  `status` en particulier), tandis que l'écran Personnalisation continue de
+  persister ses six colonnes de thème via la Server Action — c'est ce second
+  volet qui prouve que la policy n'était pas le chemin d'écriture applicatif.
+- Contrainte `tenant_min_modules` : une écriture retirant `dash` de
+  `enabledModules` est rejetée par la base.
 
 ## 13. Découpage en phases
 
 | Phase | Contenu | Risque |
 |---|---|---|
-| **1 · Fondations** | Migrations (statut, palier, modules, `Profile.tenantId` nullable + CHECK, `PlatformAuditLog`, trigger, policies, seed du premier super-admin) · `lib/tenant` en DB + cache · `proxy.ts` au header hostname · `Session` et `hasModuleAccess` en intersection · tests unitaires et RLS | **Élevé** — modifie l'auth, le proxy et le tenant en service |
+| **1 · Fondations** | Migrations (statut, palier, modules, socle `tenant_min_modules`, `Profile.tenantId` nullable + CHECK, `PlatformAuditLog`, suppression de `tenants_update_owner`, policies, seed du premier super-admin) · `lib/tenant` en DB + cache · `proxy.ts` au header hostname · `Session` et `hasModuleAccess` en intersection · filtrage de l'écran Équipe · tests unitaires et RLS | **Élevé** — modifie l'auth, le proxy et le tenant en service |
 | **2 · CRUD boutiques** | `/connexion` plateforme, layout de zone, liste du parc, création complète (§8), onglets Identité et Modules, `lib/platform/queries.ts`, alimentation de l'audit | Faible, additif |
 | **3 · Impersonation** | Contexte d'acteur, cookie signé, `requireWritableSession`, test de couverture des gardes, bandeau, mode intervention | Moyen |
 | **4 · Cycle de vie & support** | Suspension, archivage, suppression définitive, application en layouts, zone de danger, export JSON, diagnostic de santé, reset mot de passe, onglet Équipe plateforme | Moyen (la suppression) |
