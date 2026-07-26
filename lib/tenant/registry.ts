@@ -1,5 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db/client";
+import { ADMIN_HOST_PREFIX, PLATFORM_HOST_PREFIX } from "@/lib/proxy/zones";
 import type { Tenant } from "./types";
 
 /** Étiquette de cache à invalider après toute mutation de boutique. */
@@ -72,6 +73,20 @@ export async function resolveTenantFromHost(host: string): Promise<Tenant | null
 
   const byDomain = rows.find((t) => t.domains.includes(normalized));
   if (byDomain) return toTenant(byDomain);
+
+  // Sur un domaine custom, l'espace dashboard/plateforme est porté par un
+  // sous-domaine admin./platform. (cf. resolveZone dans lib/proxy/zones.ts) —
+  // une seule entrée dans Tenant.domains (le domaine nu) doit couvrir les
+  // trois surfaces, sans que l'opérateur ait à lister chaque variante.
+  const bareHost = normalized.startsWith(ADMIN_HOST_PREFIX)
+    ? normalized.slice(ADMIN_HOST_PREFIX.length)
+    : normalized.startsWith(PLATFORM_HOST_PREFIX)
+      ? normalized.slice(PLATFORM_HOST_PREFIX.length)
+      : null;
+  if (bareHost) {
+    const byBareDomain = rows.find((t) => t.domains.includes(bareHost));
+    if (byBareDomain) return toTenant(byBareDomain);
+  }
 
   return null;
 }

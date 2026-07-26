@@ -74,4 +74,14 @@ describe("resolveTenantFromHost", () => {
       logoText: "Boutique Voisine",
     });
   });
+
+  it("résout admin.<domaine> vers la même boutique que le domaine nu", async () => {
+    const tenant = await resolveTenantFromHost("admin.boutique-voisine.ci");
+    expect(tenant?.id).toBe("boutique-voisine");
+  });
+
+  it("résout platform.<domaine> vers la même boutique que le domaine nu", async () => {
+    const tenant = await resolveTenantFromHost("platform.boutique-voisine.ci");
+    expect(tenant?.id).toBe("boutique-voisine");
+  });
 });
