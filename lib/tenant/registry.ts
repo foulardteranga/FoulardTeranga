@@ -48,7 +48,10 @@ const loadTenants = unstable_cache(
       },
     }),
   ["tenants-all"],
-  { tags: [TENANTS_CACHE_TAG] }
+  // Plancher de 5 min : un correctif direct en SQL sur `domains` (seule voie
+  // avant l'UI super-admin) ne passe jamais par `updateTag`, donc sans ce
+  // plancher le cache resterait périmé indéfiniment jusqu'au redéploiement.
+  { tags: [TENANTS_CACHE_TAG], revalidate: 300 }
 );
 
 function stripPort(host: string): string {
