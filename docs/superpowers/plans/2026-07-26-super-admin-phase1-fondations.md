@@ -107,38 +107,27 @@ Note le chemin exact créé (avec l'horodatage réel) — il sera réutilisé au
 
 Créer `migration.sql` dans le dossier créé à l'étape précédente, avec ce
 contenu complet — le DDL correspondant aux champs ajoutés à l'étape 1, suivi
-de la contrainte :
-
-**Piège évité ici, à ne pas réintroduire** : `ADD COLUMN ... DEFAULT x` remplit
-**immédiatement** les lignes déjà en base avec `x` — un `UPDATE ... WHERE
-cardinality(...) = 0` exécuté ensuite ne trouverait donc jamais aucune ligne à
-corriger, puisqu'aucune ligne existante n'a jamais eu un tableau vide (elle a
-directement reçu la valeur par défaut au moment de l'`ALTER TABLE`). Pour que
-la boutique déjà en base reçoive le palier complet **tout en gardant le palier
-`essentiel` comme défaut pour les futures boutiques**, on ajoute la colonne
-avec le défaut complet (il rétro-remplit la ligne existante), puis on resserre
-le défaut immédiatement après avec `ALTER COLUMN ... SET DEFAULT` — qui ne
-touche, par construction, aucune ligne déjà en base :
+d'un backfill et de la contrainte :
 
 ```sql
 create type "TenantStatus" as enum ('active', 'suspended', 'archived');
 create type "TenantPlan" as enum ('essentiel', 'pro');
 
-alter table "Tenant" add column "status" "TenantStatus" not null default 'active';
+alter table "Tenant"
+  add column "status" "TenantStatus" not null default 'active',
+  add column "plan" "TenantPlan" not null default 'essentiel',
+  add column "enabledModules" text[] not null default array['pos','dash','orders','inv','cust','theme','vitrine','boutique'],
+  add column "suspendedAt" timestamp(3),
+  add column "suspendedReason" text,
+  add column "archivedAt" timestamp(3);
 
--- La boutique existante précède la notion de périmètre : elle avait accès à
--- tout. Le défaut complet rétro-remplit sa ligne dès l'ADD COLUMN ; on le
--- resserre ensuite au palier essentiel pour toute future boutique, sans
--- toucher à la ligne déjà en base (spec §1).
-alter table "Tenant" add column "plan" "TenantPlan" not null default 'pro';
-alter table "Tenant" alter column "plan" set default 'essentiel';
-
-alter table "Tenant" add column "enabledModules" text[] not null default array['pos','dash','orders','inv','cust','mkt','fin','theme','vitrine','boutique'];
-alter table "Tenant" alter column "enabledModules" set default array['pos','dash','orders','inv','cust','theme','vitrine','boutique'];
-
-alter table "Tenant" add column "suspendedAt" timestamp(3);
-alter table "Tenant" add column "suspendedReason" text;
-alter table "Tenant" add column "archivedAt" timestamp(3);
+-- Les boutiques existantes précèdent la notion de périmètre : elles avaient
+-- accès à tout. On les aligne sur le palier complet avant d'imposer le socle,
+-- sinon la contrainte ci-dessous échouerait sur des lignes à tableau vide.
+update "Tenant"
+set "enabledModules" = array['pos','dash','orders','inv','cust','mkt','fin','theme','vitrine','boutique'],
+    "plan" = 'pro'
+where cardinality("enabledModules") = 0;
 
 -- Socle minimal : sans « dash », une gérante se connecterait sans aucun écran
 -- accessible et atterrirait sur sa propre page de connexion, sans issue
@@ -161,6 +150,60 @@ Puis régénérer le client Prisma sur le schéma mis à jour :
 
 Run: `npx prisma generate`
 Expected : `Generated Prisma Client` sans erreur.
+
+- [ ] **Step 4b: Piège à vérifier — le backfill du Step 3 ne s'exécute jamais**
+
+`ADD COLUMN ... DEFAULT x` remplit **immédiatement** les lignes déjà en base
+avec `x`, au moment même de l'`ALTER TABLE` du Step 3 — avant que l'`UPDATE ...
+WHERE cardinality(...) = 0` de ce même fichier ne s'exécute. Aucune ligne
+existante n'a donc jamais de tableau vide à cet instant : ce backfill est mort
+à l'écriture, quel que soit l'ordre des instructions dans le fichier. Constaté
+en pratique lors de la première exécution de cette tâche : la boutique
+`foulard-teranga` restait sur `plan = essentiel` avec 8 modules après le
+Step 4, alors que l'intention (rappelée par le commentaire du Step 3
+lui-même) était qu'elle reçoive le palier complet.
+
+Vérifier maintenant, avant de continuer :
+```bash
+npx prisma db execute --stdin <<'SQL'
+select slug, plan, "enabledModules" from "Tenant";
+SQL
+```
+Si `foulard-teranga` n'a pas `plan = pro` et les dix modules, le piège vient de
+se reproduire — passer au Step 4c pour le corriger. S'il les a déjà (fenêtre
+de migration déjà passée par une exécution précédente de cette tâche), passer
+directement au Step 5.
+
+- [ ] **Step 4c: Migration corrective — ne jamais réécrire une migration déjà appliquée**
+
+Une migration une fois appliquée à la vraie base (Step 4) ne se corrige
+**jamais** en réécrivant son fichier : `prisma/migrations/` doit rester le
+reflet exact de ce qui a été réellement exécuté sous chaque nom, conformément à
+l'historique que tient Supabase (`list_migrations` via MCP). Toute correction
+se fait en avant, via une **nouvelle** migration.
+
+Créer le dossier et le fichier :
+```bash
+mkdir -p "prisma/migrations/$(date -u +%Y%m%d%H%M%S)_tenant_lifecycle_modules_fix_backfill"
+```
+
+Contenu de `migration.sql` — resserre le défaut pour les futures boutiques
+(sans toucher aux lignes déjà en base, par construction de
+`alter column ... set default`) et corrige directement la ligne déjà affectée :
+
+```sql
+alter table "Tenant" alter column "plan" set default 'essentiel';
+alter table "Tenant" alter column "enabledModules" set default array['pos','dash','orders','inv','cust','theme','vitrine','boutique'];
+
+update "Tenant"
+set "plan" = 'pro',
+    "enabledModules" = array['pos','dash','orders','inv','cust','mkt','fin','theme','vitrine','boutique']
+where slug = 'foulard-teranga';
+```
+
+Appliquer avec `mcp__supabase__apply_migration`,
+`name: "tenant_lifecycle_modules_fix_backfill"`, `query` = le contenu
+complet ci-dessus.
 
 - [ ] **Step 5: Vérifier le backfill et la contrainte en base**
 
