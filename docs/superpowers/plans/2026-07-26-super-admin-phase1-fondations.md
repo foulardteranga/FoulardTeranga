@@ -427,6 +427,14 @@ Expected : succès, client Prisma régénéré avec `prisma.platformAuditLog`.
 
 Créer `prisma/tests/rls_phase1.sql` :
 
+**Point d'attention** : le rôle qui exécute ce script (celui de `DIRECT_URL`)
+est propriétaire des tables et contourne donc la RLS par défaut — aucune
+migration de ce projet ne pose `FORCE ROW LEVEL SECURITY`. On en profite pour
+insérer une ligne réelle **avant** de basculer sur l'identité `owner` :
+sans cette ligne, l'assertion « la gérante ne lit rien » serait vraie même si
+la RLS était absente, puisqu'une table vide ne montre jamais rien à personne
+— l'assertion ne prouverait alors rien du tout.
+
 ```sql
 -- Assertions RLS de la phase 1. Exécuter avec :
 --   npx prisma db execute --file prisma/tests/rls_phase1.sql
@@ -434,10 +442,16 @@ Créer `prisma/tests/rls_phase1.sql` :
 
 begin;
 
+-- Ligne réelle, insérée par le rôle de connexion (propriétaire de la table,
+-- contourne la RLS) — sans elle, le test 1 ci-dessous serait vacuously vrai
+-- sur une table vide, qu'une policy RLS existe ou non.
+insert into "PlatformAuditLog" (id, "actorId", action)
+values ('rls-test-seed', '3529e5b3-304f-48ea-bc0f-ec82a74e8ae0', 'tenant_created');
+
 -- Un profil owner de référence pour endosser son identité dans les tests.
 -- 3529e5b3-… est l'owner créé par 20260713210000_seed_owner_profile.
 
--- 1. PlatformAuditLog : une gérante ne lit rien.
+-- 1. PlatformAuditLog : une gérante ne lit rien, même si une ligne existe réellement.
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"3529e5b3-304f-48ea-bc0f-ec82a74e8ae0"}';
 
