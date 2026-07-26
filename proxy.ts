@@ -7,7 +7,6 @@ import {
   moduleForPath,
   MODULE_ID_PATHS,
 } from "@/lib/proxy/zones";
-import { resolveTenantFromHost } from "@/lib/tenant/registry";
 import { resolveSession, isRoleAllowedForZone, hasModuleAccess } from "@/lib/auth";
 import { createMiddlewareClient } from "@/lib/supabase/middleware";
 
@@ -67,9 +66,11 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  const tenant = resolveTenantFromHost(hostname);
+  // La résolution du tenant est faite côté serveur applicatif (lib/tenant),
+  // où elle est mise en cache : la garder ici imposerait un aller-retour SQL
+  // sur chaque requête de vitrine publique.
   const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-tenant-id", tenant.id);
+  requestHeaders.set("x-tenant-host", hostname);
 
   const url = request.nextUrl.clone();
   url.pathname = rewrittenPathname;

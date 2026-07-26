@@ -1,8 +1,8 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { prisma } from "@/lib/db/client";
-import { getCurrentTenant } from "@/lib/tenant";
+import { getCurrentTenant, TENANTS_CACHE_TAG } from "@/lib/tenant";
 import { getSession } from "@/lib/auth";
 import { themeSchema, type ThemeInput } from "@/lib/validators/theme";
 
@@ -34,5 +34,9 @@ export async function updateTenantTheme(
 
   revalidatePath("/admin/personnalisation");
   revalidatePath("/");
+  // updateTag (et non revalidateTag) : cette Server Action doit invalider
+  // immédiatement l'entrée de cache du parc (lecture de sa propre écriture),
+  // pas seulement la marquer stale pour une revalidation en arrière-plan.
+  updateTag(TENANTS_CACHE_TAG);
   return { ok: true };
 }

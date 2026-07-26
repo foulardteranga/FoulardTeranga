@@ -1,11 +1,17 @@
+import { notFound } from "next/navigation";
 import { StoreHeader } from "@/components/storefront/StoreHeader";
 import { MobileMenu } from "@/components/storefront/MobileMenu";
 import { BottomTab } from "@/components/storefront/BottomTab";
 import { StoreOfflineBanner } from "@/components/storefront/StoreOfflineBanner";
 import { StoreToast } from "@/components/storefront/StoreToast";
+import { getCurrentTenantOrNull } from "@/lib/tenant";
 import { getTenantSettings } from "@/lib/data/tenant.server";
 
 export default async function StorefrontLayout({ children }: { children: React.ReactNode }) {
+  // Un hôte qui ne correspond à aucune boutique ne doit pas afficher la
+  // vitrine d'une cliente au hasard (spec §2).
+  if (!(await getCurrentTenantOrNull())) notFound();
+
   const { phone } = await getTenantSettings();
   return (
     <div style={{ minHeight: "100vh", background: "#FAF7F2", color: "#1E1B18", display: "flex", flexDirection: "column" }}>

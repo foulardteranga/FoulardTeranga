@@ -1,36 +1,74 @@
+import { unstable_cache } from "next/cache";
+import { prisma } from "@/lib/db/client";
 import type { Tenant } from "./types";
 
-/**
- * v1 mono-boutique : un seul tenant. La résolution ci-dessous reste réelle
- * (host → tenant) pour que l'ajout d'un 2e tenant soit un ajout de données,
- * jamais une réécriture de cette logique.
- */
-export const DEFAULT_TENANT: Tenant = {
-  id: "foulard-teranga",
-  slug: "foulard-teranga",
-  name: "Foulard Teranga",
-  theme: {
-    primaryColor: "#26326B",
-    accentColor: "#D07A34",
-    logoText: "Foulard Teranga",
-  },
-  domains: ["localhost", "foulard-teranga.localhost"],
-};
+/** Étiquette de cache à invalider après toute mutation de boutique. */
+export const TENANTS_CACHE_TAG = "tenants";
 
-export const TENANTS: Tenant[] = [DEFAULT_TENANT];
+interface TenantRow {
+  id: string;
+  slug: string;
+  name: string;
+  primaryColor: string;
+  accentColor: string;
+  logoText: string;
+  domains: string[];
+}
+
+function toTenant(row: TenantRow): Tenant {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    theme: {
+      primaryColor: row.primaryColor,
+      accentColor: row.accentColor,
+      logoText: row.logoText,
+    },
+    domains: row.domains,
+  };
+}
+
+/**
+ * Charge le parc entier en une requête plutôt qu'une requête par hôte : la
+ * correspondance se fait ensuite en mémoire, et le cache n'a qu'une seule
+ * entrée à invalider. Adapté à un parc de quelques dizaines de boutiques.
+ */
+const loadTenants = unstable_cache(
+  async (): Promise<TenantRow[]> =>
+    prisma.tenant.findMany({
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        primaryColor: true,
+        accentColor: true,
+        logoText: true,
+        domains: true,
+      },
+    }),
+  ["tenants-all"],
+  { tags: [TENANTS_CACHE_TAG] }
+);
 
 function stripPort(host: string): string {
   return host.split(":")[0].toLowerCase();
 }
 
-export function resolveTenantFromHost(host: string): Tenant {
+/**
+ * Résout un hôte vers sa boutique. Renvoie `null` si aucune ne correspond :
+ * un repli sur une boutique par défaut afficherait, en multi-boutique, la
+ * vitrine d'une cliente sur un domaine qui ne lui appartient pas (spec §2).
+ */
+export async function resolveTenantFromHost(host: string): Promise<Tenant | null> {
   const normalized = stripPort(host);
+  const rows = await loadTenants();
 
-  const bySubdomain = TENANTS.find((t) => normalized === `${t.slug}.plateforme.app`);
-  if (bySubdomain) return bySubdomain;
+  const bySubdomain = rows.find((t) => normalized === `${t.slug}.plateforme.app`);
+  if (bySubdomain) return toTenant(bySubdomain);
 
-  const byDomain = TENANTS.find((t) => t.domains.includes(normalized));
-  if (byDomain) return byDomain;
+  const byDomain = rows.find((t) => t.domains.includes(normalized));
+  if (byDomain) return toTenant(byDomain);
 
-  return DEFAULT_TENANT;
+  return null;
 }

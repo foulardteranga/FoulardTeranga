@@ -1,24 +1,77 @@
-import { describe, it, expect } from "vitest";
-import { DEFAULT_TENANT, resolveTenantFromHost } from "@/lib/tenant/registry";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+const findMany = vi.fn();
+
+vi.mock("@/lib/db/client", () => ({
+  prisma: { tenant: { findMany: () => findMany() } },
+}));
+
+// unstable_cache exécute simplement la fonction en test : on veut vérifier la
+// logique de résolution, pas le comportement de cache de Next.js.
+vi.mock("next/cache", () => ({
+  unstable_cache: (fn: () => unknown) => fn,
+  revalidateTag: vi.fn(),
+}));
+
+const { resolveTenantFromHost } = await import("@/lib/tenant/registry");
+
+const ROWS = [
+  {
+    id: "foulard-teranga",
+    slug: "foulard-teranga",
+    name: "Foulard Teranga",
+    primaryColor: "#26326B",
+    accentColor: "#D07A34",
+    logoText: "Foulard Teranga",
+    domains: ["localhost", "foulard-teranga.localhost"],
+  },
+  {
+    id: "boutique-voisine",
+    slug: "boutique-voisine",
+    name: "Boutique Voisine",
+    primaryColor: "#0E9F6E",
+    accentColor: "#C9A227",
+    logoText: "Boutique Voisine",
+    domains: ["boutique-voisine.ci"],
+  },
+];
+
+beforeEach(() => {
+  findMany.mockReset();
+  findMany.mockResolvedValue(ROWS);
+});
 
 describe("resolveTenantFromHost", () => {
-  it("resolves the default tenant for localhost", () => {
-    expect(resolveTenantFromHost("localhost:3000").id).toBe(DEFAULT_TENANT.id);
+  it("résout par sous-domaine canonique", async () => {
+    const tenant = await resolveTenantFromHost("foulard-teranga.plateforme.app");
+    expect(tenant?.id).toBe("foulard-teranga");
   });
 
-  it("resolves by canonical subdomain", () => {
-    expect(resolveTenantFromHost("foulard-teranga.plateforme.app").id).toBe(DEFAULT_TENANT.id);
+  it("résout par domaine personnalisé enregistré", async () => {
+    const tenant = await resolveTenantFromHost("boutique-voisine.ci");
+    expect(tenant?.id).toBe("boutique-voisine");
   });
 
-  it("resolves by a registered custom domain", () => {
-    expect(resolveTenantFromHost("foulard-teranga.localhost").id).toBe(DEFAULT_TENANT.id);
+  it("résout localhost vers la boutique qui le déclare", async () => {
+    const tenant = await resolveTenantFromHost("localhost:3000");
+    expect(tenant?.id).toBe("foulard-teranga");
   });
 
-  it("falls back to the default tenant for an unknown host", () => {
-    expect(resolveTenantFromHost("unknown-shop.example.com").id).toBe(DEFAULT_TENANT.id);
+  it("ignore la casse et le port", async () => {
+    const tenant = await resolveTenantFromHost("BOUTIQUE-VOISINE.CI:8080");
+    expect(tenant?.id).toBe("boutique-voisine");
   });
 
-  it("is case-insensitive and ignores the port", () => {
-    expect(resolveTenantFromHost("FOULARD-TERANGA.PLATEFORME.APP:8080").id).toBe(DEFAULT_TENANT.id);
+  it("renvoie null pour un hôte inconnu au lieu de retomber sur une boutique", async () => {
+    expect(await resolveTenantFromHost("inconnu.example.com")).toBeNull();
+  });
+
+  it("expose le thème de la boutique résolue", async () => {
+    const tenant = await resolveTenantFromHost("boutique-voisine.ci");
+    expect(tenant?.theme).toEqual({
+      primaryColor: "#0E9F6E",
+      accentColor: "#C9A227",
+      logoText: "Boutique Voisine",
+    });
   });
 });

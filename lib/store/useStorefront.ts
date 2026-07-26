@@ -2,7 +2,6 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { DEFAULT_TENANT } from "@/lib/tenant/registry";
 import { addLine, incLine as incLineLogic, removeLine, type StoreCartLine } from "./cartLogic";
 import { DEFAULT_BLOCK_ORDER, DEFAULT_BLOCK_NAMES, type BlockId } from "@/lib/storefront/blockIds";
 
@@ -93,7 +92,12 @@ export const useStorefront = create<StorefrontState>()(
       resetKyc: () => set({ kyc: EMPTY_KYC, kycTouched: false }),
     }),
     {
-      name: `ft-storefront-store-${DEFAULT_TENANT.id}`,
+      // Clé littérale : ce store client n'a pas accès à la résolution serveur
+      // du tenant. Conserver la valeur historique préserve les paniers déjà
+      // enregistrés chez les visiteuses. Rendre cette clé propre à chaque
+      // boutique est une tâche de la phase 2 (cf. « Ce que cette phase ne
+      // fait pas »).
+      name: "ft-storefront-store-foulard-teranga",
       storage: createJSONStorage(() => localStorage),
       skipHydration: true,
       partialize: (s) => ({
