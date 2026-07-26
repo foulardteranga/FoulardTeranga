@@ -56,7 +56,7 @@ export async function proxy(request: NextRequest) {
         // permissions to an empty array..." dans lib/auth/index.test.ts) — dans
         // ce cas, repli sur /connexion, qui sort de ce bloc de contrôle et ne
         // peut donc pas reboucler.
-        const firstAllowedId = session?.permissions[0];
+        const firstAllowedId = Object.keys(MODULE_ID_PATHS).find((id) => hasModuleAccess(session, id));
         const fallbackPath = firstAllowedId ? MODULE_ID_PATHS[firstAllowedId] : undefined;
         const redirectUrl = new URL(dashboardPath(hostname, fallbackPath ?? "/connexion"), request.url);
         const redirect = NextResponse.redirect(redirectUrl);
