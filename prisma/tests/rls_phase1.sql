@@ -61,4 +61,38 @@ begin
   end if;
 end $$;
 
+-- 5. Tenant : anon ne lit pas les colonnes de cycle de vie ajoutées en Task 1.
+set local role anon;
+do $$
+begin
+  begin
+    perform "status" from "Tenant" limit 1;
+    raise exception 'ASSERTION ÉCHOUÉE : anon a pu lire Tenant.status';
+  exception
+    when insufficient_privilege then null;
+  end;
+end $$;
+
+-- 6. Tenant : authenticated garde l'accès à enabledModules (Task 7 en dépend),
+-- mais pas aux autres colonnes de cycle de vie.
+set local role authenticated;
+do $$
+declare enabled_modules text[];
+begin
+  select "enabledModules" into enabled_modules from "Tenant" limit 1;
+  if enabled_modules is null then
+    raise exception 'ASSERTION ÉCHOUÉE : authenticated ne peut plus lire Tenant.enabledModules';
+  end if;
+end $$;
+
+do $$
+begin
+  begin
+    perform "suspendedReason" from "Tenant" limit 1;
+    raise exception 'ASSERTION ÉCHOUÉE : authenticated a pu lire Tenant.suspendedReason';
+  exception
+    when insufficient_privilege then null;
+  end;
+end $$;
+
 rollback;
