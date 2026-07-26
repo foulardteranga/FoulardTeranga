@@ -68,12 +68,16 @@ model Tenant {
   // … champs existants inchangés (slug, name, theme, domains, whatsappPhone…)
   status          TenantStatus @default(active)
   plan            TenantPlan   @default(essentiel)
-  enabledModules  String[]     @default([])
+  enabledModules  String[]     @default(["pos", "dash", "orders", "inv", "cust", "theme", "vitrine", "boutique"])
   suspendedAt     DateTime?
   suspendedReason String?
   archivedAt      DateTime?
 }
 ```
+
+Le défaut correspond au palier `essentiel`, cohérent avec `plan @default(essentiel)`.
+Un défaut vide serait incompatible avec la contrainte `tenant_min_modules` (§4) :
+toute insertion omettant le champ échouerait.
 
 `enabledModules` porte des ids de `MODULE_IDS` (`lib/nav.ts`).
 
