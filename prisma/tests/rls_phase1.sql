@@ -38,4 +38,27 @@ begin
   end;
 end $$;
 
+-- 3. Tenant : une gérante ne peut plus écrire sa propre ligne via PostgREST.
+do $$
+begin
+  begin
+    update "Tenant" set "domains" = array['boutique-voisine.ci'] where id = 'foulard-teranga';
+    if found then
+      raise exception 'ASSERTION ÉCHOUÉE : un owner a pu écrire Tenant.domains';
+    end if;
+  exception
+    when insufficient_privilege then null;
+  end;
+end $$;
+
+-- 4. Tenant : la lecture publique reste ouverte (la vitrine en dépend).
+do $$
+declare visible int;
+begin
+  select count(*) into visible from "Tenant";
+  if visible = 0 then
+    raise exception 'ASSERTION ÉCHOUÉE : la lecture publique de Tenant est cassée';
+  end if;
+end $$;
+
 rollback;
