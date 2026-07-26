@@ -70,6 +70,17 @@ enum PromoKind {
   amount
 }
 
+enum TenantStatus {
+  active
+  suspended
+  archived
+}
+
+enum TenantPlan {
+  essentiel
+  pro
+}
+
 model Tenant {
   id            String   @id @default(cuid())
   slug          String   @unique
@@ -82,6 +93,12 @@ model Tenant {
   whatsappPhone String?
   domains       String[]
   createdAt     DateTime @default(now())
+  status          TenantStatus @default(active)
+  plan            TenantPlan   @default(essentiel)
+  enabledModules  String[]     @default(["pos", "dash", "orders", "inv", "cust", "theme", "vitrine", "boutique"])
+  suspendedAt     DateTime?
+  suspendedReason String?
+  archivedAt      DateTime?
 
   profiles          Profile[]
   products          Product[]
