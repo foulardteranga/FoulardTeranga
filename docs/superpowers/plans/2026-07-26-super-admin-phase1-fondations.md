@@ -1333,7 +1333,59 @@ Expected: PASS.
 - [ ] **Step 5: Vérifier la suite complète et le typecheck**
 
 Run: `npx vitest run && npm run typecheck`
-Expected: PASS partout. `proxy.ts` appelle `hasModuleAccess(session, moduleId)` avec la même signature — aucune modification requise.
+Expected: PASS partout. `proxy.ts` appelle `hasModuleAccess(session, moduleId)` avec la même signature — aucune modification de cet appel n'est requise. **En revanche**, voir Step 5b : une autre partie de `proxy.ts` suppose implicitement l'ancien comportement (owner toujours autorisé) et doit être corrigée.
+
+- [ ] **Step 5b : corriger le repli de proxy.ts, cassé par l'intersection**
+
+**Trouvé en revue, pas anticipé à l'écriture de ce plan.** `proxy.ts` calcule le
+chemin de repli quand `moduleAllowed` est faux ainsi :
+
+```ts
+        const firstAllowedId = session?.permissions[0];
+```
+
+`session.permissions` est **toujours `[]` pour `owner`** (invariant du type
+`Session`, cf. Step 3). Avant cette tâche, `owner` ne pouvait jamais échouer
+`hasModuleAccess`, donc cette branche ne s'exécutait jamais pour lui. Depuis
+l'intersection introduite dans cette tâche, un `owner` peut désormais se voir
+refuser un module — et retombe alors sur `firstAllowedId = undefined`, donc
+sur `/connexion` : une gérante déjà connectée atterrit sur l'écran de
+connexion au lieu d'une page utile de son propre tableau de bord.
+
+**Correctif** : chercher le premier module auquel la session a *réellement*
+accès (au sens de `hasModuleAccess`), pas seulement dans `permissions` (qui
+n'a de sens que pour `staff`). Le socle minimal (`tenant_min_modules`, `dash`
+toujours activé, cf. Task 1) garantit qu'un tel module existe toujours pour
+toute session valide — `/connexion` ne reste un filet que pour un cas
+déjà dégénéré (session nulle à ce stade, normalement déjà écartée plus haut).
+
+Dans `proxy.ts`, remplacer :
+
+```ts
+        const firstAllowedId = session?.permissions[0];
+        const fallbackPath = firstAllowedId ? MODULE_ID_PATHS[firstAllowedId] : undefined;
+```
+
+par :
+
+```ts
+        const firstAllowedId = Object.keys(MODULE_ID_PATHS).find((id) => hasModuleAccess(session, id));
+        const fallbackPath = firstAllowedId ? MODULE_ID_PATHS[firstAllowedId] : undefined;
+```
+
+`proxy.ts` n'a pas de fichier de test dédié dans ce projet (la logique pure
+qu'il délègue est testée dans `lib/proxy/zones.test.ts` ; le câblage du
+middleware lui-même ne l'est pas ailleurs non plus) — ne pas introduire cette
+infrastructure de test pour ce correctif d'une ligne, hors de proportion.
+Vérifier par relecture : pour un `owner` dont `enabledModules` contient au
+moins `dash` (toujours vrai) et `pos` (déjà présent dans le palier
+`essentiel`), `Object.keys(MODULE_ID_PATHS)` étant énuméré dans l'ordre
+`pos, dash, orders, …`, le premier module trouvé sera typiquement `pos` —
+cohérent avec `/pos` déjà utilisé ailleurs comme route d'entrée par défaut du
+dashboard (`dashboardPath(hostname, "/pos")` dans `lib/proxy/zones.ts`).
+
+Run: `npx vitest run && npm run typecheck`
+Expected: PASS partout (ce correctif ne touche aucun test existant).
 
 - [ ] **Step 6: Vérifier le comportement réel**
 
