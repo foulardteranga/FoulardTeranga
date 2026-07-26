@@ -103,31 +103,42 @@ mkdir -p "prisma/migrations/$(date -u +%Y%m%d%H%M%S)_tenant_lifecycle_modules"
 Note le chemin exact créé (avec l'horodatage réel) — il sera réutilisé aux
 étapes suivantes.
 
-- [ ] **Step 3: Écrire la migration complète (DDL + backfill + contrainte)**
+- [ ] **Step 3: Écrire la migration complète (DDL + contrainte)**
 
 Créer `migration.sql` dans le dossier créé à l'étape précédente, avec ce
 contenu complet — le DDL correspondant aux champs ajoutés à l'étape 1, suivi
-du backfill et de la contrainte :
+de la contrainte :
+
+**Piège évité ici, à ne pas réintroduire** : `ADD COLUMN ... DEFAULT x` remplit
+**immédiatement** les lignes déjà en base avec `x` — un `UPDATE ... WHERE
+cardinality(...) = 0` exécuté ensuite ne trouverait donc jamais aucune ligne à
+corriger, puisqu'aucune ligne existante n'a jamais eu un tableau vide (elle a
+directement reçu la valeur par défaut au moment de l'`ALTER TABLE`). Pour que
+la boutique déjà en base reçoive le palier complet **tout en gardant le palier
+`essentiel` comme défaut pour les futures boutiques**, on ajoute la colonne
+avec le défaut complet (il rétro-remplit la ligne existante), puis on resserre
+le défaut immédiatement après avec `ALTER COLUMN ... SET DEFAULT` — qui ne
+touche, par construction, aucune ligne déjà en base :
 
 ```sql
 create type "TenantStatus" as enum ('active', 'suspended', 'archived');
 create type "TenantPlan" as enum ('essentiel', 'pro');
 
-alter table "Tenant"
-  add column "status" "TenantStatus" not null default 'active',
-  add column "plan" "TenantPlan" not null default 'essentiel',
-  add column "enabledModules" text[] not null default array['pos','dash','orders','inv','cust','theme','vitrine','boutique'],
-  add column "suspendedAt" timestamp(3),
-  add column "suspendedReason" text,
-  add column "archivedAt" timestamp(3);
+alter table "Tenant" add column "status" "TenantStatus" not null default 'active';
 
--- Les boutiques existantes précèdent la notion de périmètre : elles avaient
--- accès à tout. On les aligne sur le palier complet avant d'imposer le socle,
--- sinon la contrainte ci-dessous échouerait sur des lignes à tableau vide.
-update "Tenant"
-set "enabledModules" = array['pos','dash','orders','inv','cust','mkt','fin','theme','vitrine','boutique'],
-    "plan" = 'pro'
-where cardinality("enabledModules") = 0;
+-- La boutique existante précède la notion de périmètre : elle avait accès à
+-- tout. Le défaut complet rétro-remplit sa ligne dès l'ADD COLUMN ; on le
+-- resserre ensuite au palier essentiel pour toute future boutique, sans
+-- toucher à la ligne déjà en base (spec §1).
+alter table "Tenant" add column "plan" "TenantPlan" not null default 'pro';
+alter table "Tenant" alter column "plan" set default 'essentiel';
+
+alter table "Tenant" add column "enabledModules" text[] not null default array['pos','dash','orders','inv','cust','mkt','fin','theme','vitrine','boutique'];
+alter table "Tenant" alter column "enabledModules" set default array['pos','dash','orders','inv','cust','theme','vitrine','boutique'];
+
+alter table "Tenant" add column "suspendedAt" timestamp(3);
+alter table "Tenant" add column "suspendedReason" text;
+alter table "Tenant" add column "archivedAt" timestamp(3);
 
 -- Socle minimal : sans « dash », une gérante se connecterait sans aucun écran
 -- accessible et atterrirait sur sa propre page de connexion, sans issue
