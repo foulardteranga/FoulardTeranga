@@ -1,26 +1,21 @@
--- Create enums
 CREATE TYPE "TenantStatus" AS ENUM ('active', 'suspended', 'archived');
 CREATE TYPE "TenantPlan" AS ENUM ('essentiel', 'pro');
 
--- Add new columns to Tenant
 ALTER TABLE "Tenant" ADD COLUMN "status" "TenantStatus" NOT NULL DEFAULT 'active';
-ALTER TABLE "Tenant" ADD COLUMN "plan" "TenantPlan" NOT NULL DEFAULT 'essentiel';
-ALTER TABLE "Tenant" ADD COLUMN "enabledModules" text[] NOT NULL DEFAULT array['pos','dash','orders','inv','cust','theme','vitrine','boutique'];
+
+-- La boutique existante précède la notion de périmètre : elle avait accès à
+-- tout. Le défaut complet rétro-remplit sa ligne dès l'ADD COLUMN ; on le
+-- resserre ensuite au palier essentiel pour toute future boutique, sans
+-- toucher à la ligne déjà en base (spec §1).
+ALTER TABLE "Tenant" ADD COLUMN "plan" "TenantPlan" NOT NULL DEFAULT 'pro';
+ALTER TABLE "Tenant" ALTER COLUMN "plan" SET DEFAULT 'essentiel';
+
+ALTER TABLE "Tenant" ADD COLUMN "enabledModules" text[] NOT NULL DEFAULT array['pos','dash','orders','inv','cust','mkt','fin','theme','vitrine','boutique'];
+ALTER TABLE "Tenant" ALTER COLUMN "enabledModules" SET DEFAULT array['pos','dash','orders','inv','cust','theme','vitrine','boutique'];
+
 ALTER TABLE "Tenant" ADD COLUMN "suspendedAt" TIMESTAMP(3);
 ALTER TABLE "Tenant" ADD COLUMN "suspendedReason" TEXT;
 ALTER TABLE "Tenant" ADD COLUMN "archivedAt" TIMESTAMP(3);
 
--- Les boutiques existantes précèdent la notion de périmètre : elles avaient
--- accès à tout. On les aligne sur le palier complet avant d'imposer le socle,
--- sinon la contrainte ci-dessous échouerait sur des lignes à tableau vide.
-UPDATE "Tenant"
-SET "enabledModules" = array['pos','dash','orders','inv','cust','mkt','fin','theme','vitrine','boutique'],
-    "plan" = 'pro'
-WHERE cardinality("enabledModules") = 0;
-
--- Socle minimal : sans « dash », une gérante se connecterait sans aucun écran
--- accessible et atterrirait sur sa propre page de connexion, sans issue
--- (cf. spec §4). La contrainte rend cet état impossible, même si une écriture
--- contourne le validateur Zod.
 ALTER TABLE "Tenant" ADD CONSTRAINT tenant_min_modules
   CHECK ('dash' = any("enabledModules"));
