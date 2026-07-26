@@ -9,6 +9,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "seed:super-admin": "tsx --env-file=.env scripts/seed-super-admin.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
@@ -33,6 +34,7 @@
     "@types/react-dom": "^19.0.0",
     "prisma": "^7.8.0",
     "tailwindcss": "^4.0.0",
+    "tsx": "^4.23.1",
     "typescript": "^5.7.0",
     "vitest": "^4.1.10"
   }

@@ -1,7 +1,7 @@
 /**
  * Crée le premier compte plateforme (super_admin). À exécuter une seule fois :
  *   SUPER_ADMIN_EMAIL=… SUPER_ADMIN_PASSWORD=… SUPER_ADMIN_NAME=… \
- *     npx tsx scripts/seed-super-admin.ts
+ *     npm run seed:super-admin
  *
  * Idempotent : si un super_admin existe déjà, le script s'arrête sans rien faire.
  */
