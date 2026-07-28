@@ -30,7 +30,7 @@ vi.mock("@/lib/supabase/admin", () => ({
   },
 }));
 
-import { createTenant, updateTenantIdentity } from "./actions";
+import { createTenant, updateTenantIdentity, updateTenantModules } from "./actions";
 
 const denied = { ok: false, error: "Une erreur est survenue, réessayez." };
 
@@ -66,6 +66,13 @@ describe("updateTenantIdentity — réservée au prestataire", () => {
       whatsappPhone: "",
       domains: [],
     });
+    expect(result).toEqual(denied);
+  });
+});
+
+describe("updateTenantModules — réservée au prestataire", () => {
+  it("refuse une gérante sans toucher à la base", async () => {
+    const result = await updateTenantModules("t1", { plan: "pro", modules: ["dash", "pos"] });
     expect(result).toEqual(denied);
   });
 });

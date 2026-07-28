@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getTenantBySlug } from "@/lib/platform/queries";
 import { TenantDetailScreen, type TenantTab } from "@/components/platform/screens/TenantDetailScreen";
 import { TenantIdentityForm } from "@/components/platform/screens/TenantIdentityForm";
+import { TenantModulesForm } from "@/components/platform/screens/TenantModulesForm";
 
 export default async function BoutiqueDetailPage({
   params,
@@ -17,7 +18,7 @@ export default async function BoutiqueDetailPage({
   const tab: TenantTab = onglet === "modules" ? "modules" : "identite";
   return (
     <TenantDetailScreen tenant={tenant} tab={tab}>
-      <TenantIdentityForm tenant={tenant} />
+      {tab === "modules" ? <TenantModulesForm tenant={tenant} /> : <TenantIdentityForm tenant={tenant} />}
     </TenantDetailScreen>
   );
 }

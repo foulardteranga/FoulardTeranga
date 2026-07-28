@@ -13,9 +13,11 @@ import { defaultEmployeeRoles, initialStorefrontPage } from "./provisioning";
 import {
   createTenantSchema,
   tenantIdentitySchema,
+  tenantModulesFormSchema,
   normalizeSlug,
   type CreateTenantInput,
   type TenantIdentityInput,
+  type TenantModulesInput,
 } from "@/lib/validators/platform";
 
 export type PlatformResult = { ok: true } | { ok: false; error: string };
@@ -222,4 +224,59 @@ export async function updateTenantIdentity(
   revalidatePath("/boutiques");
   revalidatePath(`/boutiques/${data.slug}`);
   return { ok: true };
+}
+
+/**
+ * Ajuste le périmètre fonctionnel d'une boutique. `plan` n'est qu'un
+ * pré-remplissage (spec §1.1) : on enregistre les deux, mais seule
+ * `enabledModules` gouverne l'accès (`hasModuleAccess`).
+ */
+export async function updateTenantModules(
+  tenantId: string,
+  input: TenantModulesInput
+): Promise<PlatformResult> {
+  const actor = await currentSuperAdmin();
+  if (!actor) return { ok: false, error: GENERIC_ERROR };
+
+  const parsed = tenantModulesFormSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Informations invalides." };
+  }
+  const data = parsed.data;
+
+  try {
+    const before = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { slug: true, plan: true, enabledModules: true },
+    });
+    if (!before) return { ok: false, error: "Boutique introuvable." };
+
+    await prisma.$transaction(async (tx) => {
+      await tx.tenant.update({
+        where: { id: tenantId },
+        data: { plan: data.plan, enabledModules: data.modules },
+      });
+      await recordPlatformAction(
+        {
+          actorId: actor.userId,
+          action: "modules_changed",
+          tenantId,
+          metadata: {
+            planBefore: before.plan,
+            planAfter: data.plan,
+            modulesBefore: before.enabledModules,
+            modulesAfter: data.modules,
+          },
+        },
+        tx
+      );
+    });
+
+    updateTag(TENANTS_CACHE_TAG);
+    revalidatePath("/boutiques");
+    revalidatePath(`/boutiques/${before.slug}`);
+    return { ok: true };
+  } catch {
+    return { ok: false, error: GENERIC_ERROR };
+  }
 }
