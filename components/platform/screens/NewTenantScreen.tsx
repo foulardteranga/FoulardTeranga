@@ -9,6 +9,8 @@ import { parseDomains } from "@/lib/platform/domains";
 import { normalizeSlug } from "@/lib/validators/platform";
 import { modulesForPlan, PLAN_LABELS } from "@/lib/platform/plans";
 import { NAV } from "@/lib/nav";
+import { Icon, ICONS } from "@/components/ui/Icon";
+import { FormMessage } from "@/components/platform/FormMessage";
 import type { TenantPlan } from "@/lib/generated/prisma/enums";
 
 const EMPTY = {
@@ -40,6 +42,7 @@ export function NewTenantScreen() {
   const [form, setForm] = useState(EMPTY);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   function set<K extends keyof typeof EMPTY>(key: K, value: (typeof EMPTY)[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -81,7 +84,7 @@ export function NewTenantScreen() {
 
   return (
     <form onSubmit={handleSubmit} style={{ maxWidth: 760 }}>
-      <Link href="/boutiques" style={{ fontSize: 13, color: colors.muted, textDecoration: "none" }}>
+      <Link href="/boutiques" className="ft-platform-link" style={{ fontSize: 13, color: colors.muted, textDecoration: "none" }}>
         ← Retour au parc
       </Link>
       <h1 style={{ fontFamily: fonts.display, fontSize: 24, fontWeight: 600, margin: "10px 0 24px" }}>
@@ -95,6 +98,7 @@ export function NewTenantScreen() {
             Nom de la boutique
             <input
               required
+              className="ft-platform-input"
               value={form.name}
               onChange={(e) => {
                 set("name", e.target.value);
@@ -107,6 +111,7 @@ export function NewTenantScreen() {
             Slug (sous-domaine)
             <input
               required
+              className="ft-platform-input"
               value={form.slug}
               onChange={(e) => set("slug", e.target.value)}
               placeholder="boutique-du-plateau"
@@ -115,20 +120,39 @@ export function NewTenantScreen() {
           </label>
           <label style={labelStyle}>
             Logo texte
-            <input required value={form.logoText} onChange={(e) => set("logoText", e.target.value)} style={inputStyle} />
+            <input required className="ft-platform-input" value={form.logoText} onChange={(e) => set("logoText", e.target.value)} style={inputStyle} />
           </label>
           <label style={labelStyle}>
             Couleur principale
-            <input type="color" value={form.primaryColor} onChange={(e) => set("primaryColor", e.target.value)} style={{ ...inputStyle, padding: 4, height: 42 }} />
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <input
+                type="color"
+                className="ft-platform-input"
+                value={form.primaryColor}
+                onChange={(e) => set("primaryColor", e.target.value)}
+                style={{ ...inputStyle, padding: 4, height: 42, width: 56, flexShrink: 0 }}
+              />
+              <span style={{ fontSize: 13, color: colors.muted, fontFamily: "monospace" }}>{form.primaryColor}</span>
+            </div>
           </label>
           <label style={labelStyle}>
             Couleur d'accent
-            <input type="color" value={form.accentColor} onChange={(e) => set("accentColor", e.target.value)} style={{ ...inputStyle, padding: 4, height: 42 }} />
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <input
+                type="color"
+                className="ft-platform-input"
+                value={form.accentColor}
+                onChange={(e) => set("accentColor", e.target.value)}
+                style={{ ...inputStyle, padding: 4, height: 42, width: 56, flexShrink: 0 }}
+              />
+              <span style={{ fontSize: 13, color: colors.muted, fontFamily: "monospace" }}>{form.accentColor}</span>
+            </div>
           </label>
         </div>
         <label style={{ ...labelStyle, marginTop: 14 }}>
           Domaines personnalisés (un par ligne, optionnel)
           <textarea
+            className="ft-platform-textarea"
             value={form.domainsRaw}
             onChange={(e) => set("domainsRaw", e.target.value)}
             rows={3}
@@ -143,7 +167,7 @@ export function NewTenantScreen() {
         <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
           {(["essentiel", "pro"] as const).map((plan) => (
             <label key={plan} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14 }}>
-              <input type="radio" name="plan" checked={form.plan === plan} onChange={() => set("plan", plan)} />
+              <input type="radio" className="ft-platform-radio" name="plan" checked={form.plan === plan} onChange={() => set("plan", plan)} />
               {PLAN_LABELS[plan]}
             </label>
           ))}
@@ -159,15 +183,48 @@ export function NewTenantScreen() {
         <div style={{ display: "grid", gap: 14, gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
           <label style={labelStyle}>
             Nom
-            <input required value={form.ownerName} onChange={(e) => set("ownerName", e.target.value)} style={inputStyle} />
+            <input required className="ft-platform-input" value={form.ownerName} onChange={(e) => set("ownerName", e.target.value)} style={inputStyle} />
           </label>
           <label style={labelStyle}>
             Email
-            <input required type="email" autoComplete="off" value={form.ownerEmail} onChange={(e) => set("ownerEmail", e.target.value)} style={inputStyle} />
+            <input required type="email" className="ft-platform-input" autoComplete="off" value={form.ownerEmail} onChange={(e) => set("ownerEmail", e.target.value)} style={inputStyle} />
           </label>
           <label style={labelStyle}>
             Mot de passe initial
-            <input required type="text" autoComplete="off" minLength={8} value={form.ownerPassword} onChange={(e) => set("ownerPassword", e.target.value)} style={inputStyle} />
+            <div style={{ position: "relative" }}>
+              <input
+                required
+                type={showPassword ? "text" : "password"}
+                className="ft-platform-input"
+                autoComplete="off"
+                minLength={8}
+                value={form.ownerPassword}
+                onChange={(e) => set("ownerPassword", e.target.value)}
+                style={{ ...inputStyle, width: "100%", paddingRight: 40 }}
+              />
+              <button
+                type="button"
+                className="ft-platform-btn"
+                onClick={() => setShowPassword((v) => !v)}
+                title={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                style={{
+                  position: "absolute",
+                  right: 4,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  border: "none",
+                  background: "transparent",
+                  color: colors.muted,
+                  cursor: "pointer",
+                  padding: 8,
+                  borderRadius: 8,
+                  display: "flex",
+                }}
+              >
+                <Icon path={showPassword ? ICONS.eyeOff : ICONS.eye} size={17} />
+              </button>
+            </div>
           </label>
         </div>
         <p style={{ color: colors.muted, fontSize: 13, marginTop: 12, marginBottom: 0 }}>
@@ -175,27 +232,41 @@ export function NewTenantScreen() {
         </p>
       </section>
 
-      {error && (
-        <p style={{ background: colors.bgDanger, color: colors.fgDanger, borderRadius: 10, padding: "10px 14px", fontSize: 14 }}>
-          {error}
-        </p>
-      )}
+      <FormMessage message={error ? { kind: "error", text: error } : null} />
 
       <button
         type="submit"
         disabled={saving}
+        className="ft-platform-btn ft-platform-btn-primary"
         style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 9,
+          marginTop: 16,
           background: colors.primary,
           color: "#fff",
           border: "none",
-          borderRadius: 12,
+          borderRadius: 10,
           padding: "12px 22px",
           fontSize: 14,
           fontWeight: 600,
           cursor: saving ? "default" : "pointer",
-          opacity: saving ? 0.6 : 1,
+          opacity: saving ? 0.7 : 1,
         }}
       >
+        {saving && (
+          <span
+            className="ft-spin"
+            style={{
+              width: 14,
+              height: 14,
+              borderRadius: 999,
+              border: "2px solid rgba(255,255,255,.4)",
+              borderTopColor: "#fff",
+              display: "inline-block",
+            }}
+          />
+        )}
         {saving ? "Création…" : "Créer la boutique"}
       </button>
     </form>

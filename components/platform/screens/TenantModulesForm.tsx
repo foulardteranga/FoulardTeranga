@@ -6,6 +6,7 @@ import { colors, adminBorder } from "@/lib/theme/tokens";
 import { updateTenantModules } from "@/lib/platform/actions";
 import { modulesForPlan, PLAN_LABELS } from "@/lib/platform/plans";
 import { MODULE_IDS, NAV, type ModuleId } from "@/lib/nav";
+import { FormMessage } from "@/components/platform/FormMessage";
 import type { TenantDetail } from "@/lib/platform/queries";
 import type { TenantPlan } from "@/lib/generated/prisma/enums";
 
@@ -54,7 +55,7 @@ export function TenantModulesForm({ tenant }: { tenant: TenantDetail }) {
       <div style={{ display: "flex", gap: 20, flexWrap: "wrap", marginBottom: 8 }}>
         {(["essentiel", "pro"] as const).map((id) => (
           <label key={id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14 }}>
-            <input type="radio" name="plan" checked={plan === id} onChange={() => applyPlan(id)} />
+            <input type="radio" className="ft-platform-radio" name="plan" checked={plan === id} onChange={() => applyPlan(id)} />
             {PLAN_LABELS[id]}
           </label>
         ))}
@@ -78,6 +79,7 @@ export function TenantModulesForm({ tenant }: { tenant: TenantDetail }) {
           >
             <input
               type="checkbox"
+              className="ft-platform-checkbox"
               checked={modules.includes(id)}
               disabled={id === "dash"}
               onChange={() => toggle(id)}
@@ -88,36 +90,41 @@ export function TenantModulesForm({ tenant }: { tenant: TenantDetail }) {
         ))}
       </div>
 
-      {message && (
-        <p
-          style={{
-            background: message.kind === "ok" ? colors.bgSuccess : colors.bgDanger,
-            color: message.kind === "ok" ? colors.fgSuccess : colors.fgDanger,
-            borderRadius: 10,
-            padding: "10px 14px",
-            fontSize: 14,
-          }}
-        >
-          {message.text}
-        </p>
-      )}
+      <FormMessage message={message} />
 
       <button
         type="submit"
         disabled={saving}
+        className="ft-platform-btn ft-platform-btn-primary"
         style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 9,
           marginTop: 16,
           background: colors.primary,
           color: "#fff",
           border: "none",
-          borderRadius: 12,
+          borderRadius: 10,
           padding: "11px 20px",
           fontSize: 14,
           fontWeight: 600,
           cursor: saving ? "default" : "pointer",
-          opacity: saving ? 0.6 : 1,
+          opacity: saving ? 0.7 : 1,
         }}
       >
+        {saving && (
+          <span
+            className="ft-spin"
+            style={{
+              width: 14,
+              height: 14,
+              borderRadius: 999,
+              border: "2px solid rgba(255,255,255,.4)",
+              borderTopColor: "#fff",
+              display: "inline-block",
+            }}
+          />
+        )}
         {saving ? "Enregistrement…" : "Enregistrer"}
       </button>
     </form>

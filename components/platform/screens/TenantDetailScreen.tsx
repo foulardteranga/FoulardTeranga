@@ -26,7 +26,7 @@ export function TenantDetailScreen({
 }) {
   return (
     <div>
-      <Link href="/boutiques" style={{ fontSize: 13, color: colors.muted, textDecoration: "none" }}>
+      <Link href="/boutiques" className="ft-platform-link" style={{ fontSize: 13, color: colors.muted, textDecoration: "none" }}>
         ← Retour au parc
       </Link>
 
@@ -44,6 +44,7 @@ export function TenantDetailScreen({
             <Link
               key={item.id}
               href={`/boutiques/${tenant.slug}?onglet=${item.id}`}
+              className="ft-platform-tab"
               style={{
                 padding: "9px 14px",
                 fontSize: 14,
@@ -51,6 +52,7 @@ export function TenantDetailScreen({
                 color: tab === item.id ? colors.primary : colors.muted,
                 borderBottom: `2px solid ${tab === item.id ? colors.primary : "transparent"}`,
                 textDecoration: "none",
+                transition: "color .15s ease-out",
               }}
             >
               {item.label}
