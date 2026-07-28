@@ -34,110 +34,121 @@ export async function createTenant(
   }
   const data = parsed.data;
 
-  if (await tenantSlugExists(data.slug)) {
-    return { ok: false, error: "Ce slug est déjà utilisé." };
-  }
-
-  for (const domain of data.domains) {
-    const conflict = await findTenantByDomain(domain);
-    if (conflict) {
-      return { ok: false, error: `Le domaine « ${domain} » est déjà rattaché à ${conflict.name}.` };
-    }
-  }
-
-  const admin = createAdminClient();
-  const { data: created, error: createError } = await admin.auth.admin.createUser({
-    email: data.ownerEmail,
-    password: data.ownerPassword,
-    email_confirm: true,
-  });
-  if (createError || !created.user) {
-    if (createError?.code === "email_exists") return { ok: false, error: "Cet email est déjà utilisé." };
-    return { ok: false, error: GENERIC_ERROR };
-  }
-  const ownerId = created.user.id;
-
-  const modules = modulesForPlan(data.plan);
-  const page = initialStorefrontPage(data.name);
-
+  // Tout le corps ci-dessous (lectures Prisma, création du compte Auth, puis
+  // transaction) est couvert par ce try englobant, à l'image de createEmployee
+  // (lib/team/actions.ts) : toute exception inattendue (panne DB, panne réseau
+  // Supabase) doit retomber sur le message générique plutôt que de se propager
+  // hors de la Server Action.
   try {
-    await prisma.$transaction(async (tx) => {
-      const tenant = await tx.tenant.create({
-        data: {
-          slug: data.slug,
-          name: data.name,
-          primaryColor: data.primaryColor,
-          accentColor: data.accentColor,
-          logoText: data.logoText,
-          domains: data.domains,
-          plan: data.plan,
-          enabledModules: modules,
-        },
-      });
+    if (await tenantSlugExists(data.slug)) {
+      return { ok: false, error: "Ce slug est déjà utilisé." };
+    }
 
-      const roles = defaultEmployeeRoles(modules);
-      if (roles.length > 0) {
-        await tx.employeeRole.createMany({
-          data: roles.map((role) => ({
-            tenantId: tenant.id,
-            name: role.name,
-            permissions: role.permissions,
-          })),
-        });
+    for (const domain of data.domains) {
+      const conflict = await findTenantByDomain(domain);
+      if (conflict) {
+        return { ok: false, error: `Le domaine « ${domain} » est déjà rattaché à ${conflict.name}.` };
       }
+    }
 
-      await tx.storefrontPage.create({
-        data: {
-          tenantId: tenant.id,
-          slug: "home",
-          draft: page as unknown as Prisma.InputJsonValue,
-          published: page as unknown as Prisma.InputJsonValue,
-          publishedAt: new Date(),
-        },
-      });
-
-      await tx.profile.create({
-        data: {
-          id: ownerId,
-          tenantId: tenant.id,
-          role: "owner",
-          name: data.ownerName,
-          email: data.ownerEmail,
-        },
-      });
-
-      // Audit écrit dans la même transaction : PlatformAuditLog n'a aucune clé
-      // étrangère (spec §1.3), donc « créée » et « tracée » sont indissociables.
-      await recordPlatformAction(
-        {
-          actorId: actor.userId,
-          action: "tenant_created",
-          tenantId: tenant.id,
-          metadata: { slug: data.slug, name: data.name, plan: data.plan, modules },
-        },
-        tx
-      );
-      await recordPlatformAction(
-        {
-          actorId: actor.userId,
-          action: "owner_created",
-          tenantId: tenant.id,
-          targetId: ownerId,
-          metadata: { email: data.ownerEmail, name: data.ownerName },
-        },
-        tx
-      );
+    const admin = createAdminClient();
+    const { data: created, error: createError } = await admin.auth.admin.createUser({
+      email: data.ownerEmail,
+      password: data.ownerPassword,
+      email_confirm: true,
     });
+    if (createError || !created.user) {
+      if (createError?.code === "email_exists") return { ok: false, error: "Cet email est déjà utilisé." };
+      return { ok: false, error: GENERIC_ERROR };
+    }
+    const ownerId = created.user.id;
+
+    const modules = modulesForPlan(data.plan);
+    const page = initialStorefrontPage(data.name);
+
+    // Try interne dédié au rollback du compte Auth si la transaction DB échoue
+    // (distinct du try englobant : celui-ci ne fait que ce rattrapage précis).
+    try {
+      await prisma.$transaction(async (tx) => {
+        const tenant = await tx.tenant.create({
+          data: {
+            slug: data.slug,
+            name: data.name,
+            primaryColor: data.primaryColor,
+            accentColor: data.accentColor,
+            logoText: data.logoText,
+            domains: data.domains,
+            plan: data.plan,
+            enabledModules: modules,
+          },
+        });
+
+        const roles = defaultEmployeeRoles(modules);
+        if (roles.length > 0) {
+          await tx.employeeRole.createMany({
+            data: roles.map((role) => ({
+              tenantId: tenant.id,
+              name: role.name,
+              permissions: role.permissions,
+            })),
+          });
+        }
+
+        await tx.storefrontPage.create({
+          data: {
+            tenantId: tenant.id,
+            slug: "home",
+            draft: page as unknown as Prisma.InputJsonValue,
+            published: page as unknown as Prisma.InputJsonValue,
+            publishedAt: new Date(),
+          },
+        });
+
+        await tx.profile.create({
+          data: {
+            id: ownerId,
+            tenantId: tenant.id,
+            role: "owner",
+            name: data.ownerName,
+            email: data.ownerEmail,
+          },
+        });
+
+        // Audit écrit dans la même transaction : PlatformAuditLog n'a aucune clé
+        // étrangère (spec §1.3), donc « créée » et « tracée » sont indissociables.
+        await recordPlatformAction(
+          {
+            actorId: actor.userId,
+            action: "tenant_created",
+            tenantId: tenant.id,
+            metadata: { slug: data.slug, name: data.name, plan: data.plan, modules },
+          },
+          tx
+        );
+        await recordPlatformAction(
+          {
+            actorId: actor.userId,
+            action: "owner_created",
+            tenantId: tenant.id,
+            targetId: ownerId,
+            metadata: { email: data.ownerEmail, name: data.ownerName },
+          },
+          tx
+        );
+      });
+    } catch {
+      await admin.auth.admin.deleteUser(ownerId).catch(() => {
+        // Rattrapage au mieux, comme dans createEmployee : le compte Auth orphelin
+        // ne peut pas être signalé utilement ici, et sans Profile il ne donne accès
+        // à aucune zone privilégiée.
+      });
+      return { ok: false, error: GENERIC_ERROR };
+    }
+
+    updateTag(TENANTS_CACHE_TAG);
+    revalidatePath("/boutiques");
+    return { ok: true, slug: data.slug };
   } catch {
-    await admin.auth.admin.deleteUser(ownerId).catch(() => {
-      // Rattrapage au mieux, comme dans createEmployee : le compte Auth orphelin
-      // ne peut pas être signalé utilement ici, et sans Profile il ne donne accès
-      // à aucune zone privilégiée.
-    });
     return { ok: false, error: GENERIC_ERROR };
   }
-
-  updateTag(TENANTS_CACHE_TAG);
-  revalidatePath("/boutiques");
-  return { ok: true, slug: data.slug };
 }
