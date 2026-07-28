@@ -2,14 +2,18 @@
 
 import { useActionState, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { signIn, type SignInState } from "@/lib/auth/actions";
+import { signIn, signInPlatform, type SignInState } from "@/lib/auth/actions";
 import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
 
-export function LoginView() {
+export function LoginView({ variant = "dashboard" }: { variant?: "dashboard" | "platform" }) {
+  const isPlatform = variant === "platform";
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/pos";
-  const [state, formAction, pending] = useActionState<SignInState, FormData>(signIn, null);
+  const next = searchParams.get("next") ?? (isPlatform ? "/boutiques" : "/pos");
+  const [state, formAction, pending] = useActionState<SignInState, FormData>(
+    isPlatform ? signInPlatform : signIn,
+    null
+  );
   const [showPassword, setShowPassword] = useState(false);
   const [focusedField, setFocusedField] = useState<"email" | "password" | null>(null);
 
@@ -166,7 +170,7 @@ export function LoginView() {
               color: "#fff",
             }}
           >
-            Foulard Teranga
+            {isPlatform ? "Console plateforme" : "Foulard Teranga"}
           </span>
         </div>
 
@@ -343,7 +347,7 @@ export function LoginView() {
               T
             </div>
             <span style={{ fontFamily: fonts.display, fontSize: 20, fontWeight: 600, color: colors.ink }}>
-              Foulard Teranga
+              {isPlatform ? "Console plateforme" : "Foulard Teranga"}
             </span>
           </div>
 
@@ -368,10 +372,12 @@ export function LoginView() {
                   letterSpacing: "-0.01em",
                 }}
               >
-                Espace Back-Office
+                {isPlatform ? "Espace Plateforme" : "Espace Back-Office"}
               </h1>
               <p style={{ fontSize: 14, color: colors.muted, lineHeight: 1.5, margin: 0 }}>
-                Saisissez vos identifiants pour accéder à votre espace de gestion.
+                {isPlatform
+                  ? "Console prestataire : administration du parc de boutiques."
+                  : "Saisissez vos identifiants pour accéder à votre espace de gestion."}
               </p>
             </div>
 
