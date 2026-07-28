@@ -5,7 +5,8 @@ import { OfflineBanner } from "@/components/dashboard/OfflineBanner";
 import { Toast } from "@/components/dashboard/Toast";
 import { TicketModal } from "@/components/dashboard/TicketModal";
 import { getSession } from "@/lib/auth";
-import { getCurrentTenant } from "@/lib/tenant";
+import { notFound } from "next/navigation";
+import { getCurrentTenantOrNull } from "@/lib/tenant";
 import { getPendingOrdersCount } from "@/lib/data/orders.server";
 import { getNotifications } from "@/lib/data/notifications.server";
 
@@ -14,11 +15,15 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [session, pendingCount, notifications, tenant] = await Promise.all([
+  // `proxy.ts` est censé n'acheminer ici que des hôtes résolus, mais un hôte
+  // inconnu produisait une exception brute plutôt qu'une réponse contrôlée.
+  const tenant = await getCurrentTenantOrNull();
+  if (!tenant) notFound();
+
+  const [session, pendingCount, notifications] = await Promise.all([
     getSession(),
     getPendingOrdersCount(),
     getNotifications(),
-    getCurrentTenant(),
   ]);
 
   return (
