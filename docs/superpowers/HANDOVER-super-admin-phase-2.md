@@ -205,27 +205,40 @@ boutique), **§7** (requêtes inter-boutiques), **§11** (gestion d'erreurs).
 
 ## 5. Dette et constats reportés de la phase 1
 
-### Bloquant avant tout déploiement
+### Bloquant avant tout déploiement — toujours ouvert au 2026-07-28
 
-**Aucun hôte de production n'est enregistré dans `Tenant.domains`.** Sur un domaine autre que
-`localhost`, la vitrine renvoie 404 et le back-office lève une erreur — et depuis que
-`tenants_update_owner` a été supprimée (à raison), la gérante ne peut plus corriger `domains`
-elle-même. Le retrait des préfixes `admin.`/`platform.` a été implémenté en phase 1, donc **une
-seule entrée de domaine nu suffit** pour couvrir les trois surfaces. Mais l'enregistrer reste à
-faire, par SQL direct ou via l'écran Identité que construit justement la phase 2.
+**Aucun hôte de production n'est enregistré dans `Tenant.domains`.** La phase 2 construit le
+mécanisme prévu pour ceci — l'onglet Identité de la fiche boutique (`TenantIdentityForm`,
+`updateTenantIdentity`), qui accepte un champ Domaines et invalide le cache tenant à
+l'enregistrement — mais **l'enregistrement lui-même n'a pas eu lieu** : interrogé pendant la
+phase 2, l'utilisateur a confirmé que le domaine de production n'est pas encore arrêté (nom pas
+acheté, hébergement pas choisi, ou décision simplement pas prise). Rien n'a donc été inventé à sa
+place. Sur un domaine autre que `localhost`, la vitrine renvoie toujours 404 et le back-office
+lève toujours une erreur contrôlée (voir ci-dessous) tant que cette entrée n'existe pas. Une seule
+entrée de domaine nu suffira (retrait des préfixes `admin.`/`platform.` implémenté en phase 1) : à
+saisir via l'onglet Identité dès que le domaine est connu.
 
-### Points Importants, dictés par le plan, non bloquants
+### Points Importants, dictés par le plan — corrigés en phase 2 (tâche 14)
 
-- `app/(storefront)/produit/[id]/page.tsx` : le segment `ProductPage` appelle
-  `getCatalog() → getCurrentTenant()` indépendamment du layout. Next rendant layout et page en
-  parallèle, un hôte inconnu produit une exception non capturée dans les logs **en plus** du 404
-  correct rendu par le garde du layout. Bruit de logs, pas d'erreur de réponse.
-- `app/(dashboard)/layout.tsx` : `getCurrentTenant()` sans `try/catch` lève une erreur brute pour
-  un hôte non résolu (au lieu d'une réponse contrôlée). Intention explicite du plan — les hôtes
-  dashboard sont censés être déjà validés par `proxy.ts` — mais mériterait une frontière d'erreur.
+Les deux constats suivants, reportés à la clôture de la phase 1, sont désormais traités :
 
-Ces deux points deviennent ordinaires plutôt qu'exotiques une fois le point bloquant ci-dessus
-traité ; le réviseur final recommandait de les corriger *avec* lui.
+- `app/(storefront)/produit/[id]/page.tsx` (`ProductPage`) : ajout d'un garde explicite
+  `getCurrentTenantOrNull()` + `notFound()` avant tout appel dépendant du tenant. Un hôte inconnu
+  ne produit plus d'exception non capturée dans les logs, seulement le 404 du layout.
+- `app/(dashboard)/layout.tsx` : même garde, posé **avant** le `Promise.all` plutôt qu'à
+  l'intérieur — `getCurrentTenant()` (la variante qui lève) en est retiré. La résolution du tenant
+  passe désormais avant `getSession`/`getPendingOrdersCount`/`getNotifications`, délibérément :
+  ces deux derniers résolvent eux-mêmes le tenant et auraient reproduit le même bruit en parallèle.
+- **Troisième instance découverte pendant la vérification live de la tâche 14, hors périmètre
+  initial du plan** : `app/(storefront)/page.tsx` (`StorefrontHomePage`) portait le même défaut
+  (`getCatalog() → getCurrentTenant()` non gardé). Corrigé avec le même garde, dans un commit
+  séparé, et revérifié en direct (grep des logs sur `error|exception|unhandled|throw` : aucune
+  correspondance sur un hôte inconnu). Rappel pour une future session : le périmètre écrit d'une
+  tâche n'est pas forcément exhaustif — la vérification live de la tâche 14 elle-même a trouvé ce
+  troisième cas, ni le plan ni la revue ne l'avaient anticipé.
+
+Vérifié sans régression : suite complète (335/335), assertions RLS de la phase 1 rejouées
+(`prisma/tests/rls_phase1.sql`, aucune sortie), aucune migration introduite par cette phase.
 
 ### Mineurs, pour le backlog
 
