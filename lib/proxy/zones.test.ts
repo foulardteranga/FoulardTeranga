@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { resolveZone, isPathAllowedForZone, dashboardPath, moduleForPath } from "@/lib/proxy/zones";
+import {
+  resolveZone,
+  isPathAllowedForZone,
+  dashboardPath,
+  moduleForPath,
+  platformPath,
+  ADMIN_PATHS,
+} from "@/lib/proxy/zones";
 
 describe("resolveZone — dev (localhost, path-prefixed)", () => {
   it("treats the root as storefront", () => {
@@ -114,5 +121,43 @@ describe("moduleForPath", () => {
   it("retourne null pour un chemin non gaté (équipe, connexion)", () => {
     expect(moduleForPath("/equipe")).toBeNull();
     expect(moduleForPath("/connexion")).toBeNull();
+  });
+});
+
+describe("platformPath", () => {
+  it("préfixe /platform en développement (résolution par chemin)", () => {
+    expect(platformPath("localhost:3000", "/connexion")).toBe("/platform/connexion");
+  });
+
+  it("laisse le chemin nu en production (résolution par sous-domaine)", () => {
+    expect(platformPath("platform.foulard-teranga.com", "/connexion")).toBe("/connexion");
+  });
+
+  it("préfixe aussi sur les URLs de prévisualisation Vercel", () => {
+    expect(platformPath("mon-app-abc.vercel.app", "/boutiques")).toBe("/platform/boutiques");
+  });
+});
+
+describe("zone admin — chemins autorisés", () => {
+  it("déclare /connexion comme chemin de la zone plateforme", () => {
+    expect(ADMIN_PATHS).toContain("/connexion");
+  });
+
+  it("autorise /connexion dans la zone admin", () => {
+    expect(isPathAllowedForZone("admin", "/connexion")).toBe(true);
+  });
+
+  it("autorise la fiche d'une boutique et le formulaire de création", () => {
+    expect(isPathAllowedForZone("admin", "/boutiques/nouvelle")).toBe(true);
+    expect(isPathAllowedForZone("admin", "/boutiques/foulard-teranga")).toBe(true);
+  });
+
+  it("refuse toujours un chemin de dashboard dans la zone admin", () => {
+    expect(isPathAllowedForZone("admin", "/pos")).toBe(false);
+  });
+
+  it("refuse toujours /connexion et /boutiques en zone storefront", () => {
+    expect(isPathAllowedForZone("storefront", "/connexion")).toBe(false);
+    expect(isPathAllowedForZone("storefront", "/boutiques")).toBe(false);
   });
 });

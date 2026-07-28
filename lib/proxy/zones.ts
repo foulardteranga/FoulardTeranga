@@ -15,7 +15,7 @@ export const DASHBOARD_PATHS = [
   "/connexion",
 ] as const;
 
-export const ADMIN_PATHS = ["/boutiques"] as const;
+export const ADMIN_PATHS = ["/boutiques", "/connexion"] as const;
 
 export const ADMIN_HOST_PREFIX = "admin.";
 export const PLATFORM_HOST_PREFIX = "platform.";
@@ -90,6 +90,19 @@ export function resolveZone(hostname: string, pathname: string): ZoneResolution 
 export function dashboardPath(hostname: string, path: string): string {
   const host = hostname.split(":")[0].toLowerCase();
   return usesPathRouting(host) ? `/admin${path}` : path;
+}
+
+/**
+ * Miroir de `dashboardPath` pour la zone plateforme : préfixe `/platform` en
+ * développement (résolution par chemin), chemin nu en production (le
+ * sous-domaine `platform.*` porte déjà la zone). Sans lui, une redirection vers
+ * `/connexion` en développement retomberait en zone storefront, où ce chemin est
+ * interdit → redirection silencieuse vers `/`, exactement le comportement qui
+ * rendait la zone plateforme inaccessible.
+ */
+export function platformPath(hostname: string, path: string): string {
+  const host = hostname.split(":")[0].toLowerCase();
+  return usesPathRouting(host) ? `/platform${path}` : path;
 }
 
 export function isPathAllowedForZone(zone: Zone, pathname: string): boolean {

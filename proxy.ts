@@ -4,6 +4,7 @@ import {
   resolveZone,
   isPathAllowedForZone,
   dashboardPath,
+  platformPath,
   moduleForPath,
   MODULE_ID_PATHS,
 } from "@/lib/proxy/zones";
@@ -27,12 +28,16 @@ export async function proxy(request: NextRequest) {
     const supabase = createMiddlewareClient(request, authDraft);
     const session = await resolveSession(supabase);
     if (!isRoleAllowedForZone(zone, session?.role ?? null)) {
-      // La zone admin (super_admin) n'a pas de page de connexion dédiée dans ce
-      // sous-projet (dormant en v1, aucun compte super_admin) — comportement
-      // inchangé : redirection vers la vitrine.
-      const target = zone === "dashboard" ? dashboardPath(hostname, "/connexion") : "/";
+      // Chaque zone privée a désormais sa propre page de connexion : le
+      // prestataire refusé sur /boutiques atterrit sur la connexion plateforme,
+      // pas sur la vitrine. Pas de boucle possible : /connexion sort de ce bloc
+      // (condition d'entrée plus haut).
+      const target =
+        zone === "dashboard"
+          ? dashboardPath(hostname, "/connexion")
+          : platformPath(hostname, "/connexion");
       const redirectUrl = new URL(target, request.url);
-      if (zone === "dashboard") redirectUrl.searchParams.set("next", rewrittenPathname);
+      redirectUrl.searchParams.set("next", rewrittenPathname);
       const redirect = NextResponse.redirect(redirectUrl);
       authDraft.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie));
       return redirect;
@@ -71,6 +76,11 @@ export async function proxy(request: NextRequest) {
   // sur chaque requête de vitrine publique.
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-tenant-host", hostname);
+  // La zone résolue est publiée pour les Server Components : `/connexion` est un
+  // chemin partagé par la zone dashboard et la zone plateforme (Next.js interdit
+  // deux `page.tsx` sur le même chemin), et seule cette information permet à la
+  // page de savoir laquelle des deux elle sert.
+  requestHeaders.set("x-zone", zone);
 
   const url = request.nextUrl.clone();
   url.pathname = rewrittenPathname;
