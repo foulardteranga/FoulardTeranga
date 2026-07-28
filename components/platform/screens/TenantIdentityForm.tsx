@@ -143,9 +143,7 @@ export function TenantIdentityForm({ tenant }: { tenant: TenantDetail }) {
         </span>
       </label>
 
-      <div style={{ marginTop: 14 }}>
-        <FormMessage message={message} />
-      </div>
+      <FormMessage message={message} />
 
       <button
         type="submit"

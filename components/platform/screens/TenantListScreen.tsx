@@ -29,11 +29,11 @@ export function TenantListScreen({ tenants }: { tenants: TenantListItem[] }) {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 22 }}>
         <div>
           <h1 style={{ fontFamily: fonts.display, fontSize: 24, fontWeight: 600, margin: 0 }}>Parc de boutiques</h1>
-          <p style={{ color: colors.muted, fontSize: 14, margin: "4px 0 0" }}>
-            {tenants.length === 0
-              ? "Aucune boutique pour le moment."
-              : `${tenants.length} boutique${tenants.length > 1 ? "s" : ""} administrée${tenants.length > 1 ? "s" : ""}.`}
-          </p>
+          {tenants.length > 0 && (
+            <p style={{ color: colors.muted, fontSize: 14, margin: "4px 0 0" }}>
+              {`${tenants.length} boutique${tenants.length > 1 ? "s" : ""} administrée${tenants.length > 1 ? "s" : ""}.`}
+            </p>
+          )}
         </div>
         <Link
           href="/boutiques/nouvelle"
@@ -82,28 +82,9 @@ export function TenantListScreen({ tenants }: { tenants: TenantListItem[] }) {
           >
             <Icon path={ICONS.dash} size={24} />
           </div>
-          <p style={{ fontSize: 14, color: colors.muted, margin: "0 0 18px" }}>
-            Aucune boutique dans le parc pour le moment.
+          <p style={{ fontSize: 14, color: colors.muted, margin: 0 }}>
+            Aucune boutique dans le parc pour le moment — utilisez « Nouvelle boutique » ci-dessus pour créer la première.
           </p>
-          <Link
-            href="/boutiques/nouvelle"
-            className="ft-platform-btn ft-platform-btn-primary"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              background: colors.primary,
-              color: "#fff",
-              borderRadius: 10,
-              padding: "10px 18px",
-              fontSize: 14,
-              fontWeight: 600,
-              textDecoration: "none",
-            }}
-          >
-            <Icon path={ICONS.plus} size={16} />
-            Créer la première boutique
-          </Link>
         </div>
       ) : (
         <>

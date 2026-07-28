@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { colors, fonts, adminBorder } from "@/lib/theme/tokens";
+import { colors, fonts, adminBorder, hexA } from "@/lib/theme/tokens";
 import { signOutPlatform } from "@/lib/auth/actions";
 
 /**
@@ -10,7 +10,7 @@ import { signOutPlatform } from "@/lib/auth/actions";
  * `!important` est nécessaire : ces règles retouchent des styles posés en
  * inline, plus spécifiques qu'une feuille de style ordinaire.
  */
-const FOCUS_RING = `outline: 3px solid rgba(38,50,107,.35) !important; outline-offset: 2px !important;`;
+const FOCUS_RING = `outline: 3px solid ${hexA(colors.primary, 0.35)} !important; outline-offset: 2px !important;`;
 
 function PlatformFocusStyles() {
   return (
@@ -28,7 +28,9 @@ function PlatformFocusStyles() {
 
       .ft-platform-btn-primary:hover:not(:disabled) { background: ${colors.primaryHover} !important; }
       .ft-platform-btn-ghost:hover:not(:disabled) { background: ${colors.faintLine} !important; }
-      .ft-platform-tab:hover { color: ${colors.ink} !important; }
+      /* Onglet courant exclu : sinon le survol lui fait perdre sa couleur active
+         tout en gardant son soulignement, un état visuellement incohérent. */
+      .ft-platform-tab:hover:not(.ft-platform-tab-current) { color: ${colors.ink} !important; }
       .ft-platform-card-link:hover { border-color: ${colors.borderField} !important; }
 
       .ft-platform-input:focus-visible,

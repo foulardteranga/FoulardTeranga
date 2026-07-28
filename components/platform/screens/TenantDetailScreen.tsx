@@ -44,7 +44,7 @@ export function TenantDetailScreen({
             <Link
               key={item.id}
               href={`/boutiques/${tenant.slug}?onglet=${item.id}`}
-              className="ft-platform-tab"
+              className={tab === item.id ? "ft-platform-tab ft-platform-tab-current" : "ft-platform-tab"}
               style={{
                 padding: "9px 14px",
                 fontSize: 14,
