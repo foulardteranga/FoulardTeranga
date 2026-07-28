@@ -1,0 +1,73 @@
+import Link from "next/link";
+import { colors, fonts, adminBorder } from "@/lib/theme/tokens";
+import { PLAN_LABELS } from "@/lib/platform/plans";
+import type { TenantDetail } from "@/lib/platform/queries";
+
+export type TenantTab = "identite" | "modules";
+
+/** Les six onglets du spec §6. Ceux non livrés en phase 2 sont visibles mais inertes. */
+const TABS: { id: string; label: string; available: boolean }[] = [
+  { id: "apercu", label: "Vue d'ensemble", available: false },
+  { id: "modules", label: "Modules", available: true },
+  { id: "equipe", label: "Équipe", available: false },
+  { id: "identite", label: "Identité", available: true },
+  { id: "journal", label: "Journal", available: false },
+  { id: "danger", label: "Zone de danger", available: false },
+];
+
+export function TenantDetailScreen({
+  tenant,
+  tab,
+  children,
+}: {
+  tenant: TenantDetail;
+  tab: TenantTab;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <Link href="/boutiques" style={{ fontSize: 13, color: colors.muted, textDecoration: "none" }}>
+        ← Retour au parc
+      </Link>
+
+      <header style={{ margin: "10px 0 20px" }}>
+        <h1 style={{ fontFamily: fonts.display, fontSize: 24, fontWeight: 600, margin: 0 }}>{tenant.name}</h1>
+        <p style={{ color: colors.muted, fontSize: 14, margin: "4px 0 0" }}>
+          {tenant.slug} · {PLAN_LABELS[tenant.plan]} · {tenant.enabledModules.length} modules ·{" "}
+          {tenant.owner ? `Gérante : ${tenant.owner.name}` : "Aucune gérante rattachée"}
+        </p>
+      </header>
+
+      <nav style={{ display: "flex", gap: 4, flexWrap: "wrap", borderBottom: adminBorder, marginBottom: 20 }}>
+        {TABS.map((item) =>
+          item.available ? (
+            <Link
+              key={item.id}
+              href={`/boutiques/${tenant.slug}?onglet=${item.id}`}
+              style={{
+                padding: "9px 14px",
+                fontSize: 14,
+                fontWeight: tab === item.id ? 600 : 400,
+                color: tab === item.id ? colors.primary : colors.muted,
+                borderBottom: `2px solid ${tab === item.id ? colors.primary : "transparent"}`,
+                textDecoration: "none",
+              }}
+            >
+              {item.label}
+            </Link>
+          ) : (
+            <span
+              key={item.id}
+              title="Disponible dans une prochaine phase"
+              style={{ padding: "9px 14px", fontSize: 14, color: colors.disabled }}
+            >
+              {item.label}
+            </span>
+          )
+        )}
+      </nav>
+
+      {children}
+    </div>
+  );
+}

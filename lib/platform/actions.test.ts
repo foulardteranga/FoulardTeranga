@@ -30,7 +30,7 @@ vi.mock("@/lib/supabase/admin", () => ({
   },
 }));
 
-import { createTenant } from "./actions";
+import { createTenant, updateTenantIdentity } from "./actions";
 
 const denied = { ok: false, error: "Une erreur est survenue, réessayez." };
 
@@ -50,5 +50,22 @@ const VALID_INPUT = {
 describe("createTenant — réservée au prestataire", () => {
   it("refuse une gérante sans toucher ni à la base ni à Supabase Auth", async () => {
     expect(await createTenant(VALID_INPUT)).toEqual(denied);
+  });
+});
+
+describe("updateTenantIdentity — réservée au prestataire", () => {
+  it("refuse une gérante sans toucher à la base", async () => {
+    const result = await updateTenantIdentity("t1", {
+      name: "Boutique du Plateau",
+      slug: "boutique-du-plateau",
+      tagline: "",
+      primaryColor: "#26326B",
+      accentColor: "#D07A34",
+      logoText: "BDP",
+      font: "Playfair Display",
+      whatsappPhone: "",
+      domains: [],
+    });
+    expect(result).toEqual(denied);
   });
 });

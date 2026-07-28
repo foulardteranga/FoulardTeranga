@@ -10,7 +10,13 @@ import { recordPlatformAction } from "./audit";
 import { findTenantByDomain, tenantSlugExists } from "./queries";
 import { modulesForPlan } from "./plans";
 import { defaultEmployeeRoles, initialStorefrontPage } from "./provisioning";
-import { createTenantSchema, normalizeSlug, type CreateTenantInput } from "@/lib/validators/platform";
+import {
+  createTenantSchema,
+  tenantIdentitySchema,
+  normalizeSlug,
+  type CreateTenantInput,
+  type TenantIdentityInput,
+} from "@/lib/validators/platform";
 
 export type PlatformResult = { ok: true } | { ok: false; error: string };
 
@@ -151,4 +157,69 @@ export async function createTenant(
   } catch {
     return { ok: false, error: GENERIC_ERROR };
   }
+}
+
+/**
+ * Met à jour l'identité d'une boutique : nom, slug, thème, WhatsApp et surtout
+ * `domains` — seule voie applicative depuis la suppression de la policy
+ * `tenants_update_owner` (spec §5).
+ */
+export async function updateTenantIdentity(
+  tenantId: string,
+  input: TenantIdentityInput
+): Promise<PlatformResult> {
+  const actor = await currentSuperAdmin();
+  if (!actor) return { ok: false, error: GENERIC_ERROR };
+
+  const parsed = tenantIdentitySchema.safeParse({ ...input, slug: normalizeSlug(input.slug) });
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Informations invalides." };
+  }
+  const data = parsed.data;
+
+  if (await tenantSlugExists(data.slug, tenantId)) {
+    return { ok: false, error: "Ce slug est déjà utilisé." };
+  }
+
+  for (const domain of data.domains) {
+    const conflict = await findTenantByDomain(domain, tenantId);
+    if (conflict) {
+      return { ok: false, error: `Le domaine « ${domain} » est déjà rattaché à ${conflict.name}.` };
+    }
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.tenant.update({
+        where: { id: tenantId },
+        data: {
+          name: data.name,
+          slug: data.slug,
+          tagline: data.tagline,
+          primaryColor: data.primaryColor,
+          accentColor: data.accentColor,
+          logoText: data.logoText,
+          font: data.font,
+          whatsappPhone: data.whatsappPhone || null,
+          domains: data.domains,
+        },
+      });
+      await recordPlatformAction(
+        {
+          actorId: actor.userId,
+          action: "tenant_updated",
+          tenantId,
+          metadata: { slug: data.slug, name: data.name, domains: data.domains },
+        },
+        tx
+      );
+    });
+  } catch {
+    return { ok: false, error: GENERIC_ERROR };
+  }
+
+  updateTag(TENANTS_CACHE_TAG);
+  revalidatePath("/boutiques");
+  revalidatePath(`/boutiques/${data.slug}`);
+  return { ok: true };
 }
