@@ -1,3 +1,5 @@
+import { notFound } from "next/navigation";
+import { getCurrentTenantOrNull } from "@/lib/tenant";
 import { getSession } from "@/lib/auth";
 import { getCustomerByProfileId, getCustomerOrderHistory } from "@/lib/data/customers.server";
 import { AccountView } from "@/components/storefront/views/AccountView";
@@ -6,6 +8,12 @@ import { signOutCustomer } from "@/lib/customers/actions";
 import { colors, fonts } from "@/lib/theme/tokens";
 
 export default async function AccountPage() {
+  // Le layout rend déjà un 404 sur hôte inconnu, mais Next rend layout et page
+  // en parallèle : sans ce garde, ce segment appelle getCurrentTenant() (via
+  // getCustomerByProfileId()/getCustomerOrderHistory()) et lève une exception
+  // non capturée dans les logs, en plus du 404 correct.
+  if (!(await getCurrentTenantOrNull())) notFound();
+
   const session = await getSession();
   if (!session || session.role !== "customer") {
     return <AccountAuthView />;
