@@ -17,7 +17,13 @@ const MODULE_LABELS: Record<string, string> = Object.fromEntries(
 export function TenantModulesForm({ tenant }: { tenant: TenantDetail }) {
   const router = useRouter();
   const [plan, setPlan] = useState<TenantPlan>(tenant.plan);
-  const [modules, setModules] = useState<string[]>(tenant.enabledModules);
+  // Filtré aux MODULE_IDS connus : si la base contenait un jour un id hors de
+  // cette liste, la grille de cases ne pourrait de toute façon pas le rendre —
+  // sans ce filtre, l'état garderait cet id « fantôme » et divergerait de ce
+  // qui est affiché/coché.
+  const [modules, setModules] = useState<string[]>(
+    tenant.enabledModules.filter((m) => (MODULE_IDS as readonly string[]).includes(m))
+  );
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
 
