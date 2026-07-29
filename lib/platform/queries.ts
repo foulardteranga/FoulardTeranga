@@ -1,12 +1,16 @@
 import { prisma } from "@/lib/db/client";
 import { requireSuperAdmin } from "./guard";
+import { ADMIN_HOST_PREFIX, PLATFORM_HOST_PREFIX } from "@/lib/proxy/zones";
 import type { TenantPlan, TenantStatus } from "@/lib/generated/prisma/enums";
 
 /**
- * SEUL module du dépôt autorisé à requêter sans filtre `tenantId` (spec §7).
- * Partout ailleurs, l'absence de ce filtre est une fuite de données inter-
- * boutiques. Chaque fonction commence donc par `requireSuperAdmin()` : le
- * « sans filtre » reste un choix délibéré, concentré et relisable.
+ * SEUL module du dépôt autorisé à requêter Tenant **sans filtre `tenantId`**
+ * (spec §7). Partout ailleurs, l'absence de ce filtre est une fuite de données
+ * inter-boutiques. Chaque fonction commence donc par `requireSuperAdmin()` :
+ * le « sans filtre » reste un choix délibéré, concentré et relisable.
+ * (`updateTenantModules` dans `actions.ts` fait bien une lecture Tenant
+ * directe, mais filtrée par `id` — donc gardée par construction — et ne
+ * relève pas de cette claim, spécifique aux requêtes non filtrées.)
  */
 
 export interface TenantListItem {
@@ -47,7 +51,7 @@ export async function listTenants(): Promise<TenantListItem[]> {
     orderBy: { createdAt: "asc" },
     include: {
       _count: { select: { products: true, orders: true } },
-      profiles: { where: { role: "owner" }, select: { name: true }, take: 1 },
+      profiles: { where: { role: "owner" }, orderBy: { createdAt: "asc" }, select: { name: true }, take: 1 },
     },
   });
   return rows.map((row) => ({
@@ -70,7 +74,12 @@ export async function getTenantBySlug(slug: string): Promise<TenantDetail | null
   const row = await prisma.tenant.findUnique({
     where: { slug },
     include: {
-      profiles: { where: { role: "owner" }, select: { id: true, name: true, email: true }, take: 1 },
+      profiles: {
+        where: { role: "owner" },
+        orderBy: { createdAt: "asc" },
+        select: { id: true, name: true, email: true },
+        take: 1,
+      },
     },
   });
   if (!row) return null;
@@ -94,19 +103,39 @@ export async function getTenantBySlug(slug: string): Promise<TenantDetail | null
   };
 }
 
+/** Forme nue d'un domaine : retire un préfixe `admin.`/`platform.` s'il y en a un. */
+function bareForm(domain: string): string {
+  if (domain.startsWith(ADMIN_HOST_PREFIX)) return domain.slice(ADMIN_HOST_PREFIX.length);
+  if (domain.startsWith(PLATFORM_HOST_PREFIX)) return domain.slice(PLATFORM_HOST_PREFIX.length);
+  return domain;
+}
+
 /**
  * Unicité inter-boutiques de `domains` (spec §11). `domains` est un tableau :
  * aucune contrainte base ne peut l'assurer, c'est donc une vérification
  * applicative — d'où l'importance de passer par ce point unique.
+ *
+ * `resolveTenantFromHost` (lib/tenant/registry.ts) fait correspondre `admin.`/
+ * `platform.` + un domaine nu au tenant qui détient l'entrée NUE (repli après
+ * échec de la correspondance exacte) : une seule entrée nue couvre les trois
+ * surfaces. Se limiter à la correspondance exacte ici laisserait un autre
+ * tenant enregistrer littéralement `admin.<domaine nu de X>` sans conflit
+ * détecté, alors que ce host cesserait aussitôt de résoudre vers X — un
+ * détournement silencieux du sous-domaine admin/plateforme de X. On vérifie
+ * donc les trois formes (nue, `admin.`, `platform.`) dérivées de la forme
+ * canonique du domaine candidat, qui couvrent aussi la correspondance exacte
+ * d'origine (le domaine candidat est toujours égal à l'une des trois).
  */
 export async function findTenantByDomain(
   domain: string,
   exceptTenantId?: string
 ): Promise<{ id: string; slug: string; name: string } | null> {
   await requireSuperAdmin();
+  const bare = bareForm(domain);
+  const candidates = [bare, `${ADMIN_HOST_PREFIX}${bare}`, `${PLATFORM_HOST_PREFIX}${bare}`];
   const row = await prisma.tenant.findFirst({
     where: {
-      domains: { has: domain },
+      OR: candidates.map((candidate) => ({ domains: { has: candidate } })),
       ...(exceptTenantId ? { NOT: { id: exceptTenantId } } : {}),
     },
     select: { id: true, slug: true, name: true },
