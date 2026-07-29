@@ -58,14 +58,17 @@ export function TenantDetailScreen({
               {item.label}
             </Link>
           ) : (
-            // `disabled` + `aria-disabled` plutôt qu'un `<span>` : un `<span>`
-            // n'est ni focusable ni annoncé par un lecteur d'écran, donc l'état
-            // « pas encore disponible » n'était visible qu'au survol souris.
+            // `aria-disabled` (pas l'attribut natif `disabled`, qui retirerait
+            // l'élément du parcours clavier) + un `<button>` plutôt qu'un
+            // `<span>` : sans handler, il n'a aucun effet au clic/à l'activation,
+            // mais reste focusable et annoncé par un lecteur d'écran, contre un
+            // `<span>` qui n'était ni l'un ni l'autre — l'état « pas encore
+            // disponible » n'était visible qu'au survol souris (title).
             <button
               key={item.id}
               type="button"
-              disabled
               aria-disabled="true"
+              className="ft-platform-tab-inert"
               title="Disponible dans une prochaine phase"
               style={{
                 padding: "9px 14px",

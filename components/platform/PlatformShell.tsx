@@ -19,6 +19,7 @@ function PlatformFocusStyles() {
       .ft-platform-link:focus-visible,
       .ft-platform-btn:focus-visible,
       .ft-platform-tab:focus-visible,
+      .ft-platform-tab-inert:focus-visible,
       .ft-platform-input:focus-visible,
       .ft-platform-select:focus-visible,
       .ft-platform-textarea:focus-visible,
