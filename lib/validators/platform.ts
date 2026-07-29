@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MODULE_IDS } from "@/lib/nav";
+import { normalizeDomain, isValidDomain } from "@/lib/platform/domains";
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
@@ -23,6 +24,21 @@ export const tenantSlugSchema = z
 const hexColor = z.string().trim().regex(HEX_RE, "Couleur invalide.");
 
 /**
+ * Les Server Actions sont directement appelables (HTTP), donc le formulaire
+ * client (NewTenantScreen.tsx, TenantIdentityForm.tsx) qui normalise/valide
+ * via `normalizeDomain`/`isValidDomain` avant l'appel n'est pas une garantie :
+ * un appelant qui contourne le formulaire pourrait persister un hôte non
+ * normalisé (casse mixte, espaces) ou invalide, qui ne correspondrait alors
+ * plus jamais dans `resolveTenantFromHost`. Ce filet est un dernier recours ;
+ * le message générique suffit, le client donne déjà une erreur par domaine.
+ */
+const domainsSchema = z
+  .array(z.string())
+  .default([])
+  .transform((domains) => domains.map(normalizeDomain))
+  .refine((domains) => domains.every(isValidDomain), "Domaine invalide.");
+
+/**
  * Miroir applicatif de la contrainte base `tenant_min_modules` : `dash` ne peut
  * jamais être décoché (spec §12). La contrainte CHECK reste la garde ultime,
  * mais elle produirait une erreur Postgres brute au lieu d'un message lisible.
@@ -41,7 +57,7 @@ export const createTenantSchema = z.object({
   primaryColor: hexColor,
   accentColor: hexColor,
   logoText: z.string().trim().min(1, "Le logo texte est requis.").max(24, "24 caractères maximum."),
-  domains: z.array(z.string()).default([]),
+  domains: domainsSchema,
   ownerName: z.string().trim().min(2, "Le nom de la gérante est requis."),
   ownerEmail: z.string().trim().email("Adresse email invalide."),
   ownerPassword: z.string().min(8, "8 caractères minimum."),
@@ -61,7 +77,7 @@ export const tenantIdentitySchema = z.object({
     .trim()
     .regex(/^[0-9+()\-\s]{0,20}$/, "Numéro invalide.")
     .default(""),
-  domains: z.array(z.string()).default([]),
+  domains: domainsSchema,
 });
 export type TenantIdentityInput = z.infer<typeof tenantIdentitySchema>;
 
