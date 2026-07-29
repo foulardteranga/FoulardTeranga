@@ -58,6 +58,7 @@ function resetTestState() {
   adminState.createUserError = null;
   adminState.calls.createUser = [];
   adminState.calls.deleteUser = [];
+  vi.mocked(revalidatePath).mockClear();
 }
 
 vi.mock("@/lib/auth", () => ({
@@ -195,6 +196,7 @@ vi.mock("next/cache", () => ({
       fn(...args),
 }));
 
+import { revalidatePath } from "next/cache";
 import { createTenant, updateTenantIdentity, updateTenantModules } from "./actions";
 
 const denied = { ok: false, error: "Une erreur est survenue, réessayez." };
@@ -381,6 +383,11 @@ describe("updateTenantIdentity — réservée au prestataire", () => {
       action: "tenant_updated",
       tenantId: "t1",
     });
+
+    // L'ANCIEN slug ("ancien-slug", lu avant la transaction) doit aussi être
+    // revalidé après un renommage, sinon sa page publiée reste périmée.
+    expect(revalidatePath).toHaveBeenCalledWith("/boutiques/ancien-slug");
+    expect(revalidatePath).toHaveBeenCalledWith("/boutiques/boutique-du-plateau");
   });
 
   it("n'accuse pas un conflit de slug avec la boutique elle-même (exceptTenantId)", async () => {
