@@ -152,13 +152,15 @@ export async function createTenant(
       });
       return { ok: false, error: GENERIC_ERROR };
     }
-
-    updateTag(TENANTS_CACHE_TAG);
-    revalidatePath("/boutiques");
-    return { ok: true, slug: data.slug };
   } catch {
     return { ok: false, error: GENERIC_ERROR };
   }
+
+  // Hors du try : un échec ici correspond à une écriture déjà réussie, pas à un
+  // échec de création — le signaler comme GENERIC_ERROR mentirait sur l'état réel.
+  updateTag(TENANTS_CACHE_TAG);
+  revalidatePath("/boutiques");
+  return { ok: true, slug: data.slug };
 }
 
 /**
@@ -179,18 +181,29 @@ export async function updateTenantIdentity(
   }
   const data = parsed.data;
 
-  if (await tenantSlugExists(data.slug, tenantId)) {
-    return { ok: false, error: "Ce slug est déjà utilisé." };
-  }
-
-  for (const domain of data.domains) {
-    const conflict = await findTenantByDomain(domain, tenantId);
-    if (conflict) {
-      return { ok: false, error: `Le domaine « ${domain} » est déjà rattaché à ${conflict.name}.` };
-    }
-  }
-
+  // Élargi pour couvrir tenantSlugExists/findTenantByDomain (et la lecture du
+  // slug courant ci-dessous), à l'image de createTenant et updateTenantModules :
+  // toute exception inattendue (panne DB) doit retomber sur le message
+  // générique plutôt que de se propager hors de la Server Action.
+  let previousSlug = data.slug;
   try {
+    if (await tenantSlugExists(data.slug, tenantId)) {
+      return { ok: false, error: "Ce slug est déjà utilisé." };
+    }
+
+    for (const domain of data.domains) {
+      const conflict = await findTenantByDomain(domain, tenantId);
+      if (conflict) {
+        return { ok: false, error: `Le domaine « ${domain} » est déjà rattaché à ${conflict.name}.` };
+      }
+    }
+
+    // Lu avant la transaction pour pouvoir invalider le cache de l'ANCIEN slug
+    // après un renommage : sans ça, la page publiée sous l'ancien slug reste
+    // périmée jusqu'au plancher de revalidation.
+    const before = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { slug: true } });
+    if (before) previousSlug = before.slug;
+
     await prisma.$transaction(async (tx) => {
       await tx.tenant.update({
         where: { id: tenantId },
@@ -222,6 +235,7 @@ export async function updateTenantIdentity(
 
   updateTag(TENANTS_CACHE_TAG);
   revalidatePath("/boutiques");
+  revalidatePath(`/boutiques/${previousSlug}`);
   revalidatePath(`/boutiques/${data.slug}`);
   return { ok: true };
 }
@@ -244,12 +258,14 @@ export async function updateTenantModules(
   }
   const data = parsed.data;
 
+  let previousSlug = "";
   try {
     const before = await prisma.tenant.findUnique({
       where: { id: tenantId },
       select: { slug: true, plan: true, enabledModules: true },
     });
     if (!before) return { ok: false, error: "Boutique introuvable." };
+    previousSlug = before.slug;
 
     await prisma.$transaction(async (tx) => {
       await tx.tenant.update({
@@ -271,12 +287,14 @@ export async function updateTenantModules(
         tx
       );
     });
-
-    updateTag(TENANTS_CACHE_TAG);
-    revalidatePath("/boutiques");
-    revalidatePath(`/boutiques/${before.slug}`);
-    return { ok: true };
   } catch {
     return { ok: false, error: GENERIC_ERROR };
   }
+
+  // Hors du try : un échec ici correspond à une écriture déjà réussie, pas à un
+  // échec de mise à jour — le signaler comme GENERIC_ERROR mentirait sur l'état réel.
+  updateTag(TENANTS_CACHE_TAG);
+  revalidatePath("/boutiques");
+  revalidatePath(`/boutiques/${previousSlug}`);
+  return { ok: true };
 }
