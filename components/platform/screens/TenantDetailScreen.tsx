@@ -58,13 +58,28 @@ export function TenantDetailScreen({
               {item.label}
             </Link>
           ) : (
-            <span
+            // `disabled` + `aria-disabled` plutôt qu'un `<span>` : un `<span>`
+            // n'est ni focusable ni annoncé par un lecteur d'écran, donc l'état
+            // « pas encore disponible » n'était visible qu'au survol souris.
+            <button
               key={item.id}
+              type="button"
+              disabled
+              aria-disabled="true"
               title="Disponible dans une prochaine phase"
-              style={{ padding: "9px 14px", fontSize: 14, color: colors.disabled }}
+              style={{
+                padding: "9px 14px",
+                fontSize: 14,
+                color: colors.disabled,
+                background: "none",
+                border: "none",
+                borderBottom: "2px solid transparent",
+                font: "inherit",
+                cursor: "not-allowed",
+              }}
             >
               {item.label}
-            </span>
+            </button>
           )
         )}
       </nav>
