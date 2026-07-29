@@ -6,7 +6,7 @@ product
 
 ## Users
 
-Foulard Teranga is a mono-shop omnichannel commerce platform (Sénégal), architected for a future
+Foulard Teranga is a mono-shop omnichannel commerce platform (Côte d'Ivoire), architected for a future
 multi-shop SaaS. It has two distinct audiences with two distinct surfaces:
 
 - **The shop owner ("gérante") and her staff**, in the existing back-office dashboard: POS,
