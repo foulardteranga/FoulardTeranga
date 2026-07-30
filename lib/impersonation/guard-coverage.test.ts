@@ -6,6 +6,11 @@ import ts from "typescript";
 
 const LIB_ROOT = path.resolve(__dirname, "..");
 
+/**
+ * Tout fichier `.ts` sous `lib/` marqué `"use server"` — pas seulement ceux
+ * littéralement nommés `actions.ts`. Le scan par nom manquait des fichiers
+ * comme `lib/discounts/webActions.ts`, également des Server Actions.
+ */
 function listActionFiles(dir: string): string[] {
   const files: string[] = [];
   for (const entry of readdirSync(dir)) {
@@ -13,8 +18,9 @@ function listActionFiles(dir: string): string[] {
     const full = path.join(dir, entry);
     if (statSync(full).isDirectory()) {
       files.push(...listActionFiles(full));
-    } else if (entry === "actions.ts") {
-      files.push(full);
+    } else if (entry.endsWith(".ts") && !entry.endsWith(".test.ts")) {
+      const content = readFileSync(full, "utf8");
+      if (content.trimStart().startsWith('"use server"')) files.push(full);
     }
   }
   return files;
@@ -28,6 +34,23 @@ function exportedFunctions(filePath: string): { name: string; bodyText: string }
     if (ts.isFunctionDeclaration(node) && node.name && node.body) {
       const isExported = (node.modifiers ?? []).some((mod) => mod.kind === ts.SyntaxKind.ExportKeyword);
       if (isExported) results.push({ name: node.name.text, bodyText: node.body.getText(sourceFile) });
+      return;
+    }
+    // `export const foo = async () => { ... }` — non détecté par
+    // ts.isFunctionDeclaration ci-dessus, mais tout aussi capable d'être une
+    // Server Action non gardée.
+    if (ts.isVariableStatement(node)) {
+      const isExported = (node.modifiers ?? []).some((mod) => mod.kind === ts.SyntaxKind.ExportKeyword);
+      if (!isExported) return;
+      for (const decl of node.declarationList.declarations) {
+        if (!ts.isIdentifier(decl.name) || !decl.initializer) continue;
+        const initializer = decl.initializer;
+        if (ts.isArrowFunction(initializer) || ts.isFunctionExpression(initializer)) {
+          if (initializer.body) {
+            results.push({ name: decl.name.text, bodyText: initializer.body.getText(sourceFile) });
+          }
+        }
+      }
     }
   });
   return results;
@@ -55,6 +78,8 @@ const EXEMPT: Record<string, string[]> = {
   // findPromoByCode) — aucun create/update/delete, c'est un calcul d'aperçu
   // pur (aucun débit ni compteur, voir le commentaire sur la fonction).
   "discounts/actions.ts": ["previewPosDiscount"],
+  // lecture pure côté vitrine, aucune écriture (cf. discounts/actions.ts:previewPosDiscount, même nature)
+  "discounts/webActions.ts": ["previewWebDiscount"],
   "impersonation/actions.ts": ["startImpersonation", "unlockImpersonationWrite", "endImpersonation"],
 };
 
