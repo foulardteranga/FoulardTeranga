@@ -2,6 +2,7 @@ import Link from "next/link";
 import { colors, fonts, adminBorder } from "@/lib/theme/tokens";
 import { PLAN_LABELS } from "@/lib/platform/plans";
 import type { TenantDetail } from "@/lib/platform/queries";
+import { EnterTenantButton } from "@/components/platform/EnterTenantButton";
 
 export type TenantTab = "identite" | "modules";
 
@@ -30,12 +31,15 @@ export function TenantDetailScreen({
         ← Retour au parc
       </Link>
 
-      <header style={{ margin: "10px 0 20px" }}>
-        <h1 style={{ fontFamily: fonts.display, fontSize: 24, fontWeight: 600, margin: 0 }}>{tenant.name}</h1>
-        <p style={{ color: colors.muted, fontSize: 14, margin: "4px 0 0" }}>
-          {tenant.slug} · {PLAN_LABELS[tenant.plan]} · {tenant.enabledModules.length} modules ·{" "}
-          {tenant.owner ? `Gérante : ${tenant.owner.name}` : "Aucune gérante rattachée"}
-        </p>
+      <header style={{ margin: "10px 0 20px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
+        <div>
+          <h1 style={{ fontFamily: fonts.display, fontSize: 24, fontWeight: 600, margin: 0 }}>{tenant.name}</h1>
+          <p style={{ color: colors.muted, fontSize: 14, margin: "4px 0 0" }}>
+            {tenant.slug} · {PLAN_LABELS[tenant.plan]} · {tenant.enabledModules.length} modules ·{" "}
+            {tenant.owner ? `Gérante : ${tenant.owner.name}` : "Aucune gérante rattachée"}
+          </p>
+        </div>
+        <EnterTenantButton ownerProfileId={tenant.owner?.id ?? null} />
       </header>
 
       <nav style={{ display: "flex", gap: 4, flexWrap: "wrap", borderBottom: adminBorder, marginBottom: 20 }}>
