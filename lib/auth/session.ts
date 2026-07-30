@@ -45,7 +45,7 @@ export function hasModuleAccess(session: Session | null, moduleId: string): bool
 /**
  * Résout la session à partir d'un client Supabase déjà construit — factorisé
  * pour être appelable aussi bien depuis un contexte Server Component/Action
- * (lib/supabase/server.ts) que depuis proxy.ts en Edge (lib/supabase/middleware.ts),
+ * (lib/supabase/server.ts) que depuis proxy.ts en runtime Node.js (lib/supabase/middleware.ts),
  * qui n'ont pas la même API de cookies.
  */
 export async function resolveSession(supabase: SupabaseClient): Promise<Session | null> {

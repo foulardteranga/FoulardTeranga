@@ -20,8 +20,13 @@ export async function requireWritableSession(): Promise<boolean> {
   if (!ctx) return false;
   if (ctx.impersonation) {
     if (ctx.impersonation.mode === "read") return false;
-    const tenant = await getCurrentTenant();
-    if (ctx.impersonation.tenantId !== tenant.id) return false;
+    try {
+      const tenant = await getCurrentTenant();
+      if (ctx.impersonation.tenantId !== tenant.id) return false;
+    } catch {
+      // Hôte non résolu (spec §9 : échec fermé, jamais un 500 en garde d'écriture).
+      return false;
+    }
   }
   return true;
 }

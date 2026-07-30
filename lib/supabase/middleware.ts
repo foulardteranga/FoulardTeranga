@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import type { NextRequest, NextResponse } from "next/server";
 
 /**
- * Client Supabase pour proxy.ts (Edge runtime — pas d'accès à next/headers,
+ * Client Supabase pour proxy.ts (runtime Node.js — pas d'accès à next/headers,
  * les cookies transitent par NextRequest/NextResponse directement).
  */
 export function createMiddlewareClient(request: NextRequest, response: NextResponse) {

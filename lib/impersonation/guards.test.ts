@@ -5,7 +5,15 @@ vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({}) }));
 const ctxState = vi.hoisted(() => ({ value: null as unknown }));
 vi.mock("./context", () => ({ resolveActorContext: async () => ctxState.value }));
 
-vi.mock("@/lib/tenant", () => ({ getCurrentTenant: async () => ({ id: "t1", slug: "foulard-teranga", name: "Foulard Teranga", theme: {}, domains: [] }) }));
+const tenantState = vi.hoisted(() => ({ shouldThrow: false }));
+vi.mock("@/lib/tenant", () => ({
+  getCurrentTenant: async () => {
+    if (tenantState.shouldThrow) {
+      throw new Error("Aucune boutique ne correspond à cet hôte.");
+    }
+    return { id: "t1", slug: "foulard-teranga", name: "Foulard Teranga", theme: {}, domains: [] };
+  },
+}));
 
 import { requireWritableSession, READ_ONLY_ERROR } from "./guards";
 
@@ -58,5 +66,19 @@ describe("requireWritableSession", () => {
 
   it("expose un message d'erreur explicite invitant à activer le mode intervention", () => {
     expect(READ_ONLY_ERROR).toMatch(/mode intervention/i);
+  });
+
+  it("refuse (fail closed) en mode intervention (write) si getCurrentTenant() échoue (hôte non résolu)", async () => {
+    tenantState.shouldThrow = true;
+    try {
+      ctxState.value = {
+        actor: { userId: "s1", name: "P", role: "super_admin" },
+        effective: { tenantId: "t1", role: "owner", permissions: [] },
+        impersonation: { targetProfileId: "p1", tenantId: "t1", mode: "write", startedAt: new Date().toISOString() },
+      };
+      await expect(requireWritableSession()).resolves.toBe(false);
+    } finally {
+      tenantState.shouldThrow = false;
+    }
   });
 });
