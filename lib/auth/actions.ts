@@ -1,11 +1,12 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { validateLogin, type LoginFieldErrors } from "@/lib/validators/auth";
 import { dashboardPath, platformPath } from "@/lib/proxy/zones";
 import { resolveSession } from "@/lib/auth";
+import { IMPERSONATION_COOKIE_NAME } from "@/lib/impersonation/cookie";
 
 export type SignInState = { ok: false; errors: LoginFieldErrors; formError?: string } | null;
 
@@ -71,6 +72,10 @@ export async function signInPlatform(
 export async function signOutPlatform(): Promise<void> {
   const supabase = await createClient();
   await supabase.auth.signOut();
+  // Une impersonation en cours ne doit pas survivre à la déconnexion du
+  // prestataire : le cookie serait autrement lié à une session désormais
+  // invalidée (spec §3).
+  (await cookies()).delete(IMPERSONATION_COOKIE_NAME);
   const hostname = (await headers()).get("host") ?? "localhost";
   redirect(platformPath(hostname, "/connexion"));
 }
