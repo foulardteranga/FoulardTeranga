@@ -7,6 +7,8 @@ import { validateLogin, type LoginFieldErrors } from "@/lib/validators/auth";
 import { dashboardPath, platformPath } from "@/lib/proxy/zones";
 import { resolveSession } from "@/lib/auth";
 import { IMPERSONATION_COOKIE_NAME } from "@/lib/impersonation/cookie";
+import { getActorContext } from "@/lib/impersonation/context";
+import { recordPlatformAction } from "@/lib/platform/audit";
 
 export type SignInState = { ok: false; errors: LoginFieldErrors; formError?: string } | null;
 
@@ -20,6 +22,11 @@ export async function signIn(_prevState: SignInState, formData: FormData): Promi
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword(result.data);
   if (error) return { ok: false, errors: {}, formError: "Email ou mot de passe incorrect." };
+  // Une connexion réussie repart d'une ardoise propre : un cookie
+  // d'impersonation resté valide (fenêtre de 60 min) ne doit jamais reprendre
+  // silencieusement une session empruntée précédente, sans nouvelle trace
+  // d'audit (spec §3).
+  (await cookies()).delete(IMPERSONATION_COOKIE_NAME);
 
   const next = String(formData.get("next") ?? "/pos");
   // N'accepte qu'un chemin relatif de même origine : un seul "/" en tête, ni
@@ -31,6 +38,18 @@ export async function signIn(_prevState: SignInState, formData: FormData): Promi
 }
 
 export async function signOut(): Promise<void> {
+  // Résolu AVANT `signOut()` : celui-ci invalide la session dont
+  // `getActorContext()` a besoin pour retrouver l'impersonation en cours.
+  const ctx = await getActorContext();
+  if (ctx?.impersonation) {
+    await recordPlatformAction({
+      actorId: ctx.actor.userId,
+      action: "impersonation_ended",
+      tenantId: ctx.impersonation.tenantId,
+      targetId: ctx.impersonation.targetProfileId,
+    });
+  }
+
   const supabase = await createClient();
   await supabase.auth.signOut();
   // Une impersonation en cours ne doit pas survivre à la déconnexion du
@@ -59,6 +78,8 @@ export async function signInPlatform(
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword(result.data);
   if (error) return { ok: false, errors: {}, formError: "Email ou mot de passe incorrect." };
+  // Voir signIn() : une connexion réussie repart d'une ardoise propre.
+  (await cookies()).delete(IMPERSONATION_COOKIE_NAME);
 
   const session = await resolveSession(supabase);
   if (session?.role !== "super_admin") {
@@ -74,6 +95,18 @@ export async function signInPlatform(
 }
 
 export async function signOutPlatform(): Promise<void> {
+  // Résolu AVANT `signOut()` : celui-ci invalide la session dont
+  // `getActorContext()` a besoin pour retrouver l'impersonation en cours.
+  const ctx = await getActorContext();
+  if (ctx?.impersonation) {
+    await recordPlatformAction({
+      actorId: ctx.actor.userId,
+      action: "impersonation_ended",
+      tenantId: ctx.impersonation.tenantId,
+      targetId: ctx.impersonation.targetProfileId,
+    });
+  }
+
   const supabase = await createClient();
   await supabase.auth.signOut();
   // Une impersonation en cours ne doit pas survivre à la déconnexion du
