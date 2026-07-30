@@ -7,7 +7,7 @@ import type { Session, Role } from "@/lib/auth/session";
 import { IMPERSONATION_COOKIE_NAME, verifyImpersonationCookie } from "./cookie";
 import type { ActorContext } from "./types";
 
-interface Resolved {
+export interface ResolvedIdentity {
   actor: { userId: string; name: string; role: Role };
   /** Identité effective, prête à devenir un `Session` — voir resolveEffectiveSession. */
   session: Session;
@@ -16,13 +16,18 @@ interface Resolved {
 
 /**
  * Cœur partagé par `resolveEffectiveSession` (utilisé par `getSession()`, donc
- * par tout le dashboard existant) et `resolveActorContext` (audit, bandeau).
- * Une seule résolution DB par appel. Si l'acteur n'est pas `super_admin`, le
- * cookie est ignoré avant même d'être lu — c'est ce qui rend son forgeage sans
- * effet pour qui n'est pas déjà `super_admin` (spec §3, test le plus important
- * du lot, cf. context.test.ts).
+ * par tout le dashboard existant), `resolveActorContext` (audit, bandeau) et
+ * `resolveRequestIdentity` (proxy.ts, hors `next/headers`). Une seule
+ * résolution DB par appel. Si l'acteur n'est pas `super_admin`, le cookie est
+ * ignoré avant même d'être lu — c'est ce qui rend son forgeage sans effet pour
+ * qui n'est pas déjà `super_admin` (spec §3, test le plus important du lot,
+ * cf. context.test.ts). Reçoit le cookie brut en paramètre plutôt que de le
+ * lire lui-même via `next/headers`, indisponible dans `proxy.ts` (middleware).
  */
-async function resolveActorAndSession(supabase: SupabaseClient): Promise<Resolved | null> {
+async function resolveActorAndSession(
+  supabase: SupabaseClient,
+  impersonationCookieRaw: string | undefined
+): Promise<ResolvedIdentity | null> {
   const actorSession = await resolveSession(supabase);
   if (!actorSession) return null;
 
@@ -32,9 +37,7 @@ async function resolveActorAndSession(supabase: SupabaseClient): Promise<Resolve
     return { actor, session: actorSession, impersonation: null };
   }
 
-  const store = await cookies();
-  const raw = store.get(IMPERSONATION_COOKIE_NAME)?.value;
-  const payload = verifyImpersonationCookie(raw, actor.userId);
+  const payload = verifyImpersonationCookie(impersonationCookieRaw, actor.userId);
   if (!payload) {
     return { actor, session: actorSession, impersonation: null };
   }
@@ -88,12 +91,16 @@ async function resolveActorAndSession(supabase: SupabaseClient): Promise<Resolve
 }
 
 export async function resolveEffectiveSession(supabase: SupabaseClient): Promise<Session | null> {
-  const resolved = await resolveActorAndSession(supabase);
+  const store = await cookies();
+  const raw = store.get(IMPERSONATION_COOKIE_NAME)?.value;
+  const resolved = await resolveActorAndSession(supabase, raw);
   return resolved?.session ?? null;
 }
 
 export async function resolveActorContext(supabase: SupabaseClient): Promise<ActorContext | null> {
-  const resolved = await resolveActorAndSession(supabase);
+  const store = await cookies();
+  const raw = store.get(IMPERSONATION_COOKIE_NAME)?.value;
+  const resolved = await resolveActorAndSession(supabase, raw);
   if (!resolved) return null;
   return {
     actor: resolved.actor,
@@ -104,6 +111,20 @@ export async function resolveActorContext(supabase: SupabaseClient): Promise<Act
     },
     impersonation: resolved.impersonation,
   };
+}
+
+/**
+ * Variante pour `proxy.ts` : reçoit le cookie brut de la requête (via
+ * `request.cookies`) plutôt que de lire `next/headers`, indisponible hors
+ * Server Component/Action. `proxy.ts` s'exécute toujours en runtime Node.js
+ * (convention Next 16 confirmée), donc Prisma et la vérification HMAC y
+ * sont utilisables sans contrainte Edge.
+ */
+export async function resolveRequestIdentity(
+  supabase: SupabaseClient,
+  impersonationCookieRaw: string | undefined
+): Promise<ResolvedIdentity | null> {
+  return resolveActorAndSession(supabase, impersonationCookieRaw);
 }
 
 /** Convenience Server Component/Action, à l'image de `getSession()` (lib/auth/index.ts). */

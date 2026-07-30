@@ -27,7 +27,7 @@ vi.mock("@/lib/auth/session", async () => {
 
 import { resolveSession } from "@/lib/auth/session";
 import { signImpersonationCookie } from "./cookie";
-import { resolveActorContext } from "./context";
+import { resolveActorContext, resolveRequestIdentity } from "./context";
 
 const mockedResolveSession = vi.mocked(resolveSession);
 
@@ -181,5 +181,43 @@ describe("resolveActorContext — le test anti-escalade le plus important du lot
     mockedResolveSession.mockResolvedValue(null);
     const ctx = await resolveActorContext({} as never);
     expect(ctx).toBeNull();
+  });
+});
+
+describe("resolveRequestIdentity — variante proxy.ts (cookie brut, pas next/headers)", () => {
+  it("ignore le cookie fourni si l'acteur n'est pas super_admin", async () => {
+    mockedResolveSession.mockResolvedValue(ownerSession);
+    const raw = signImpersonationCookie({
+      targetProfileId: "target-owner-1",
+      tenantId: "tenant-1",
+      mode: "write",
+      actorUserId: "owner-1",
+      startedAt: new Date().toISOString(),
+    });
+    dbState.profile = validTarget;
+
+    const identity = await resolveRequestIdentity({} as never, raw);
+
+    expect(identity?.actor.role).toBe("owner");
+    expect(identity?.impersonation).toBeNull();
+    expect(identity?.session.role).toBe("owner");
+  });
+
+  it("super_admin + cookie valide → actor.role super_admin ET session.role = celui de la cible", async () => {
+    mockedResolveSession.mockResolvedValue(superAdminSession);
+    const raw = signImpersonationCookie({
+      targetProfileId: "target-owner-1",
+      tenantId: "tenant-1",
+      mode: "read",
+      actorUserId: "super-1",
+      startedAt: new Date().toISOString(),
+    });
+    dbState.profile = validTarget;
+
+    const identity = await resolveRequestIdentity({} as never, raw);
+
+    expect(identity?.actor.role).toBe("super_admin");
+    expect(identity?.session.role).toBe("owner");
+    expect(identity?.impersonation).toMatchObject({ targetProfileId: "target-owner-1", mode: "read" });
   });
 });
