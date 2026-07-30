@@ -45,7 +45,16 @@ const EXEMPT: Record<string, string[]> = {
   "auth/actions.ts": ["signIn", "signOut", "signInPlatform", "signOutPlatform"],
   "platform/actions.ts": ["createTenant", "updateTenantIdentity", "updateTenantModules"],
   "inventory/actions.ts": ["getProductStockMovements"],
-  "orders/actions.ts": ["getOrderStatusHistoryAction"],
+  // submitWebOrder est l'action de checkout de la vitrine publique, appelée
+  // par un visiteur non authentifié (fiche KYC uniquement, cf. CLAUDE.md §4) —
+  // elle n'a et ne doit avoir aucune garde de session/rôle, donc jamais une
+  // cible du verrou d'écriture de l'impersonation (jamais appelée depuis le
+  // back-office owner/staff).
+  "orders/actions.ts": ["getOrderStatusHistoryAction", "submitWebOrder"],
+  // previewPosDiscount ne fait que des lectures (prisma.customer.findFirst,
+  // findPromoByCode) — aucun create/update/delete, c'est un calcul d'aperçu
+  // pur (aucun débit ni compteur, voir le commentaire sur la fonction).
+  "discounts/actions.ts": ["previewPosDiscount"],
   "impersonation/actions.ts": ["startImpersonation", "unlockImpersonationWrite", "endImpersonation"],
 };
 

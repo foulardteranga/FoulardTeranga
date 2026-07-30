@@ -7,6 +7,7 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import { getCurrentTenant } from "@/lib/tenant";
 import { requireZone, getSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { requireWritableSession, READ_ONLY_ERROR } from "@/lib/impersonation/guards";
 import { compressImage, validateImageUpload, STOREFRONT_IMAGES_BUCKET } from "@/lib/images/imageUpload";
 import { productSchema, productImagesSchema, type ProductInput } from "@/lib/validators/product";
 import { stockAdjustmentSchema, type StockAdjustmentInput } from "@/lib/validators/stockMovement";
@@ -17,6 +18,7 @@ export async function createProduct(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const { allowed } = await requireZone("dashboard");
   if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+  if (!(await requireWritableSession())) return { ok: false, error: READ_ONLY_ERROR };
 
   const parsed = productSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Informations invalides." };
@@ -57,6 +59,7 @@ export async function uploadProductImage(
 ): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
   const { allowed } = await requireZone("dashboard");
   if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+  if (!(await requireWritableSession())) return { ok: false, error: READ_ONLY_ERROR };
 
   const file = formData.get("file");
   if (!(file instanceof File)) return { ok: false, error: "Requête invalide." };
@@ -90,6 +93,7 @@ export async function updateProductImages(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const { allowed } = await requireZone("dashboard");
   if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+  if (!(await requireWritableSession())) return { ok: false, error: READ_ONLY_ERROR };
 
   const parsed = productImagesSchema.safeParse(images);
   if (!parsed.success) return { ok: false, error: "Photos invalides." };
@@ -122,6 +126,7 @@ export async function adjustStock(
 
   const session = await getSession();
   if (!session) return { ok: false, error: "Une erreur est survenue, réessayez." };
+  if (!(await requireWritableSession())) return { ok: false, error: READ_ONLY_ERROR };
 
   const parsed = stockAdjustmentSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Informations invalides." };

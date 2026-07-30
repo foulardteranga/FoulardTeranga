@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db/client";
 import { getCurrentTenant } from "@/lib/tenant";
 import { requireZone } from "@/lib/auth";
+import { requireWritableSession, READ_ONLY_ERROR } from "@/lib/impersonation/guards";
 import { promoCreateSchema, type PromoCreateInput } from "@/lib/validators/promo";
 
 /** Fin de journée locale pour une date AAAA-MM-JJ (un code « jusqu'au 24/07 » vaut toute la journée du 24). */
@@ -16,6 +17,7 @@ export async function createPromoCode(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const { allowed } = await requireZone("dashboard");
   if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+  if (!(await requireWritableSession())) return { ok: false, error: READ_ONLY_ERROR };
 
   const parsed = promoCreateSchema.safeParse(input);
   if (!parsed.success) {
@@ -54,6 +56,7 @@ export async function setPromoCodeActive(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const { allowed } = await requireZone("dashboard");
   if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+  if (!(await requireWritableSession())) return { ok: false, error: READ_ONLY_ERROR };
 
   try {
     const tenant = await getCurrentTenant();

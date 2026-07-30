@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db/client";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { getCurrentTenant } from "@/lib/tenant";
 import { requireZone, getSession } from "@/lib/auth";
+import { requireWritableSession, READ_ONLY_ERROR } from "@/lib/impersonation/guards";
 import { posSaleSchema, type PosSaleInput } from "@/lib/validators/pos";
 import { buildOrderLines } from "@/lib/orders/buildOrderLines";
 import { aggregateQtyByProduct } from "@/lib/orders/stockCheck";
@@ -32,6 +33,7 @@ export async function encaisserVente(
 
   const session = await getSession();
   if (!session) return { ok: false, error: "Une erreur est survenue, réessayez." };
+  if (!(await requireWritableSession())) return { ok: false, error: READ_ONLY_ERROR };
 
   const parsed = posSaleSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Informations invalides." };
