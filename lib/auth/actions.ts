@@ -33,6 +33,10 @@ export async function signIn(_prevState: SignInState, formData: FormData): Promi
 export async function signOut(): Promise<void> {
   const supabase = await createClient();
   await supabase.auth.signOut();
+  // Une impersonation en cours ne doit pas survivre à la déconnexion du
+  // compte (ex. la gérante ciblée) : le cookie serait autrement lié à une
+  // session désormais invalidée (spec §3).
+  (await cookies()).delete(IMPERSONATION_COOKIE_NAME);
   const hostname = (await headers()).get("host") ?? "localhost";
   redirect(dashboardPath(hostname, "/connexion"));
 }
