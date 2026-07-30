@@ -34,6 +34,7 @@ vi.mock("@/lib/tenant", () => ({
 }));
 
 import { startImpersonation, unlockImpersonationWrite, endImpersonation } from "./actions";
+import * as cookieModule from "./cookie";
 
 const superAdminActor = { actor: { userId: "super-1", name: "Prestataire", role: "super_admin" as const } };
 
@@ -85,6 +86,26 @@ describe("startImpersonation", () => {
     const [body] = cookieValue.split(".");
     const payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8"));
     expect(payload.mode).toBe("read");
+  });
+
+  it("renvoie une erreur générique plutôt que de lever si la signature du cookie échoue (ex. IMPERSONATION_COOKIE_SECRET manquant en prod)", async () => {
+    actorState.value = superAdminActor;
+    dbState.profile = {
+      id: "target-1",
+      tenantId: "tenant-1",
+      role: "owner",
+      active: true,
+      tenant: { status: "active" },
+    };
+    const spy = vi.spyOn(cookieModule, "signImpersonationCookie").mockImplementation(() => {
+      throw new Error("IMPERSONATION_COOKIE_SECRET est requis en production.");
+    });
+
+    const result = await startImpersonation("target-1");
+
+    expect(result).toEqual({ ok: false, error: "Une erreur est survenue, réessayez." });
+    expect(cookieJar.set).not.toHaveBeenCalled();
+    spy.mockRestore();
   });
 });
 

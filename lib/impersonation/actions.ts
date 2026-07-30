@@ -31,13 +31,18 @@ export async function startImpersonation(targetProfileId: string): Promise<Resul
   }
 
   const startedAt = new Date().toISOString();
-  const cookieValue = signImpersonationCookie({
-    targetProfileId: target.id,
-    tenantId: target.tenantId,
-    mode: "read",
-    actorUserId: ctx.actor.userId,
-    startedAt,
-  });
+  let cookieValue: string;
+  try {
+    cookieValue = signImpersonationCookie({
+      targetProfileId: target.id,
+      tenantId: target.tenantId,
+      mode: "read",
+      actorUserId: ctx.actor.userId,
+      startedAt,
+    });
+  } catch {
+    return { ok: false, error: GENERIC_ERROR };
+  }
 
   const store = await cookies();
   store.set(IMPERSONATION_COOKIE_NAME, cookieValue, {
@@ -62,13 +67,18 @@ export async function unlockImpersonationWrite(): Promise<Result> {
   const ctx = await getActorContext();
   if (!ctx || ctx.actor.role !== "super_admin" || !ctx.impersonation) return { ok: false, error: GENERIC_ERROR };
 
-  const cookieValue = signImpersonationCookie({
-    targetProfileId: ctx.impersonation.targetProfileId,
-    tenantId: ctx.impersonation.tenantId,
-    mode: "write",
-    actorUserId: ctx.actor.userId,
-    startedAt: ctx.impersonation.startedAt, // inchangé : l'expiration dure ne se prolonge pas au déblocage
-  });
+  let cookieValue: string;
+  try {
+    cookieValue = signImpersonationCookie({
+      targetProfileId: ctx.impersonation.targetProfileId,
+      tenantId: ctx.impersonation.tenantId,
+      mode: "write",
+      actorUserId: ctx.actor.userId,
+      startedAt: ctx.impersonation.startedAt, // inchangé : l'expiration dure ne se prolonge pas au déblocage
+    });
+  } catch {
+    return { ok: false, error: GENERIC_ERROR };
+  }
 
   const store = await cookies();
   store.set(IMPERSONATION_COOKIE_NAME, cookieValue, {
