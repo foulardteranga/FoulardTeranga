@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db/client";
 import { getCurrentTenant } from "@/lib/tenant";
 import { getSession, type Session } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireWritableSession, READ_ONLY_ERROR } from "@/lib/impersonation/guards";
 import {
   employeeRoleSchema,
   createEmployeeSchema,
@@ -21,6 +22,7 @@ export async function createEmployeeRole(
   input: EmployeeRoleInput
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   if (!(await requireOwnerSession())) return { ok: false, error: "Une erreur est survenue, réessayez." };
+  if (!(await requireWritableSession())) return { ok: false, error: READ_ONLY_ERROR };
 
   const parsed = employeeRoleSchema.safeParse(input);
   if (!parsed.success) {
@@ -49,6 +51,7 @@ export async function updateEmployeeRole(
   input: EmployeeRoleInput
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   if (!(await requireOwnerSession())) return { ok: false, error: "Une erreur est survenue, réessayez." };
+  if (!(await requireWritableSession())) return { ok: false, error: READ_ONLY_ERROR };
 
   const parsed = employeeRoleSchema.safeParse(input);
   if (!parsed.success) {
@@ -78,6 +81,7 @@ export async function updateEmployeeRole(
 
 export async function deleteEmployeeRole(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
   if (!(await requireOwnerSession())) return { ok: false, error: "Une erreur est survenue, réessayez." };
+  if (!(await requireWritableSession())) return { ok: false, error: READ_ONLY_ERROR };
 
   try {
     const tenant = await getCurrentTenant();
@@ -104,6 +108,7 @@ export async function createEmployee(
   input: CreateEmployeeInput
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   if (!(await requireOwnerSession())) return { ok: false, error: "Une erreur est survenue, réessayez." };
+  if (!(await requireWritableSession())) return { ok: false, error: READ_ONLY_ERROR };
 
   const parsed = createEmployeeSchema.safeParse(input);
   if (!parsed.success) {
@@ -160,6 +165,7 @@ export async function setEmployeeActive(
   active: boolean
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   if (!(await requireOwnerSession())) return { ok: false, error: "Une erreur est survenue, réessayez." };
+  if (!(await requireWritableSession())) return { ok: false, error: READ_ONLY_ERROR };
 
   try {
     const tenant = await getCurrentTenant();
@@ -180,6 +186,7 @@ export async function setEmployeeRole(
   employeeRoleId: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   if (!(await requireOwnerSession())) return { ok: false, error: "Une erreur est survenue, réessayez." };
+  if (!(await requireWritableSession())) return { ok: false, error: READ_ONLY_ERROR };
 
   try {
     const tenant = await getCurrentTenant();
