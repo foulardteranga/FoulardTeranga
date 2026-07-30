@@ -2,7 +2,8 @@ import { Sidebar } from "@/components/dashboard/Sidebar";
 import { TopBar } from "@/components/dashboard/TopBar";
 import { MobileNav } from "@/components/dashboard/MobileNav";
 import { OfflineBanner } from "@/components/dashboard/OfflineBanner";
-import { ImpersonationBanner } from "@/components/dashboard/ImpersonationBanner";
+import { ImpersonationBanner, BANNER_HEIGHT } from "@/components/dashboard/ImpersonationBanner";
+import { IMPERSONATION_DURATION_MS } from "@/lib/impersonation/cookie";
 import { Toast } from "@/components/dashboard/Toast";
 import { TicketModal } from "@/components/dashboard/TicketModal";
 import { getSession } from "@/lib/auth";
@@ -30,6 +31,7 @@ export default async function DashboardLayout({
   ]);
 
   const impersonation = actorContext?.impersonation ?? null;
+  const topOffset = impersonation ? BANNER_HEIGHT : 0;
 
   return (
     <div
@@ -40,7 +42,7 @@ export default async function DashboardLayout({
         color: "var(--color-ink)",
       }}
     >
-      <Sidebar session={session} pendingCount={pendingCount} />
+      <Sidebar session={session} pendingCount={pendingCount} topOffset={topOffset} />
 
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         {impersonation && (
@@ -48,11 +50,11 @@ export default async function DashboardLayout({
             tenantName={tenant.name}
             targetName={session?.name ?? ""}
             mode={impersonation.mode}
-            expiresAt={new Date(new Date(impersonation.startedAt).getTime() + 60 * 60 * 1000).toISOString()}
+            expiresAt={new Date(new Date(impersonation.startedAt).getTime() + IMPERSONATION_DURATION_MS).toISOString()}
           />
         )}
         <OfflineBanner />
-        <TopBar initialNotifications={notifications} tenantId={tenant.id} />
+        <TopBar initialNotifications={notifications} tenantId={tenant.id} topOffset={topOffset} />
         <main className="ft-main" style={{ flex: 1, minWidth: 0, overflowX: "hidden" }}>
           {children}
         </main>

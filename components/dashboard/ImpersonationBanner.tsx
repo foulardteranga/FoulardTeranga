@@ -4,7 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { unlockImpersonationWrite, endImpersonation } from "@/lib/impersonation/actions";
 
-const BANNER_HEIGHT = 44;
+export const BANNER_HEIGHT = 44;
 
 function formatRemaining(ms: number): string {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));

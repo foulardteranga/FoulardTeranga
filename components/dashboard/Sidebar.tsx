@@ -17,7 +17,15 @@ const ROLE_LABELS: Record<Session["role"], string> = {
   customer: "Cliente",
 };
 
-export function Sidebar({ session, pendingCount }: { session: Session | null; pendingCount: number }) {
+export function Sidebar({
+  session,
+  pendingCount,
+  topOffset = 0,
+}: {
+  session: Session | null;
+  pendingCount: number;
+  topOffset?: number;
+}) {
   const pathname = usePathname();
   const offline = useBackoffice((s) => s.offline);
   const toggleOffline = useBackoffice((s) => s.toggleOffline);
@@ -37,7 +45,7 @@ export function Sidebar({ session, pendingCount }: { session: Session | null; pe
         display: "flex",
         flexDirection: "column",
         position: "sticky",
-        top: 0,
+        top: topOffset,
         height: "100vh",
         padding: "16px 12px",
       }}

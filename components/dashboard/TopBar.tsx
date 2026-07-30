@@ -21,9 +21,11 @@ const NOTIF_META: Record<NotificationType, { icon: string; iconColor: string; bg
 export function TopBar({
   initialNotifications,
   tenantId,
+  topOffset = 0,
 }: {
   initialNotifications: NotificationItem[];
   tenantId: string;
+  topOffset?: number;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -93,7 +95,7 @@ export function TopBar({
     <header
       style={{
         position: "sticky",
-        top: 0,
+        top: topOffset,
         zIndex: 30,
         display: "flex",
         alignItems: "center",
