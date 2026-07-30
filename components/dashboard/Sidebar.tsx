@@ -46,7 +46,7 @@ export function Sidebar({
         flexDirection: "column",
         position: "sticky",
         top: topOffset,
-        height: "100vh",
+        height: `calc(100vh - ${topOffset}px)`,
         padding: "16px 12px",
       }}
     >
