@@ -8,8 +8,10 @@ import {
   moduleForPath,
   MODULE_ID_PATHS,
 } from "@/lib/proxy/zones";
-import { resolveSession, isRoleAllowedForZone, hasModuleAccess } from "@/lib/auth";
+import { isRoleAllowedForZone, hasModuleAccess } from "@/lib/auth";
 import { createMiddlewareClient } from "@/lib/supabase/middleware";
+import { resolveRequestIdentity } from "@/lib/impersonation/context";
+import { IMPERSONATION_COOKIE_NAME } from "@/lib/impersonation/cookie";
 
 export async function proxy(request: NextRequest) {
   const hostname = request.headers.get("host") ?? "localhost";
@@ -26,8 +28,16 @@ export async function proxy(request: NextRequest) {
 
   if (zone !== "storefront" && rewrittenPathname !== "/connexion") {
     const supabase = createMiddlewareClient(request, authDraft);
-    const session = await resolveSession(supabase);
-    if (!isRoleAllowedForZone(zone, session?.role ?? null)) {
+    const impersonationCookieRaw = request.cookies.get(IMPERSONATION_COOKIE_NAME)?.value;
+    const identity = await resolveRequestIdentity(supabase, impersonationCookieRaw);
+    // Zone plateforme : gardée sur l'acteur RÉEL, pour que le prestataire reste
+    // maître de sa propre zone même en cours d'impersonation (sinon "Quitter"
+    // deviendrait inatteignable). Zone dashboard : gardée sur l'identité
+    // EFFECTIVE, qui est celle de la cible en impersonation.
+    const roleForZone = zone === "admin" ? (identity?.actor.role ?? null) : (identity?.session.role ?? null);
+    const session = identity?.session ?? null;
+
+    if (!isRoleAllowedForZone(zone, roleForZone)) {
       // Chaque zone privée a désormais sa propre page de connexion : le
       // prestataire refusé sur /boutiques atterrit sur la connexion plateforme,
       // pas sur la vitrine. Pas de boucle possible : /connexion sort de ce bloc
