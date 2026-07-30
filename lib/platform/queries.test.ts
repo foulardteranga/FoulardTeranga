@@ -1,14 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
 
 // Session de gérante : aucune fonction de ce module ne doit lui répondre.
-vi.mock("@/lib/auth", () => ({
-  getSession: async () => ({
-    userId: "u1",
-    name: "Aya",
-    role: "owner",
-    tenantId: "t1",
-    permissions: [],
-    enabledModules: ["dash"],
+vi.mock("@/lib/impersonation/context", () => ({
+  getActorContext: async () => ({
+    actor: { userId: "u1", name: "Aya", role: "owner" },
+    effective: { tenantId: "t1", role: "owner", permissions: [] },
+    impersonation: null,
   }),
 }));
 

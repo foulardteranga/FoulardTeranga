@@ -61,24 +61,18 @@ function resetTestState() {
   vi.mocked(revalidatePath).mockClear();
 }
 
-vi.mock("@/lib/auth", () => ({
-  getSession: async () =>
+vi.mock("@/lib/impersonation/context", () => ({
+  getActorContext: async () =>
     authState.role === "super_admin"
       ? {
-          userId: "admin-1",
-          name: "Admin Plateforme",
-          role: "super_admin",
-          tenantId: null,
-          permissions: [],
-          enabledModules: [],
+          actor: { userId: "admin-1", name: "Admin Plateforme", role: "super_admin" },
+          effective: { tenantId: null, role: "super_admin", permissions: [] },
+          impersonation: null,
         }
       : {
-          userId: "u1",
-          name: "Aya",
-          role: "owner",
-          tenantId: "t1",
-          permissions: [],
-          enabledModules: ["dash"],
+          actor: { userId: "u1", name: "Aya", role: "owner" },
+          effective: { tenantId: "t1", role: "owner", permissions: [] },
+          impersonation: null,
         },
 }));
 
