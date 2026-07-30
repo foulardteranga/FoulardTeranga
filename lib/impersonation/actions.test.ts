@@ -76,6 +76,11 @@ describe("startImpersonation", () => {
     expect(auditLog.entries).toEqual([
       expect.objectContaining({ actorId: "super-1", action: "impersonation_started", tenantId: "tenant-1", targetId: "target-1" }),
     ]);
+
+    const cookieValue = cookieJar.set.mock.calls[0][1] as string;
+    const [body] = cookieValue.split(".");
+    const payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8"));
+    expect(payload.mode).toBe("read");
   });
 });
 
@@ -97,6 +102,22 @@ describe("unlockImpersonationWrite", () => {
     expect(auditLog.entries).toEqual([
       expect.objectContaining({ actorId: "super-1", action: "impersonation_write_unlocked", tenantId: "tenant-1", targetId: "target-1" }),
     ]);
+  });
+
+  it("préserve le startedAt d'origine dans le cookie re-signé (l'expiration dure ne doit jamais s'étendre)", async () => {
+    const originalStartedAt = new Date().toISOString();
+    actorState.value = {
+      ...superAdminActor,
+      impersonation: { targetProfileId: "target-1", tenantId: "tenant-1", mode: "read", startedAt: originalStartedAt },
+    };
+
+    await unlockImpersonationWrite();
+
+    const cookieValue = cookieJar.set.mock.calls[0][1] as string;
+    const [body] = cookieValue.split(".");
+    const payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8"));
+    expect(payload.startedAt).toBe(originalStartedAt);
+    expect(payload.mode).toBe("write");
   });
 });
 
@@ -126,7 +147,6 @@ describe("endImpersonation", () => {
 });
 
 import { requireWritableSession } from "./guards";
-import { resolveEffectiveSession } from "./context";
 
 describe("séquence complète : entrer → refus en lecture → intervention → écriture acceptée → sortie", () => {
   it("mode read refuse l'écriture, mode write l'autorise, sortie efface tout", async () => {
