@@ -5,6 +5,8 @@ vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({}) }));
 const ctxState = vi.hoisted(() => ({ value: null as unknown }));
 vi.mock("./context", () => ({ resolveActorContext: async () => ctxState.value }));
 
+vi.mock("@/lib/tenant", () => ({ getCurrentTenant: async () => ({ id: "t1", slug: "foulard-teranga", name: "Foulard Teranga", theme: {}, domains: [] }) }));
+
 import { requireWritableSession, READ_ONLY_ERROR } from "./guards";
 
 describe("requireWritableSession", () => {
@@ -29,6 +31,20 @@ describe("requireWritableSession", () => {
       impersonation: { targetProfileId: "p1", tenantId: "t1", mode: "write", startedAt: new Date().toISOString() },
     };
     expect(await requireWritableSession()).toBe(true);
+  });
+
+  it("refuse en mode intervention (write) si le tenantId de l'impersonation ne correspond pas à la boutique courante", async () => {
+    ctxState.value = {
+      actor: { userId: "s1", name: "P", role: "super_admin" },
+      effective: { tenantId: "autre-tenant", role: "owner", permissions: [] },
+      impersonation: {
+        targetProfileId: "p1",
+        tenantId: "autre-tenant",
+        mode: "write",
+        startedAt: new Date().toISOString(),
+      },
+    };
+    expect(await requireWritableSession()).toBe(false);
   });
 
   it("autorise hors impersonation (usage normal owner/staff/super_admin)", async () => {

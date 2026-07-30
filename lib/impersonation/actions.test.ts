@@ -29,6 +29,10 @@ vi.mock("./context", () => ({
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({}) }));
 
+vi.mock("@/lib/tenant", () => ({
+  getCurrentTenant: async () => ({ id: "tenant-1", slug: "foulard-teranga", name: "Foulard Teranga", theme: {}, domains: [] }),
+}));
+
 import { startImpersonation, unlockImpersonationWrite, endImpersonation } from "./actions";
 
 const superAdminActor = { actor: { userId: "super-1", name: "Prestataire", role: "super_admin" as const } };
