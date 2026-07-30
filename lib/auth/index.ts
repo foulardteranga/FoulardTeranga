@@ -1,13 +1,20 @@
 import { createClient } from "@/lib/supabase/server";
-import { isRoleAllowedForZone, resolveSession } from "./session";
+import { isRoleAllowedForZone } from "./session";
+import { resolveEffectiveSession } from "@/lib/impersonation/context";
 import type { Zone, Session } from "./session";
 
 export * from "./session";
 
-/** Convenience Server Component/Action : construit le client puis résout la session. */
+/**
+ * Convenience Server Component/Action : construit le client puis résout
+ * l'identité EFFECTIVE (celle de la cible en impersonation, celle de l'acteur
+ * sinon). Tout le dashboard existant continue de fonctionner sans changement
+ * — c'est délibéré (spec §3). Pour l'acteur réel (audit, bandeau), utiliser
+ * `getActorContext()` (lib/impersonation/context.ts).
+ */
 export async function getSession(): Promise<Session | null> {
   const supabase = await createClient();
-  return resolveSession(supabase);
+  return resolveEffectiveSession(supabase);
 }
 
 export async function requireZone(zone: Zone): Promise<{ allowed: boolean }> {

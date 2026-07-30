@@ -1,6 +1,17 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isRoleAllowedForZone, resolveSession, hasModuleAccess, type Session } from "@/lib/auth";
+
+process.env.IMPERSONATION_COOKIE_SECRET = "test-secret-do-not-use-in-prod";
+
+vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({}) }));
+
+const effectiveState = vi.hoisted(() => ({ value: null as unknown }));
+vi.mock("@/lib/impersonation/context", () => ({
+  resolveEffectiveSession: async () => effectiveState.value,
+}));
+
+import { getSession } from "./index";
 
 function fakeSupabase(
   user: { id: string } | null,
@@ -193,5 +204,28 @@ describe("resolveSession", () => {
       permissions: [],
       enabledModules: [],
     });
+  });
+});
+
+describe("getSession — délègue à resolveEffectiveSession", () => {
+  beforeEach(() => {
+    effectiveState.value = null;
+  });
+
+  it("renvoie null si aucune session", async () => {
+    expect(await getSession()).toBeNull();
+  });
+
+  it("renvoie l'identité effective (impersonation ou non) telle quelle", async () => {
+    const session = {
+      userId: "target-1",
+      name: "Fatou",
+      role: "owner" as const,
+      tenantId: "tenant-1",
+      permissions: [],
+      enabledModules: ["dash"],
+    };
+    effectiveState.value = session;
+    expect(await getSession()).toEqual(session);
   });
 });
