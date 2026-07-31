@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getCurrentTenantOrNull } from "@/lib/tenant";
+import { requireActiveStorefrontTenant } from "@/lib/tenant";
 import { getCatalog, getProductById } from "@/lib/data/catalog.server";
 import { relatedTo } from "@/lib/data/catalog";
 import { ProductView } from "@/components/storefront/views/ProductView";
@@ -15,10 +15,11 @@ export async function generateStaticParams() {
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
-  // Le layout rend déjà un 404 sur hôte inconnu, mais Next rend layout et page
-  // en parallèle : sans ce garde, ce segment appelle getCurrentTenant() et lève
-  // une exception non capturée dans les logs, en plus du 404 correct.
-  if (!(await getCurrentTenantOrNull())) notFound();
+  // Le layout rend déjà un 404 (hôte inconnu/archivée) ou StoreUnavailable
+  // (suspendue), mais Next rend layout et page en parallèle : sans ce garde,
+  // ce segment appelle getCurrentTenant() et lève une exception non capturée
+  // dans les logs, en plus de la réponse déjà décidée par le layout.
+  await requireActiveStorefrontTenant();
 
   const { id } = await params;
   const product = await getProductById(id);

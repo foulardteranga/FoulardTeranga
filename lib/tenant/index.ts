@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import { notFound } from "next/navigation";
 import { resolveTenantFromHost } from "./registry";
 import type { Tenant } from "./types";
 
@@ -22,5 +23,18 @@ export async function getCurrentTenantOrNull(): Promise<Tenant | null> {
 export async function getCurrentTenant(): Promise<Tenant> {
   const tenant = await getCurrentTenantOrNull();
   if (!tenant) throw new Error("Aucune boutique ne correspond à cet hôte.");
+  return tenant;
+}
+
+/**
+ * Garde des **pages** de la vitrine. Next.js prérend les segments en parallèle :
+ * sans elle, une page continuerait d'exécuter ses requêtes catalogue/commandes
+ * alors que le layout a déjà décidé de ne pas la rendre. Elle coupe donc le
+ * rendu pour tout état non `active` — y compris `suspended`, dont la réponse
+ * visible est produite par le layout (`StoreUnavailable`), pas ici.
+ */
+export async function requireActiveStorefrontTenant(): Promise<Tenant> {
+  const tenant = await getCurrentTenantOrNull();
+  if (!tenant || tenant.status !== "active") notFound();
   return tenant;
 }
