@@ -6,6 +6,10 @@ import {
   createTenantSchema,
   tenantIdentitySchema,
   tenantModulesFormSchema,
+  suspendTenantSchema,
+  deleteTenantSchema,
+  resetOwnerPasswordSchema,
+  createOwnerSchema,
 } from "./platform";
 
 describe("normalizeSlug", () => {
@@ -136,5 +140,60 @@ describe("tenantModulesFormSchema", () => {
 
   it("refuse des modules sans dash même avec un palier valide", () => {
     expect(tenantModulesFormSchema.safeParse({ plan: "pro", modules: ["fin"] }).success).toBe(false);
+  });
+});
+
+describe("suspendTenantSchema", () => {
+  it("accepte un motif renseigné", () => {
+    const result = suspendTenantSchema.safeParse({ reason: "Impayé depuis 2 mois" });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepte un motif vide — la suspension ne doit jamais être bloquée par la paperasse", () => {
+    const result = suspendTenantSchema.safeParse({ reason: "" });
+    expect(result.success).toBe(true);
+  });
+
+  it("refuse un motif trop long", () => {
+    const result = suspendTenantSchema.safeParse({ reason: "x".repeat(281) });
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.issues[0].message).toBe("280 caractères maximum.");
+  });
+});
+
+describe("deleteTenantSchema", () => {
+  it("accepte un slug de confirmation", () => {
+    expect(deleteTenantSchema.safeParse({ confirmSlug: "foulard-teranga" }).success).toBe(true);
+  });
+
+  it("refuse une confirmation vide", () => {
+    const result = deleteTenantSchema.safeParse({ confirmSlug: "" });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe("Retapez le slug de la boutique pour confirmer.");
+    }
+  });
+});
+
+describe("resetOwnerPasswordSchema", () => {
+  it("exige 8 caractères minimum, comme createTenantSchema", () => {
+    expect(resetOwnerPasswordSchema.safeParse({ password: "1234567" }).success).toBe(false);
+    expect(resetOwnerPasswordSchema.safeParse({ password: "12345678" }).success).toBe(true);
+  });
+});
+
+describe("createOwnerSchema", () => {
+  it("accepte une gérante complète", () => {
+    const result = createOwnerSchema.safeParse({
+      name: "Aïssatou Diallo",
+      email: "aissatou@example.com",
+      password: "motdepasse1",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("refuse une adresse email invalide", () => {
+    const result = createOwnerSchema.safeParse({ name: "Aya", email: "pas-un-email", password: "motdepasse1" });
+    expect(result.success).toBe(false);
   });
 });

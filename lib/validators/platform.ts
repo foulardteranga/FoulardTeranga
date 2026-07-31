@@ -86,3 +86,37 @@ export const tenantModulesFormSchema = z.object({
   modules: tenantModulesSchema,
 });
 export type TenantModulesInput = z.infer<typeof tenantModulesFormSchema>;
+
+/**
+ * Motif de suspension (spec §9). Optionnel par conception : la gérante doit
+ * pouvoir être coupée immédiatement, la justification peut suivre. Stocké dans
+ * `Tenant.suspendedReason` et recopié dans `metadata` de l'entrée d'audit.
+ */
+export const suspendTenantSchema = z.object({
+  reason: z.string().trim().max(280, "280 caractères maximum.").default(""),
+});
+export type SuspendTenantInput = z.infer<typeof suspendTenantSchema>;
+
+/**
+ * Confirmation de la suppression définitive (spec §9) : l'opérateur retape le
+ * slug. La comparaison au slug réel se fait dans l'action, pas ici — le schéma
+ * ne connaît pas la boutique visée.
+ */
+export const deleteTenantSchema = z.object({
+  confirmSlug: z.string().trim().min(1, "Retapez le slug de la boutique pour confirmer."),
+});
+export type DeleteTenantInput = z.infer<typeof deleteTenantSchema>;
+
+/** Même plancher que `createTenantSchema.ownerPassword` : 8 caractères. */
+export const resetOwnerPasswordSchema = z.object({
+  password: z.string().min(8, "8 caractères minimum."),
+});
+export type ResetOwnerPasswordInput = z.infer<typeof resetOwnerPasswordSchema>;
+
+/** Rattachement d'une gérante à une boutique qui n'en a pas (spec §6, onglet Équipe). */
+export const createOwnerSchema = z.object({
+  name: z.string().trim().min(2, "Le nom de la gérante est requis."),
+  email: z.string().trim().email("Adresse email invalide."),
+  password: z.string().min(8, "8 caractères minimum."),
+});
+export type CreateOwnerInput = z.infer<typeof createOwnerSchema>;
