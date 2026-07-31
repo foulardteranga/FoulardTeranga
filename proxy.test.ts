@@ -1,5 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
 vi.mock("@/lib/supabase/middleware", () => ({
   createMiddlewareClient: () => ({}) as never,
@@ -168,23 +170,35 @@ describe("proxy — comportement normal, sans impersonation (régression)", () =
 });
 
 describe("proxy — statut de boutique : décision de conception du spec §2", () => {
-  it("laisse passer une requête de vitrine sans consulter la base : la suspension est l'affaire des layouts", async () => {
-    // identityState reste null (beforeEach) : la zone storefront ne passe
-    // jamais par resolveRequestIdentity (cf. la garde de proxy.ts), donc
-    // aucune requête Prisma n'est même tentée ici.
-    const response = await proxy(makeRequest("/catalogue"));
+  // Test structurel, pas comportemental. proxy.ts n'importe aujourd'hui aucun
+  // module de résolution de tenant : il n'y a donc rien à mocker qui puisse
+  // faire échouer un test comportemental si quelqu'un réintroduit la
+  // vérification ici (cf. le commentaire dans proxy.ts). On lit le fichier
+  // source et on vérifie l'absence d'import ou d'identifiant de
+  // résolution/statut de tenant, en ignorant les commentaires (le commentaire
+  // de conception cite volontairement `lib/tenant` pour expliquer la
+  // décision, ce qui ferait échouer une recherche naïve de sous-chaîne).
+  //
+  // Si ce test échoue : quelqu'un a remis un accès base de données sur le
+  // chemin du proxy (edge) — revalider la décision du spec §2 avant de
+  // modifier ce test, ne pas l'ajuster pour le faire passer.
+  it("ne réintroduit pas de résolution de tenant dans proxy.ts (spec §2)", () => {
+    const proxySourcePath = path.resolve(__dirname, "./proxy.ts");
+    const rawSource = readFileSync(proxySourcePath, "utf8");
 
-    // Ni redirection ni blocage : le proxy achemine (rewrite), le layout décide.
-    expect(isRedirectTo(response, "/")).toBe(false);
-    expect(response.headers.get("x-middleware-rewrite")).toBeTruthy();
-  });
+    const withoutLineComments = rawSource.replace(/\/\/.*$/gm, "");
+    const withoutComments = withoutLineComments.replace(/\/\*[\s\S]*?\*\//g, "");
 
-  it("achemine une requête dashboard vers le layout plutôt que de la refuser lui-même", async () => {
-    identityState.value = { actor: ownerActor, session: ownerSelfSession, impersonation: null };
+    const forbiddenPatterns = [
+      /from\s+["'][^"']*lib\/tenant[^"']*["']/,
+      /\bgetCurrentTenant\b/,
+      /\bresolveTenantFromHost\b/,
+      /\btenant\.status\b/,
+      /\bprisma\.tenant\b/,
+    ];
 
-    const response = await proxy(makeRequest("/admin/pos"));
-
-    expect(isRedirectTo(response, "/admin/connexion")).toBe(false);
-    expect(response.headers.get("x-middleware-rewrite")).toBeTruthy();
+    for (const pattern of forbiddenPatterns) {
+      expect(withoutComments).not.toMatch(pattern);
+    }
   });
 });
