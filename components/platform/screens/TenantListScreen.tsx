@@ -2,15 +2,16 @@ import Link from "next/link";
 import { colors, fonts, adminBorder } from "@/lib/theme/tokens";
 import { PLAN_LABELS } from "@/lib/platform/plans";
 import { Icon, ICONS } from "@/components/ui/Icon";
+import { StatusBadge } from "@/components/platform/StatusBadge";
 import type { TenantListItem } from "@/lib/platform/queries";
 
-const STATUS_STYLES: Record<string, { bg: string; fg: string; label: string }> = {
-  active: { bg: colors.bgSuccess, fg: colors.fgSuccess, label: "Active" },
-  suspended: { bg: colors.bgWarning, fg: colors.fgWarning, label: "Suspendue" },
-  archived: { bg: colors.bgInfo, fg: colors.fgInfo, label: "Archivée" },
-};
-
-export function TenantListScreen({ tenants }: { tenants: TenantListItem[] }) {
+export function TenantListScreen({
+  tenants,
+  includeArchived,
+}: {
+  tenants: TenantListItem[];
+  includeArchived: boolean;
+}) {
   return (
     <div>
       <style>{`
@@ -54,6 +55,16 @@ export function TenantListScreen({ tenants }: { tenants: TenantListItem[] }) {
         >
           <Icon path={ICONS.plus} size={16} />
           Nouvelle boutique
+        </Link>
+      </div>
+
+      <div style={{ marginBottom: 14 }}>
+        <Link
+          href={includeArchived ? "/boutiques" : "/boutiques?archivees=1"}
+          className="ft-platform-link"
+          style={{ fontSize: 13, color: colors.muted, textDecoration: "none" }}
+        >
+          {includeArchived ? "Masquer les boutiques archivées" : "Afficher les boutiques archivées"}
         </Link>
       </div>
 
@@ -102,58 +113,48 @@ export function TenantListScreen({ tenants }: { tenants: TenantListItem[] }) {
                 </tr>
               </thead>
               <tbody>
-                {tenants.map((tenant) => {
-                  const status = STATUS_STYLES[tenant.status] ?? STATUS_STYLES.active;
-                  return (
-                    <tr key={tenant.id}>
-                      <td>
-                        <Link href={`/boutiques/${tenant.slug}`} className="ft-platform-link" style={{ color: colors.primary, fontWeight: 600, textDecoration: "none" }}>
-                          {tenant.name}
-                        </Link>
-                        <div style={{ color: colors.muted, fontSize: 12 }}>{tenant.slug}</div>
-                      </td>
-                      <td>{tenant.ownerName ?? <span style={{ color: colors.muted }}>—</span>}</td>
-                      <td>
-                        <span style={{ background: status.bg, color: status.fg, borderRadius: 999, padding: "3px 10px", fontSize: 12, fontWeight: 600 }}>
-                          {status.label}
-                        </span>
-                      </td>
-                      <td>{PLAN_LABELS[tenant.plan]}</td>
-                      <td>{tenant.enabledModules.length}</td>
-                      <td>{tenant.productCount}</td>
-                      <td>{tenant.orderCount}</td>
-                    </tr>
-                  );
-                })}
+                {tenants.map((tenant) => (
+                  <tr key={tenant.id}>
+                    <td>
+                      <Link href={`/boutiques/${tenant.slug}`} className="ft-platform-link" style={{ color: colors.primary, fontWeight: 600, textDecoration: "none" }}>
+                        {tenant.name}
+                      </Link>
+                      <div style={{ color: colors.muted, fontSize: 12 }}>{tenant.slug}</div>
+                    </td>
+                    <td>{tenant.ownerName ?? <span style={{ color: colors.muted }}>—</span>}</td>
+                    <td>
+                      <StatusBadge status={tenant.status} />
+                    </td>
+                    <td>{PLAN_LABELS[tenant.plan]}</td>
+                    <td>{tenant.enabledModules.length}</td>
+                    <td>{tenant.productCount}</td>
+                    <td>{tenant.orderCount}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
 
           <div className="ft-parc-cards">
-            {tenants.map((tenant) => {
-              const status = STATUS_STYLES[tenant.status] ?? STATUS_STYLES.active;
-              return (
-                <Link
-                  key={tenant.id}
-                  href={`/boutiques/${tenant.slug}`}
-                  className="ft-platform-card-link"
-                  style={{ background: colors.surface, border: adminBorder, borderRadius: 14, padding: 16, textDecoration: "none", color: colors.ink, display: "block" }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "start" }}>
-                    <div>
-                      <div style={{ fontWeight: 600 }}>{tenant.name}</div>
-                      <div style={{ color: colors.muted, fontSize: 12 }}>{tenant.slug}</div>
-                    </div>
-                    <span style={{ background: status.bg, color: status.fg, borderRadius: 999, padding: "3px 10px", fontSize: 12, fontWeight: 600 }}>
-                      {status.label}
-                    </span>
+            {tenants.map((tenant) => (
+              <Link
+                key={tenant.id}
+                href={`/boutiques/${tenant.slug}`}
+                className="ft-platform-card-link"
+                style={{ background: colors.surface, border: adminBorder, borderRadius: 14, padding: 16, textDecoration: "none", color: colors.ink, display: "block" }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "start" }}>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>{tenant.name}</div>
+                    <div style={{ color: colors.muted, fontSize: 12 }}>{tenant.slug}</div>
                   </div>
-                  <div style={{ color: colors.muted, fontSize: 13, marginTop: 10 }}>
-                    {PLAN_LABELS[tenant.plan]} · {tenant.productCount} produits · {tenant.orderCount} commandes
-                  </div>
-                </Link>
-              );
-            })}
+                  <StatusBadge status={tenant.status} />
+                </div>
+                <div style={{ color: colors.muted, fontSize: 13, marginTop: 10 }}>
+                  {PLAN_LABELS[tenant.plan]} · {tenant.productCount} produits · {tenant.orderCount} commandes
+                </div>
+              </Link>
+            ))}
           </div>
         </>
       )}

@@ -42,12 +42,22 @@ export interface TenantDetail {
   plan: TenantPlan;
   enabledModules: string[];
   createdAt: Date;
+  suspendedAt: Date | null;
+  suspendedReason: string | null;
+  archivedAt: Date | null;
   owner: { id: string; name: string; email: string } | null;
 }
 
-export async function listTenants(): Promise<TenantListItem[]> {
+/**
+ * Spec §9 : une boutique archivée est « sortie du parc, invisible partout sauf
+ * pour le prestataire ». Elle est donc masquée par défaut mais reste atteignable
+ * — sans quoi elle deviendrait insupprimable, la suppression définitive n'étant
+ * possible que depuis sa fiche.
+ */
+export async function listTenants(options?: { includeArchived?: boolean }): Promise<TenantListItem[]> {
   await requireSuperAdmin();
   const rows = await prisma.tenant.findMany({
+    ...(options?.includeArchived ? {} : { where: { status: { not: "archived" } } }),
     orderBy: { createdAt: "asc" },
     include: {
       _count: { select: { products: true, orders: true } },
@@ -99,6 +109,9 @@ export async function getTenantBySlug(slug: string): Promise<TenantDetail | null
     plan: row.plan,
     enabledModules: row.enabledModules,
     createdAt: row.createdAt,
+    suspendedAt: row.suspendedAt,
+    suspendedReason: row.suspendedReason,
+    archivedAt: row.archivedAt,
     owner: owner ? { id: owner.id, name: owner.name, email: owner.email ?? "" } : null,
   };
 }
