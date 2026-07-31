@@ -169,13 +169,18 @@ export async function deleteTenant(
   }
 
   // Au mieux, hors transaction : la base fait foi, un compte Auth orphelin est bénin.
-  const admin = createAdminClient();
-  for (const id of profileIds) {
-    try {
-      await admin.auth.admin.deleteUser(id);
-    } catch {
-      // Ignoré volontairement : la boutique est déjà supprimée en base.
+  try {
+    const admin = createAdminClient();
+    for (const id of profileIds) {
+      try {
+        await admin.auth.admin.deleteUser(id);
+      } catch {
+        // Ignoré volontairement : la boutique est déjà supprimée en base.
+      }
     }
+  } catch {
+    // Client Auth indisponible (variables d'env absentes/tournées) : sans
+    // conséquence sur le résultat, la suppression en base a déjà réussi.
   }
 
   updateTag(TENANTS_CACHE_TAG);

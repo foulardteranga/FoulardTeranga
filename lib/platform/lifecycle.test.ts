@@ -228,6 +228,14 @@ describe("archiveTenant", () => {
 });
 
 describe("deleteTenant", () => {
+  it("refuse un appelant qui n'est pas super_admin, sans toucher la base", async () => {
+    authState.role = "owner";
+    dbState.tenant = { id: "t1", slug: "boutique-test", name: "Boutique Test", status: "archived" };
+    const result = await deleteTenant("t1", { confirmSlug: "boutique-test" });
+    expect(result).toEqual({ ok: false, error: "Une erreur est survenue, réessayez." });
+    expect(dbState.calls.deleteMany).toHaveLength(0);
+  });
+
   it("REFUS 1 — refuse de supprimer une boutique active (spec §9)", async () => {
     const result = await deleteTenant("t1", { confirmSlug: "boutique-test" });
     expect(result).toEqual({
