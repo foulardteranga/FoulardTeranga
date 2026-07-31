@@ -9,10 +9,19 @@ import { resolveSession } from "@/lib/auth";
 import { IMPERSONATION_COOKIE_NAME } from "@/lib/impersonation/cookie";
 import { getActorContext } from "@/lib/impersonation/context";
 import { recordPlatformAction } from "@/lib/platform/audit";
+import { getCurrentTenantOrNull } from "@/lib/tenant";
 
 export type SignInState = { ok: false; errors: LoginFieldErrors; formError?: string } | null;
 
 export async function signIn(_prevState: SignInState, formData: FormData): Promise<SignInState> {
+  // Spec §2 : une boutique suspendue ou archivée refuse la connexion à son
+  // back-office. Contrôlé ici en plus de la page /connexion parce que la Server
+  // Action est un point d'entrée indépendant, appelable sans passer par elle.
+  const tenant = await getCurrentTenantOrNull();
+  if (tenant && tenant.status !== "active") {
+    return { ok: false, errors: {}, formError: "L'accès à cette boutique est suspendu. Contactez votre prestataire." };
+  }
+
   const result = validateLogin({
     email: String(formData.get("email") ?? ""),
     password: String(formData.get("password") ?? ""),
