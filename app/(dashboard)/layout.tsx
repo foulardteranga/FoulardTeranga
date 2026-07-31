@@ -52,7 +52,7 @@ export default async function DashboardLayout({
             ).toISOString()}
           />
         )}
-        <div style={{ flex: 1, display: "flex", paddingTop: topOffset }}>
+        <div style={{ flex: 1, display: "flex" }}>
           <TenantBlockedNotice tenantName={tenant.name} status={tenant.status} />
         </div>
       </div>

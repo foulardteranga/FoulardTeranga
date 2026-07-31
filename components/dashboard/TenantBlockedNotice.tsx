@@ -19,7 +19,6 @@ export function TenantBlockedNotice({
 
   return (
     <main
-      role="alert"
       style={{
         flex: 1,
         display: "flex",
