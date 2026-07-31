@@ -2569,10 +2569,11 @@ export function TenantDangerTab({ tenant }: { tenant: TenantDetail }) {
           title="Suspendre la boutique"
           body="La vitrine devient indisponible et le back-office est bloqué. Les données restent intactes et la suspension est réversible à tout moment."
         >
-          <label style={{ display: "block", fontSize: 13, color: colors.muted, marginBottom: 6 }}>
+          <label htmlFor="suspend-reason" style={{ display: "block", fontSize: 13, color: colors.muted, marginBottom: 6 }}>
             Motif (facultatif, interne — jamais affiché aux clientes)
           </label>
           <input
+            id="suspend-reason"
             type="text"
             value={reason}
             maxLength={280}
