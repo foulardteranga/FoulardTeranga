@@ -71,6 +71,11 @@ const EXEMPT: Record<string, string[]> = {
   // l'impersonation ne s'applique jamais à ce que le prestataire fait dans SA
   // PROPRE zone, seulement à ce qu'il fait une fois entré dans une boutique.
   "platform/lifecycle.ts": ["suspendTenant", "reactivateTenant", "archiveTenant"],
+  // Export JSON d'une boutique (spec §10) : gardé par `currentSuperAdmin` au
+  // même titre que le reste de la zone plateforme, jamais une action que
+  // l'impersonation devrait verrouiller (elle ne s'applique qu'à ce que le
+  // prestataire fait une fois entré dans une boutique).
+  "platform/export.ts": ["exportTenantData"],
   "platform/team.ts": ["resetOwnerPassword", "createTenantOwner"],
   "inventory/actions.ts": ["getProductStockMovements"],
   // submitWebOrder est l'action de checkout de la vitrine publique, appelée
