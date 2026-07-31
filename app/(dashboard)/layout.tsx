@@ -6,6 +6,7 @@ import { ImpersonationBanner, BANNER_HEIGHT } from "@/components/dashboard/Imper
 import { IMPERSONATION_DURATION_MS } from "@/lib/impersonation/cookie";
 import { Toast } from "@/components/dashboard/Toast";
 import { TicketModal } from "@/components/dashboard/TicketModal";
+import { TenantBlockedNotice } from "@/components/dashboard/TenantBlockedNotice";
 import { getSession } from "@/lib/auth";
 import { getActorContext } from "@/lib/impersonation/context";
 import { notFound } from "next/navigation";
@@ -32,6 +33,31 @@ export default async function DashboardLayout({
 
   const impersonation = actorContext?.impersonation ?? null;
   const topOffset = impersonation ? BANNER_HEIGHT : 0;
+
+  // Boutique suspendue ou archivée : accès bloqué (spec §2). Le bandeau
+  // d'impersonation est rendu MALGRÉ le blocage, délibérément : sans lui, le
+  // prestataire entré dans la boutique avant sa suspension perdrait le bouton
+  // « Quitter » et resterait enfermé jusqu'à l'expiration des 60 minutes,
+  // derrière un cookie httpOnly qu'il ne peut pas supprimer depuis l'interface.
+  if (tenant.status !== "active") {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+        {impersonation && (
+          <ImpersonationBanner
+            tenantName={tenant.name}
+            targetName={session?.name ?? ""}
+            mode={impersonation.mode}
+            expiresAt={new Date(
+              new Date(impersonation.startedAt).getTime() + IMPERSONATION_DURATION_MS
+            ).toISOString()}
+          />
+        )}
+        <div style={{ flex: 1, display: "flex", paddingTop: topOffset }}>
+          <TenantBlockedNotice tenantName={tenant.name} status={tenant.status} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
