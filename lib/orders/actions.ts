@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db/client";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { getCurrentTenant } from "@/lib/tenant";
 import { requireZone, getSession } from "@/lib/auth";
-import { requireWritableSession, READ_ONLY_ERROR } from "@/lib/impersonation/guards";
+import { requireWritableSession } from "@/lib/impersonation/guards";
 import { kycSchema, type KycInput } from "@/lib/validators/kyc";
 import { orderEditSchema, type OrderEditInput } from "@/lib/validators/orderEdit";
 import { buildOrderLines, type WebCartLineInput } from "./buildOrderLines";
@@ -37,6 +37,14 @@ export async function submitWebOrder(
 
   try {
     const tenant = await getCurrentTenant();
+
+    // Contrôle séparé de requireWritableSession() (Tâche 17) : submitWebOrder
+    // est le checkout public, appelé par une visiteuse anonyme sans session —
+    // message neutre, pas de jargon « boutique suspendue » (cf. guard-coverage
+    // EXEMPT, submitWebOrder n'appelle jamais requireWritableSession).
+    if (tenant.status !== "active") {
+      return { ok: false, error: "Cette boutique n'accepte plus de commandes pour le moment." };
+    }
 
     const order = await prisma.$transaction(async (tx) => {
       const products = await tx.product.findMany({
@@ -122,7 +130,8 @@ export async function confirmOrder(ref: string): Promise<{ ok: true } | { ok: fa
 
   const session = await getSession();
   if (!session) return { ok: false, error: "Une erreur est survenue, réessayez." };
-  if (!(await requireWritableSession())) return { ok: false, error: READ_ONLY_ERROR };
+  const writable = await requireWritableSession();
+  if (!writable.ok) return { ok: false, error: writable.error };
 
   try {
     const tenant = await getCurrentTenant();
@@ -251,7 +260,8 @@ export async function updateOrder(
   const { allowed } = await requireZone("dashboard");
   if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
 
-  if (!(await requireWritableSession())) return { ok: false, error: READ_ONLY_ERROR };
+  const writable = await requireWritableSession();
+  if (!writable.ok) return { ok: false, error: writable.error };
 
   const parsed = orderEditSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Informations invalides." };
@@ -284,7 +294,8 @@ export async function rejectOrder(ref: string): Promise<{ ok: true } | { ok: fal
 
   const session = await getSession();
   if (!session) return { ok: false, error: "Une erreur est survenue, réessayez." };
-  if (!(await requireWritableSession())) return { ok: false, error: READ_ONLY_ERROR };
+  const writable = await requireWritableSession();
+  if (!writable.ok) return { ok: false, error: writable.error };
 
   try {
     const tenant = await getCurrentTenant();
@@ -313,7 +324,8 @@ export async function markPreparing(ref: string): Promise<{ ok: true } | { ok: f
 
   const session = await getSession();
   if (!session) return { ok: false, error: "Une erreur est survenue, réessayez." };
-  if (!(await requireWritableSession())) return { ok: false, error: READ_ONLY_ERROR };
+  const writable = await requireWritableSession();
+  if (!writable.ok) return { ok: false, error: writable.error };
 
   try {
     const tenant = await getCurrentTenant();
@@ -341,7 +353,8 @@ export async function markDelivered(ref: string): Promise<{ ok: true } | { ok: f
 
   const session = await getSession();
   if (!session) return { ok: false, error: "Une erreur est survenue, réessayez." };
-  if (!(await requireWritableSession())) return { ok: false, error: READ_ONLY_ERROR };
+  const writable = await requireWritableSession();
+  if (!writable.ok) return { ok: false, error: writable.error };
 
   try {
     const tenant = await getCurrentTenant();

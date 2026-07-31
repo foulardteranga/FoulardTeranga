@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db/client";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { getCurrentTenant } from "@/lib/tenant";
 import { requireZone } from "@/lib/auth";
-import { requireWritableSession, READ_ONLY_ERROR } from "@/lib/impersonation/guards";
+import { requireWritableSession } from "@/lib/impersonation/guards";
 import { pageContentSchema, parsePageContent, defaultPage } from "./pageContent";
 import { randomUUID } from "crypto";
 import { createClient } from "@/lib/supabase/server";
@@ -19,7 +19,8 @@ export async function saveDraft(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const { allowed } = await requireZone("dashboard");
   if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
-  if (!(await requireWritableSession())) return { ok: false, error: READ_ONLY_ERROR };
+  const writable = await requireWritableSession();
+  if (!writable.ok) return { ok: false, error: writable.error };
 
   const parsed = pageContentSchema.safeParse(content);
   if (!parsed.success) return { ok: false, error: "Contenu invalide." };
@@ -48,7 +49,8 @@ export async function saveDraft(
 export async function publish(): Promise<{ ok: true } | { ok: false; error: string }> {
   const { allowed } = await requireZone("dashboard");
   if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
-  if (!(await requireWritableSession())) return { ok: false, error: READ_ONLY_ERROR };
+  const writable = await requireWritableSession();
+  if (!writable.ok) return { ok: false, error: writable.error };
 
   try {
     const tenant = await getCurrentTenant();
@@ -73,7 +75,8 @@ export async function publish(): Promise<{ ok: true } | { ok: false; error: stri
 export async function revertDraft(): Promise<{ ok: true } | { ok: false; error: string }> {
   const { allowed } = await requireZone("dashboard");
   if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
-  if (!(await requireWritableSession())) return { ok: false, error: READ_ONLY_ERROR };
+  const writable = await requireWritableSession();
+  if (!writable.ok) return { ok: false, error: writable.error };
 
   try {
     const tenant = await getCurrentTenant();
@@ -98,7 +101,8 @@ export async function uploadBlockImage(
 ): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
   const { allowed } = await requireZone("dashboard");
   if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
-  if (!(await requireWritableSession())) return { ok: false, error: READ_ONLY_ERROR };
+  const writable = await requireWritableSession();
+  if (!writable.ok) return { ok: false, error: writable.error };
 
   const file = formData.get("file");
   const blockType = formData.get("blockType");

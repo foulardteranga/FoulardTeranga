@@ -4,7 +4,7 @@ import { revalidatePath, updateTag } from "next/cache";
 import { prisma } from "@/lib/db/client";
 import { getCurrentTenant, TENANTS_CACHE_TAG } from "@/lib/tenant";
 import { getSession } from "@/lib/auth";
-import { requireWritableSession, READ_ONLY_ERROR } from "@/lib/impersonation/guards";
+import { requireWritableSession } from "@/lib/impersonation/guards";
 import { themeSchema, type ThemeInput } from "@/lib/validators/theme";
 
 export async function updateTenantTheme(
@@ -14,8 +14,9 @@ export async function updateTenantTheme(
   if (session?.role !== "owner") {
     return { ok: false, error: "Une erreur est survenue, réessayez." };
   }
-  if (!(await requireWritableSession())) {
-    return { ok: false, error: READ_ONLY_ERROR };
+  const writable = await requireWritableSession();
+  if (!writable.ok) {
+    return { ok: false, error: writable.error };
   }
 
   const parsed = themeSchema.safeParse(input);

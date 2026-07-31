@@ -30,7 +30,14 @@ vi.mock("./context", () => ({
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({}) }));
 
 vi.mock("@/lib/tenant", () => ({
-  getCurrentTenant: async () => ({ id: "tenant-1", slug: "foulard-teranga", name: "Foulard Teranga", theme: {}, domains: [] }),
+  getCurrentTenant: async () => ({
+    id: "tenant-1",
+    slug: "foulard-teranga",
+    name: "Foulard Teranga",
+    status: "active",
+    theme: {},
+    domains: [],
+  }),
 }));
 
 import { startImpersonation, unlockImpersonationWrite, endImpersonation } from "./actions";
@@ -208,7 +215,7 @@ describe("endImpersonation", () => {
   });
 });
 
-import { requireWritableSession } from "./guards";
+import { requireWritableSession, READ_ONLY_ERROR } from "./guards";
 
 describe("séquence complète : entrer → refus en lecture → intervention → écriture acceptée → sortie", () => {
   it("mode read refuse l'écriture, mode write l'autorise, sortie efface tout", async () => {
@@ -230,7 +237,7 @@ describe("séquence complète : entrer → refus en lecture → intervention →
       effective: { tenantId: "tenant-1", role: "owner", permissions: [] },
       impersonation: { targetProfileId: "target-1", tenantId: "tenant-1", mode: "read", startedAt: new Date().toISOString() },
     };
-    expect(await requireWritableSession()).toBe(false);
+    expect(await requireWritableSession()).toEqual({ ok: false, error: READ_ONLY_ERROR });
 
     await unlockImpersonationWrite();
     const writeCookie = cookieJar.set.mock.calls[1][1] as string;
@@ -239,7 +246,7 @@ describe("séquence complète : entrer → refus en lecture → intervention →
       ...(actorState.value as Record<string, unknown>),
       impersonation: { ...((actorState.value as { impersonation: object }).impersonation), mode: "write" },
     };
-    expect(await requireWritableSession()).toBe(true);
+    expect(await requireWritableSession()).toEqual({ ok: true });
 
     await endImpersonation();
     expect(cookieJar.delete).toHaveBeenCalledWith("ft-impersonation");
