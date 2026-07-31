@@ -21,7 +21,7 @@ const dbState = vi.hoisted(() => ({
 
 const adminState = vi.hoisted(() => ({
   updateUserError: null as null | { message: string },
-  createUserError: null as null | { message: string },
+  createUserError: null as null | { message: string; code?: string },
   calls: {
     updateUserById: [] as Array<[string, Record<string, unknown>]>,
     createUser: [] as Array<Record<string, unknown>>,
@@ -194,7 +194,9 @@ describe("createTenantOwner", () => {
     expect(adminState.calls.createUser).toHaveLength(1);
     const profile = dbState.calls.profileCreate[0].data as Record<string, unknown>;
     expect(profile).toMatchObject({ tenantId: "t1", role: "owner", name: "Aya" });
-    expect(dbState.calls.auditCreate[0].data).toMatchObject({ action: "owner_created" });
+    const audit = dbState.calls.auditCreate[0].data as Record<string, unknown>;
+    expect(audit).toMatchObject({ action: "owner_created" });
+    expect(JSON.stringify(audit.metadata)).not.toContain("motdepasse1");
   });
 
   it("supprime le compte Auth au mieux si l'écriture du Profile échoue", async () => {
@@ -211,7 +213,7 @@ describe("createTenantOwner", () => {
 
   it("renvoie un message parlant si l'email est déjà utilisé", async () => {
     dbState.existingOwner = null;
-    adminState.createUserError = { message: "User already registered" };
+    adminState.createUserError = { message: "User already registered", code: "email_exists" };
     const result = await createTenantOwner("t1", {
       name: "Aya",
       email: "aya@example.com",

@@ -97,7 +97,7 @@ export async function createTenantOwner(tenantId: string, input: CreateOwnerInpu
       email_confirm: true,
     });
     if (createError || !created.user) {
-      if (createError?.message.includes("already registered")) {
+      if (createError?.code === "email_exists") {
         return { ok: false, error: "Cette adresse email est déjà utilisée." };
       }
       return { ok: false, error: GENERIC_ERROR };
