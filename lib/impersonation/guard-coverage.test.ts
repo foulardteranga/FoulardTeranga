@@ -71,6 +71,7 @@ const EXEMPT: Record<string, string[]> = {
   // l'impersonation ne s'applique jamais à ce que le prestataire fait dans SA
   // PROPRE zone, seulement à ce qu'il fait une fois entré dans une boutique.
   "platform/lifecycle.ts": ["suspendTenant", "reactivateTenant", "archiveTenant"],
+  "platform/team.ts": ["resetOwnerPassword", "createTenantOwner"],
   "inventory/actions.ts": ["getProductStockMovements"],
   // submitWebOrder est l'action de checkout de la vitrine publique, appelée
   // par un visiteur non authentifié (fiche KYC uniquement, cf. CLAUDE.md §4) —

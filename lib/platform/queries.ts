@@ -164,3 +164,55 @@ export async function tenantSlugExists(slug: string, exceptTenantId?: string): P
   });
   return row !== null;
 }
+
+export interface TenantTeamProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  active: boolean;
+  employeeRoleName: string | null;
+}
+
+export interface TenantTeamEmployeeRole {
+  id: string;
+  name: string;
+  permissions: string[];
+}
+
+/** Onglet Équipe (spec §6) : profils d'accès et employés d'une boutique donnée. */
+export async function getTenantTeam(
+  tenantId: string
+): Promise<{ profiles: TenantTeamProfile[]; employeeRoles: TenantTeamEmployeeRole[] }> {
+  await requireSuperAdmin();
+  const [profiles, employeeRoles] = await Promise.all([
+    prisma.profile.findMany({
+      where: { tenantId },
+      orderBy: [{ role: "asc" }, { createdAt: "asc" }],
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        active: true,
+        employeeRole: { select: { name: true } },
+      },
+    }),
+    prisma.employeeRole.findMany({
+      where: { tenantId },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, permissions: true },
+    }),
+  ]);
+  return {
+    profiles: profiles.map((p) => ({
+      id: p.id,
+      name: p.name,
+      email: p.email ?? "",
+      role: p.role as string,
+      active: p.active,
+      employeeRoleName: p.employeeRole?.name ?? null,
+    })),
+    employeeRoles,
+  };
+}

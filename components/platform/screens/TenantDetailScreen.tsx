@@ -10,7 +10,7 @@ export type TenantTab = "apercu" | "modules" | "equipe" | "identite" | "journal"
 const TABS: { id: string; label: string; available: boolean }[] = [
   { id: "apercu", label: "Vue d'ensemble", available: true },
   { id: "modules", label: "Modules", available: true },
-  { id: "equipe", label: "Équipe", available: false },
+  { id: "equipe", label: "Équipe", available: true },
   { id: "identite", label: "Identité", available: true },
   { id: "journal", label: "Journal", available: false },
   { id: "danger", label: "Zone de danger", available: false },
