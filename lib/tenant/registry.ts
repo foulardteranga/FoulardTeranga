@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db/client";
 import { ADMIN_HOST_PREFIX, PLATFORM_HOST_PREFIX } from "@/lib/proxy/zones";
+import type { TenantStatus } from "@/lib/generated/prisma/enums";
 import type { Tenant } from "./types";
 
 /** Étiquette de cache à invalider après toute mutation de boutique. */
@@ -10,6 +11,7 @@ interface TenantRow {
   id: string;
   slug: string;
   name: string;
+  status: TenantStatus;
   primaryColor: string;
   accentColor: string;
   logoText: string;
@@ -21,6 +23,7 @@ function toTenant(row: TenantRow): Tenant {
     id: row.id,
     slug: row.slug,
     name: row.name,
+    status: row.status,
     theme: {
       primaryColor: row.primaryColor,
       accentColor: row.accentColor,
@@ -42,6 +45,7 @@ const loadTenants = unstable_cache(
         id: true,
         slug: true,
         name: true,
+        status: true,
         primaryColor: true,
         accentColor: true,
         logoText: true,

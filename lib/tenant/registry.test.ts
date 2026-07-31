@@ -20,6 +20,7 @@ const ROWS = [
     id: "foulard-teranga",
     slug: "foulard-teranga",
     name: "Foulard Teranga",
+    status: "active",
     primaryColor: "#26326B",
     accentColor: "#D07A34",
     logoText: "Foulard Teranga",
@@ -29,6 +30,7 @@ const ROWS = [
     id: "boutique-voisine",
     slug: "boutique-voisine",
     name: "Boutique Voisine",
+    status: "active",
     primaryColor: "#0E9F6E",
     accentColor: "#C9A227",
     logoText: "Boutique Voisine",
@@ -83,5 +85,20 @@ describe("resolveTenantFromHost", () => {
   it("résout platform.<domaine> vers la même boutique que le domaine nu", async () => {
     const tenant = await resolveTenantFromHost("platform.boutique-voisine.ci");
     expect(tenant?.id).toBe("boutique-voisine");
+  });
+});
+
+describe("statut de la boutique", () => {
+  it("remonte le statut de la boutique résolue", async () => {
+    findMany.mockResolvedValue(ROWS);
+    const tenant = await resolveTenantFromHost("localhost");
+    expect(tenant?.status).toBe("active");
+  });
+
+  it("remonte un statut suspendu sans masquer la boutique — c'est aux layouts de décider", async () => {
+    findMany.mockResolvedValue([{ ...ROWS[0], status: "suspended" }]);
+    const tenant = await resolveTenantFromHost("localhost");
+    expect(tenant).not.toBeNull();
+    expect(tenant?.status).toBe("suspended");
   });
 });
