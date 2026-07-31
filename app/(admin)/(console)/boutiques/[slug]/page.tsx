@@ -1,8 +1,16 @@
 import { notFound } from "next/navigation";
 import { getTenantBySlug } from "@/lib/platform/queries";
+import { getTenantHealth } from "@/lib/platform/health";
 import { TenantDetailScreen, type TenantTab } from "@/components/platform/screens/TenantDetailScreen";
+import { TenantOverviewTab } from "@/components/platform/screens/TenantOverviewTab";
 import { TenantIdentityForm } from "@/components/platform/screens/TenantIdentityForm";
 import { TenantModulesForm } from "@/components/platform/screens/TenantModulesForm";
+
+const TABS = ["apercu", "modules", "equipe", "identite", "danger"] as const;
+
+function resolveTab(raw: string | undefined): TenantTab {
+  return (TABS as readonly string[]).includes(raw ?? "") ? (raw as TenantTab) : "apercu";
+}
 
 export default async function BoutiqueDetailPage({
   params,
@@ -15,10 +23,14 @@ export default async function BoutiqueDetailPage({
   const tenant = await getTenantBySlug(slug);
   if (!tenant) notFound();
 
-  const tab: TenantTab = onglet === "modules" ? "modules" : "identite";
+  const tab = resolveTab(onglet);
+  const health = tab === "apercu" ? await getTenantHealth(tenant.id, tenant.owner?.id ?? null) : null;
+
   return (
     <TenantDetailScreen tenant={tenant} tab={tab}>
-      {tab === "modules" ? <TenantModulesForm tenant={tenant} /> : <TenantIdentityForm tenant={tenant} />}
+      {tab === "apercu" && health && <TenantOverviewTab tenant={tenant} health={health} />}
+      {tab === "modules" && <TenantModulesForm tenant={tenant} />}
+      {tab === "identite" && <TenantIdentityForm tenant={tenant} />}
     </TenantDetailScreen>
   );
 }

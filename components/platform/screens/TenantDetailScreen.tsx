@@ -4,11 +4,11 @@ import { PLAN_LABELS } from "@/lib/platform/plans";
 import type { TenantDetail } from "@/lib/platform/queries";
 import { EnterTenantButton } from "@/components/platform/EnterTenantButton";
 
-export type TenantTab = "identite" | "modules";
+export type TenantTab = "apercu" | "modules" | "equipe" | "identite" | "journal" | "danger";
 
 /** Les six onglets du spec §6. Ceux non livrés en phase 2 sont visibles mais inertes. */
 const TABS: { id: string; label: string; available: boolean }[] = [
-  { id: "apercu", label: "Vue d'ensemble", available: false },
+  { id: "apercu", label: "Vue d'ensemble", available: true },
   { id: "modules", label: "Modules", available: true },
   { id: "equipe", label: "Équipe", available: false },
   { id: "identite", label: "Identité", available: true },
