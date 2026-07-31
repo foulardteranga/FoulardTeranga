@@ -13,7 +13,7 @@ const TABS: { id: string; label: string; available: boolean }[] = [
   { id: "equipe", label: "Équipe", available: true },
   { id: "identite", label: "Identité", available: true },
   { id: "journal", label: "Journal", available: false },
-  { id: "danger", label: "Zone de danger", available: false },
+  { id: "danger", label: "Zone de danger", available: true },
 ];
 
 export function TenantDetailScreen({

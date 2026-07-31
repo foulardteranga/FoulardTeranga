@@ -6,6 +6,7 @@ import { TenantOverviewTab } from "@/components/platform/screens/TenantOverviewT
 import { TenantIdentityForm } from "@/components/platform/screens/TenantIdentityForm";
 import { TenantModulesForm } from "@/components/platform/screens/TenantModulesForm";
 import { TenantTeamTab } from "@/components/platform/screens/TenantTeamTab";
+import { TenantDangerTab } from "@/components/platform/screens/TenantDangerTab";
 
 const TABS = ["apercu", "modules", "equipe", "identite", "danger"] as const;
 
@@ -34,6 +35,7 @@ export default async function BoutiqueDetailPage({
       {tab === "modules" && <TenantModulesForm tenant={tenant} />}
       {tab === "equipe" && team && <TenantTeamTab tenant={tenant} team={team} />}
       {tab === "identite" && <TenantIdentityForm tenant={tenant} />}
+      {tab === "danger" && <TenantDangerTab tenant={tenant} />}
     </TenantDetailScreen>
   );
 }
