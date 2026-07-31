@@ -61,6 +61,14 @@ export async function signUpCustomer(
   if (!data.user) return { ok: false, errors: {}, formError: "Une erreur est survenue, réessayez." };
 
   const tenant = await getCurrentTenant();
+  if (tenant.status !== "active") {
+    return {
+      ok: false,
+      errors: {},
+      formError: "Cette boutique n'accepte plus de nouvelles inscriptions pour le moment.",
+    };
+  }
+
   await prisma.profile.create({
     data: { id: data.user.id, tenantId: tenant.id, role: "customer", name: result.data.name },
   });
