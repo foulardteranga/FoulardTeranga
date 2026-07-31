@@ -39,7 +39,7 @@ export function TenantDetailScreen({
             {tenant.owner ? `Gérante : ${tenant.owner.name}` : "Aucune gérante rattachée"}
           </p>
         </div>
-        <EnterTenantButton ownerProfileId={tenant.owner?.id ?? null} />
+        <EnterTenantButton ownerProfileId={tenant.owner?.id ?? null} tenantStatus={tenant.status} />
       </header>
 
       <nav style={{ display: "flex", gap: 4, flexWrap: "wrap", borderBottom: adminBorder, marginBottom: 20 }}>

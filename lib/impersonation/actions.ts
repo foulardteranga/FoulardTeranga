@@ -24,10 +24,16 @@ export async function startImpersonation(targetProfileId: string): Promise<Resul
     !!target &&
     target.active &&
     !!target.tenantId &&
-    target.tenant?.status === "active" &&
     (target.role === "owner" || target.role === "staff");
   if (!targetIsValid || !target || !target.tenantId) {
     return { ok: false, error: TARGET_UNAVAILABLE };
+  }
+
+  // Spec §9 : une boutique suspendue ou archivée a son back-office bloqué.
+  // Y entrer poserait le cookie pour 60 minutes et aboutirait à l'écran
+  // bloquant — une impersonation dans une coquille vide.
+  if (target.tenant?.status !== "active") {
+    return { ok: false, error: "Cette boutique n'est pas active : réactivez-la avant d'y entrer." };
   }
 
   const startedAt = new Date().toISOString();

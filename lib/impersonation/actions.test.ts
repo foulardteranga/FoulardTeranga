@@ -109,6 +109,43 @@ describe("startImpersonation", () => {
   });
 });
 
+describe("startImpersonation — boutique non active", () => {
+  it("refuse d'entrer dans une boutique suspendue, sans poser de cookie", async () => {
+    actorState.value = superAdminActor;
+    dbState.profile = {
+      id: "target-1",
+      tenantId: "tenant-1",
+      role: "owner",
+      active: true,
+      tenant: { status: "suspended" },
+    };
+
+    const result = await startImpersonation("owner-profile-1");
+
+    expect(result).toEqual({
+      ok: false,
+      error: "Cette boutique n'est pas active : réactivez-la avant d'y entrer.",
+    });
+    expect(cookieJar.set).not.toHaveBeenCalled();
+  });
+
+  it("refuse d'entrer dans une boutique archivée", async () => {
+    actorState.value = superAdminActor;
+    dbState.profile = {
+      id: "target-1",
+      tenantId: "tenant-1",
+      role: "owner",
+      active: true,
+      tenant: { status: "archived" },
+    };
+
+    const result = await startImpersonation("owner-profile-1");
+
+    expect(result.ok).toBe(false);
+    expect(cookieJar.set).not.toHaveBeenCalled();
+  });
+});
+
 describe("unlockImpersonationWrite", () => {
   it("refuse hors impersonation", async () => {
     actorState.value = { ...superAdminActor, impersonation: null };
