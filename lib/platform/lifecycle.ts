@@ -6,7 +6,9 @@ import { TENANTS_CACHE_TAG } from "@/lib/tenant";
 import { currentSuperAdmin } from "./guard";
 import { recordPlatformAction } from "./audit";
 import { transitionRefusal, type LifecycleTarget } from "./transitions";
-import { suspendTenantSchema, type SuspendTenantInput } from "@/lib/validators/platform";
+import { suspendTenantSchema, type SuspendTenantInput, deleteTenantSchema, type DeleteTenantInput } from "@/lib/validators/platform";
+import { deleteTenantRows } from "./deletion";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { PlatformAction, TenantStatus } from "@/lib/generated/prisma/enums";
 import type { Prisma } from "@/lib/generated/prisma/client";
 
@@ -102,4 +104,82 @@ export async function archiveTenant(tenantId: string): Promise<PlatformResult> {
     { status: "archived", archivedAt: new Date() },
     {}
   );
+}
+
+/**
+ * Suppression définitive (spec §9). Réservée aux boutiques ARCHIVÉES et
+ * confirmée par la saisie du slug — les deux refus du spec §11.
+ *
+ * Les lignes métier et le `Tenant` partent dans UNE transaction, avec l'entrée
+ * `tenant_deleted` : « supprimé » et « tracé » sont le même événement. Les
+ * comptes Supabase Auth sont supprimés APRÈS, au mieux et hors transaction :
+ * Postgres et Auth sont deux systèmes sans transaction commune, et un compte
+ * Auth orphelin est bénin (son `Profile` n'existe plus, donc aucune session ne
+ * résout) là où une transaction annulée pour cette raison laisserait la
+ * boutique à moitié supprimée.
+ */
+export async function deleteTenant(
+  tenantId: string,
+  input: DeleteTenantInput
+): Promise<PlatformResult> {
+  const actor = await currentSuperAdmin();
+  if (!actor) return { ok: false, error: GENERIC_ERROR };
+
+  const parsed = deleteTenantSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Informations invalides." };
+  }
+
+  let slug = "";
+  let profileIds: string[] = [];
+  try {
+    const before = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { id: true, slug: true, name: true, status: true },
+    });
+    if (!before) return { ok: false, error: NOT_FOUND_ERROR };
+    slug = before.slug;
+
+    // REFUS 1 (spec §9) : seule une boutique archivée peut être supprimée.
+    const refusal = transitionRefusal(before.status as TenantStatus, "deleted");
+    if (refusal) return { ok: false, error: refusal };
+
+    // REFUS 2 (spec §11) : slug de confirmation incorrect, sans effet de bord.
+    if (parsed.data.confirmSlug !== before.slug) {
+      return { ok: false, error: "Le slug saisi ne correspond pas à celui de la boutique." };
+    }
+
+    const profiles = await prisma.profile.findMany({ where: { tenantId }, select: { id: true } });
+    profileIds = profiles.map((p) => p.id);
+
+    await prisma.$transaction(async (tx) => {
+      await deleteTenantRows(tx, tenantId);
+      await recordPlatformAction(
+        {
+          actorId: actor.userId,
+          action: "tenant_deleted",
+          tenantId,
+          metadata: { slug: before.slug, name: before.name, profilesDeleted: profileIds.length },
+        },
+        tx
+      );
+    });
+  } catch {
+    return { ok: false, error: GENERIC_ERROR };
+  }
+
+  // Au mieux, hors transaction : la base fait foi, un compte Auth orphelin est bénin.
+  const admin = createAdminClient();
+  for (const id of profileIds) {
+    try {
+      await admin.auth.admin.deleteUser(id);
+    } catch {
+      // Ignoré volontairement : la boutique est déjà supprimée en base.
+    }
+  }
+
+  updateTag(TENANTS_CACHE_TAG);
+  revalidatePath("/boutiques");
+  revalidatePath(`/boutiques/${slug}`);
+  return { ok: true };
 }

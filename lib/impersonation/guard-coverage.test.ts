@@ -70,7 +70,7 @@ const EXEMPT: Record<string, string[]> = {
   // Actions de la zone plateforme, déjà gardées par `currentSuperAdmin` :
   // l'impersonation ne s'applique jamais à ce que le prestataire fait dans SA
   // PROPRE zone, seulement à ce qu'il fait une fois entré dans une boutique.
-  "platform/lifecycle.ts": ["suspendTenant", "reactivateTenant", "archiveTenant"],
+  "platform/lifecycle.ts": ["suspendTenant", "reactivateTenant", "archiveTenant", "deleteTenant"],
   // Export JSON d'une boutique (spec §10) : gardé par `currentSuperAdmin` au
   // même titre que le reste de la zone plateforme, jamais une action que
   // l'impersonation devrait verrouiller (elle ne s'applique qu'à ce que le

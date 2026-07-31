@@ -4,10 +4,18 @@ const authState = vi.hoisted(() => ({ role: "owner" as "owner" | "super_admin" }
 
 const dbState = vi.hoisted(() => ({
   tenant: null as null | { id: string; slug: string; name: string; status: string },
+  profileIds: [] as string[],
   calls: {
     tenantUpdate: [] as Array<Record<string, unknown>>,
+    tenantDelete: [] as Array<Record<string, unknown>>,
     auditCreate: [] as Array<Record<string, unknown>>,
+    deleteMany: [] as Array<{ model: string; args: Record<string, unknown> }>,
   },
+}));
+
+const adminState = vi.hoisted(() => ({
+  calls: { deleteUser: [] as string[] },
+  deleteUserThrows: false,
 }));
 
 vi.mock("@/lib/impersonation/context", () => ({
@@ -26,10 +34,27 @@ vi.mock("@/lib/impersonation/context", () => ({
 }));
 
 vi.mock("@/lib/db/client", () => {
-  const tx = {
+  const deletionModels = [
+    "orderLine",
+    "orderStatusEvent",
+    "stockMovement",
+    "order",
+    "customer",
+    "notification",
+    "storefrontPage",
+    "promoCode",
+    "product",
+    "profile",
+    "employeeRole",
+  ];
+  const tx: Record<string, unknown> = {
     tenant: {
       update: async (args: Record<string, unknown>) => {
         dbState.calls.tenantUpdate.push(args);
+        return {};
+      },
+      delete: async (args: Record<string, unknown>) => {
+        dbState.calls.tenantDelete.push(args);
         return {};
       },
     },
@@ -40,17 +65,42 @@ vi.mock("@/lib/db/client", () => {
       },
     },
   };
+  for (const model of deletionModels) {
+    tx[model] = {
+      deleteMany: async (args: Record<string, unknown>) => {
+        dbState.calls.deleteMany.push({ model, args });
+        return { count: 0 };
+      },
+    };
+  }
   return {
     prisma: {
       tenant: {
         findUnique: async () => dbState.tenant,
-        update: tx.tenant.update,
+        update: (tx.tenant as { update: unknown }).update,
+      },
+      profile: {
+        findMany: async () => dbState.profileIds.map((id) => ({ id })),
       },
       platformAuditLog: tx.platformAuditLog,
       $transaction: async (fn: (t: typeof tx) => Promise<unknown>) => fn(tx),
     },
   };
 });
+
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: () => ({
+    auth: {
+      admin: {
+        deleteUser: async (id: string) => {
+          if (adminState.deleteUserThrows) throw new Error("boom");
+          adminState.calls.deleteUser.push(id);
+          return {};
+        },
+      },
+    },
+  }),
+}));
 
 const updateTag = vi.hoisted(() => vi.fn());
 const revalidatePath = vi.hoisted(() => vi.fn());
@@ -66,13 +116,18 @@ vi.mock("next/cache", () => ({
       fn(...args),
 }));
 
-const { suspendTenant, reactivateTenant, archiveTenant } = await import("@/lib/platform/lifecycle");
+const { suspendTenant, reactivateTenant, archiveTenant, deleteTenant } = await import("@/lib/platform/lifecycle");
 
 beforeEach(() => {
   authState.role = "super_admin";
   dbState.tenant = { id: "t1", slug: "boutique-test", name: "Boutique Test", status: "active" };
+  dbState.profileIds = [];
   dbState.calls.tenantUpdate = [];
+  dbState.calls.tenantDelete = [];
   dbState.calls.auditCreate = [];
+  dbState.calls.deleteMany = [];
+  adminState.calls.deleteUser = [];
+  adminState.deleteUserThrows = false;
   updateTag.mockClear();
   revalidatePath.mockClear();
 });
@@ -169,5 +224,68 @@ describe("archiveTenant", () => {
     dbState.tenant = { id: "t1", slug: "boutique-test", name: "Boutique Test", status: "archived" };
     const result = await archiveTenant("t1");
     expect(result).toEqual({ ok: false, error: "Cette boutique est déjà archivée." });
+  });
+});
+
+describe("deleteTenant", () => {
+  it("REFUS 1 — refuse de supprimer une boutique active (spec §9)", async () => {
+    const result = await deleteTenant("t1", { confirmSlug: "boutique-test" });
+    expect(result).toEqual({
+      ok: false,
+      error: "Seule une boutique archivée peut être supprimée définitivement. Archivez-la d'abord.",
+    });
+    expect(dbState.calls.deleteMany).toHaveLength(0);
+  });
+
+  it("REFUS 1 bis — refuse aussi de supprimer une boutique suspendue", async () => {
+    dbState.tenant = { id: "t1", slug: "boutique-test", name: "Boutique Test", status: "suspended" };
+    const result = await deleteTenant("t1", { confirmSlug: "boutique-test" });
+    expect(result.ok).toBe(false);
+    expect(dbState.calls.deleteMany).toHaveLength(0);
+  });
+
+  it("REFUS 2 — refuse un slug de confirmation incorrect, sans effet de bord (spec §11)", async () => {
+    dbState.tenant = { id: "t1", slug: "boutique-test", name: "Boutique Test", status: "archived" };
+    const result = await deleteTenant("t1", { confirmSlug: "boutique-tests" });
+    expect(result).toEqual({
+      ok: false,
+      error: "Le slug saisi ne correspond pas à celui de la boutique.",
+    });
+    expect(dbState.calls.deleteMany).toHaveLength(0);
+    expect(dbState.calls.auditCreate).toHaveLength(0);
+  });
+
+  it("supprime une boutique archivée dont le slug est confirmé", async () => {
+    dbState.tenant = { id: "t1", slug: "boutique-test", name: "Boutique Test", status: "archived" };
+    const result = await deleteTenant("t1", { confirmSlug: "boutique-test" });
+    expect(result).toEqual({ ok: true });
+    expect(dbState.calls.tenantDelete).toHaveLength(1);
+  });
+
+  it("écrit tenant_deleted en conservant le nom et le slug dans metadata (spec §9)", async () => {
+    dbState.tenant = { id: "t1", slug: "boutique-test", name: "Boutique Test", status: "archived" };
+    await deleteTenant("t1", { confirmSlug: "boutique-test" });
+    const audit = dbState.calls.auditCreate[0].data as Record<string, unknown>;
+    expect(audit.action).toBe("tenant_deleted");
+    expect(audit.metadata).toMatchObject({ slug: "boutique-test", name: "Boutique Test" });
+  });
+
+  it("supprime les comptes Auth au mieux, après la transaction", async () => {
+    dbState.tenant = { id: "t1", slug: "boutique-test", name: "Boutique Test", status: "archived" };
+    dbState.profileIds = ["owner-1", "staff-1"];
+    await deleteTenant("t1", { confirmSlug: "boutique-test" });
+    expect(adminState.calls.deleteUser).toEqual(["owner-1", "staff-1"]);
+  });
+
+  it("réussit quand même si la suppression d'un compte Auth échoue — la base fait foi", async () => {
+    dbState.tenant = { id: "t1", slug: "boutique-test", name: "Boutique Test", status: "archived" };
+    dbState.profileIds = ["owner-1"];
+    adminState.deleteUserThrows = true;
+    expect(await deleteTenant("t1", { confirmSlug: "boutique-test" })).toEqual({ ok: true });
+  });
+
+  it("accepte un slug de confirmation avec des espaces autour (trim du schéma Zod)", async () => {
+    dbState.tenant = { id: "t1", slug: "boutique-test", name: "Boutique Test", status: "archived" };
+    expect(await deleteTenant("t1", { confirmSlug: "  boutique-test  " })).toEqual({ ok: true });
   });
 });

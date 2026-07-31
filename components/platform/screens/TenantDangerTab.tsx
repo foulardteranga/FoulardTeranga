@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { colors, adminBorder } from "@/lib/theme/tokens";
-import { suspendTenant, reactivateTenant, archiveTenant } from "@/lib/platform/lifecycle";
+import { suspendTenant, reactivateTenant, archiveTenant, deleteTenant } from "@/lib/platform/lifecycle";
 import { exportTenantData } from "@/lib/platform/export";
 import { canTransition } from "@/lib/platform/transitions";
 import { FormMessage, type FormMessageState } from "@/components/platform/FormMessage";
@@ -42,6 +42,7 @@ function actionButton(danger: boolean, busy: boolean): React.CSSProperties {
 export function TenantDangerTab({ tenant }: { tenant: TenantDetail }) {
   const router = useRouter();
   const [reason, setReason] = useState("");
+  const [confirmSlug, setConfirmSlug] = useState("");
   const [message, setMessage] = useState<FormMessageState>(null);
   const [busy, setBusy] = useState(false);
 
@@ -76,6 +77,22 @@ export function TenantDangerTab({ tenant }: { tenant: TenantDetail }) {
     URL.revokeObjectURL(url);
     setMessage({ kind: "ok", text: `Export téléchargé (${result.filename}).` });
   }
+
+  async function handleDelete() {
+    if (!window.confirm(`Supprimer définitivement « ${tenant.name} » ? Cette action est irréversible.`)) return;
+    setMessage(null);
+    setBusy(true);
+    const result = await deleteTenant(tenant.id, { confirmSlug });
+    setBusy(false);
+    if (!result.ok) {
+      setMessage({ kind: "error", text: result.error });
+      return;
+    }
+    // La fiche n'existe plus : y rester donnerait un 404.
+    router.push("/boutiques");
+  }
+
+  const deleteConfirmed = confirmSlug.trim() === tenant.slug;
 
   return (
     <div style={{ display: "grid", gap: 16, maxWidth: 760 }}>
@@ -153,6 +170,55 @@ export function TenantDangerTab({ tenant }: { tenant: TenantDetail }) {
           Exporter les données (JSON)
         </button>
       </Card>
+
+      {canTransition(tenant.status, "deleted") ? (
+        <Card
+          title="Supprimer définitivement"
+          body="Cette action supprime irréversiblement les produits, clientes, commandes, mouvements de stock, codes promo, pages vitrine, profils d'accès et comptes liés à cette boutique. Le journal d'audit du prestataire, lui, est conservé."
+        >
+          <button
+            type="button"
+            disabled={busy}
+            style={{ ...actionButton(false, busy), background: "none", color: colors.primary, padding: 0, marginBottom: 12, textDecoration: "underline" }}
+            onClick={handleExport}
+          >
+            Exporter les données avant de supprimer
+          </button>
+          <label htmlFor="delete-confirm-slug" style={{ display: "block", fontSize: 13, color: colors.muted, marginBottom: 6 }}>
+            {`Tapez « ${tenant.slug} » pour confirmer`}
+          </label>
+          <input
+            id="delete-confirm-slug"
+            type="text"
+            value={confirmSlug}
+            placeholder={tenant.slug}
+            onChange={(event) => setConfirmSlug(event.target.value)}
+            style={{
+              width: "100%",
+              padding: "10px 12px",
+              borderRadius: 10,
+              border: adminBorder,
+              fontSize: 14,
+              marginBottom: 12,
+            }}
+          />
+          <button
+            type="button"
+            disabled={busy || !deleteConfirmed}
+            style={{ ...actionButton(true, busy), opacity: busy || !deleteConfirmed ? 0.5 : 1, cursor: busy || !deleteConfirmed ? "default" : "pointer" }}
+            onClick={handleDelete}
+          >
+            Supprimer définitivement
+          </button>
+        </Card>
+      ) : (
+        <Card
+          title="Supprimer définitivement"
+          body="Archivez d'abord la boutique pour pouvoir la supprimer définitivement."
+        >
+          <></>
+        </Card>
+      )}
 
       <FormMessage message={message} />
     </div>
