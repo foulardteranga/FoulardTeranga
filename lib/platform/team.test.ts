@@ -221,4 +221,15 @@ describe("createTenantOwner", () => {
     });
     expect(result).toEqual({ ok: false, error: "Cette adresse email est déjà utilisée." });
   });
+
+  it("revalide le chemin de la boutique après la création réussie (Tâche 17 : hors du try, comme applyTransition)", async () => {
+    dbState.existingOwner = null;
+    const result = await createTenantOwner("t1", {
+      name: "Aya",
+      email: "aya@example.com",
+      password: "motdepasse1",
+    });
+    expect(result).toEqual({ ok: true });
+    expect(revalidatePath).toHaveBeenCalledWith("/boutiques/boutique-test");
+  });
 });

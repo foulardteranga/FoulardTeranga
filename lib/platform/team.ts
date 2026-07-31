@@ -80,6 +80,7 @@ export async function createTenantOwner(tenantId: string, input: CreateOwnerInpu
   }
   const data = parsed.data;
 
+  let slug = "";
   try {
     const existingOwner = await prisma.profile.findFirst({
       where: { tenantId, role: "owner" },
@@ -89,6 +90,7 @@ export async function createTenantOwner(tenantId: string, input: CreateOwnerInpu
 
     const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { slug: true } });
     if (!tenant) return { ok: false, error: "Boutique introuvable." };
+    slug = tenant.slug;
 
     const admin = createAdminClient();
     const { data: created, error: createError } = await admin.auth.admin.createUser({
@@ -137,11 +139,13 @@ export async function createTenantOwner(tenantId: string, input: CreateOwnerInpu
       });
       return { ok: false, error: GENERIC_ERROR };
     }
-
-    revalidatePath(`/boutiques/${tenant.slug}`);
   } catch {
     return { ok: false, error: GENERIC_ERROR };
   }
 
+  // Hors du try (même convention que lib/platform/lifecycle.ts, Tâche 17) :
+  // un échec ici correspond à une écriture déjà réussie, pas à un échec de
+  // création à rapporter comme tel.
+  revalidatePath(`/boutiques/${slug}`);
   return { ok: true };
 }
