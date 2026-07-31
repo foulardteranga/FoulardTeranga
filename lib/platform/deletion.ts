@@ -43,5 +43,16 @@ export async function deleteTenantRows(tx: Prisma.TransactionClient, tenantId: s
   await tx.product.deleteMany({ where: { tenantId } });
   await tx.profile.deleteMany({ where: { tenantId } });
   await tx.employeeRole.deleteMany({ where: { tenantId } });
-  await tx.tenant.delete({ where: { id: tenantId } });
+
+  // Réaffirme le statut archived de manière atomique, dans la même
+  // instruction que la suppression (Tâche 17, TOCTOU trouvé par la revue
+  // finale) : `deleteTenant` lit le statut AVANT d'ouvrir cette transaction,
+  // ce qui laisse une fenêtre où une `reactivateTenant` concurrente pourrait
+  // repasser la boutique à `active` entre-temps. Un `where` composite qui
+  // inclut `status: "archived"` rend l'invariant vérifiable par la base
+  // elle-même, plutôt que de faire confiance à une lecture faite plus tôt.
+  const deleted = await tx.tenant.deleteMany({ where: { id: tenantId, status: "archived" } });
+  if (deleted.count !== 1) {
+    throw new Error("Le statut de la boutique a changé entre la vérification et la suppression.");
+  }
 }

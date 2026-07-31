@@ -5,6 +5,10 @@ const authState = vi.hoisted(() => ({ role: "owner" as "owner" | "super_admin" }
 const dbState = vi.hoisted(() => ({
   tenant: null as null | { id: string; slug: string; name: string; status: string },
   profileIds: [] as string[],
+  // Compte renvoyé par le deleteMany final sur Tenant (Tâche 17, TOCTOU) :
+  // 1 = suppression réussie (cas nominal), 0 = la boutique n'est plus
+  // "archived" au moment de l'exécution (reactivateTenant concurrent).
+  tenantDeleteCount: 1,
   calls: {
     tenantUpdate: [] as Array<Record<string, unknown>>,
     tenantDelete: [] as Array<Record<string, unknown>>,
@@ -53,9 +57,9 @@ vi.mock("@/lib/db/client", () => {
         dbState.calls.tenantUpdate.push(args);
         return {};
       },
-      delete: async (args: Record<string, unknown>) => {
+      deleteMany: async (args: Record<string, unknown>) => {
         dbState.calls.tenantDelete.push(args);
-        return {};
+        return { count: dbState.tenantDeleteCount };
       },
     },
     platformAuditLog: {
@@ -122,6 +126,7 @@ beforeEach(() => {
   authState.role = "super_admin";
   dbState.tenant = { id: "t1", slug: "boutique-test", name: "Boutique Test", status: "active" };
   dbState.profileIds = [];
+  dbState.tenantDeleteCount = 1;
   dbState.calls.tenantUpdate = [];
   dbState.calls.tenantDelete = [];
   dbState.calls.auditCreate = [];
@@ -295,5 +300,12 @@ describe("deleteTenant", () => {
   it("accepte un slug de confirmation avec des espaces autour (trim du schéma Zod)", async () => {
     dbState.tenant = { id: "t1", slug: "boutique-test", name: "Boutique Test", status: "archived" };
     expect(await deleteTenant("t1", { confirmSlug: "  boutique-test  " })).toEqual({ ok: true });
+  });
+
+  it("TOCTOU (Tâche 17) — renvoie une erreur générique si le statut a changé entre la vérification et la suppression (count: 0 au deleteMany final)", async () => {
+    dbState.tenant = { id: "t1", slug: "boutique-test", name: "Boutique Test", status: "archived" };
+    dbState.tenantDeleteCount = 0;
+    const result = await deleteTenant("t1", { confirmSlug: "boutique-test" });
+    expect(result).toEqual({ ok: false, error: "Une erreur est survenue, réessayez." });
   });
 });

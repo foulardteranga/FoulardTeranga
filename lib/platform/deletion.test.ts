@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { TENANT_DELETION_ORDER, deleteTenantRows } from "@/lib/platform/deletion";
 
-function makeTx() {
+function makeTx(tenantDeleteCount = 1) {
   const calls: Array<{ model: string; args: Record<string, unknown> }> = [];
   const models = [
     "orderLine",
@@ -18,9 +18,9 @@ function makeTx() {
   ];
   const tx: Record<string, unknown> = {
     tenant: {
-      delete: async (args: Record<string, unknown>) => {
+      deleteMany: async (args: Record<string, unknown>) => {
         calls.push({ model: "tenant", args });
-        return {};
+        return { count: tenantDeleteCount };
       },
     },
   };
@@ -85,12 +85,22 @@ describe("deleteTenantRows", () => {
     expect(calls[0]).toEqual({ model: "orderLine", args: { where: { order: { tenantId: "t1" } } } });
   });
 
-  it("filtre toutes les autres tables par tenantId, et Tenant par son id", async () => {
+  it("filtre toutes les autres tables par tenantId, et réaffirme Tenant par son id + statut archived", async () => {
     const { tx, calls } = makeTx();
     await deleteTenantRows(tx as never, "t1");
     for (const call of calls.slice(1, -1)) {
       expect(call.args).toEqual({ where: { tenantId: "t1" } });
     }
-    expect(calls[calls.length - 1]).toEqual({ model: "tenant", args: { where: { id: "t1" } } });
+    expect(calls[calls.length - 1]).toEqual({
+      model: "tenant",
+      args: { where: { id: "t1", status: "archived" } },
+    });
+  });
+
+  it("lève une exception si l'appel final ne supprime pas exactement une ligne (TOCTOU — statut changé entre-temps)", async () => {
+    const { tx } = makeTx(0);
+    await expect(deleteTenantRows(tx as never, "t1")).rejects.toThrow(
+      "Le statut de la boutique a changé entre la vérification et la suppression."
+    );
   });
 });

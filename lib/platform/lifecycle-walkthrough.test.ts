@@ -7,7 +7,7 @@ import { describe, it, expect, vi } from "vitest";
  * complète » de la phase 3 (handover §6), dont la faiblesse relevée était
  * exactement celle-ci : chaque étape imposait son propre état au lieu de
  * laisser le mock refléter ce que l'étape précédente venait d'écrire. Ici,
- * `tenant.update`/`tenant.delete` MUTENT `tenantRow` : si une transition
+ * `tenant.update`/`tenant.deleteMany` MUTENT `tenantRow` : si une transition
  * écrivait le mauvais statut ou oubliait de nettoyer un marqueur, ce test
  * l'attraperait au lieu de continuer sur un état figé.
  */
@@ -66,9 +66,11 @@ vi.mock("@/lib/db/client", () => {
         Object.assign(tenantRow, data);
         return { ...tenantRow };
       },
-      delete: async () => {
+      // deleteMany (pas delete) depuis la Tâche 17 : réaffirme status:
+      // "archived" atomiquement, voir lib/platform/deletion.ts.
+      deleteMany: async () => {
         deletedTenantIds.push(tenantRow.id);
-        return { ...tenantRow };
+        return { count: 1 };
       },
     },
     platformAuditLog: {
