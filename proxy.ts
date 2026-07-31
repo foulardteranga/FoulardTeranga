@@ -81,9 +81,22 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // La résolution du tenant est faite côté serveur applicatif (lib/tenant),
-  // où elle est mise en cache : la garder ici imposerait un aller-retour SQL
-  // sur chaque requête de vitrine publique.
+  // La résolution du tenant est faite côté serveur applicatif (lib/tenant), où
+  // elle est mise en cache : la garder ici imposerait un aller-retour SQL sur
+  // chaque requête de vitrine publique.
+  //
+  // Le STATUT de la boutique (suspendue/archivée, spec §9) n'est volontairement
+  // pas contrôlé ici non plus — décision revalidée en phase 4, pas héritée. La
+  // requête Prisma que ce fichier exécute depuis la phase 3 ne part que si un
+  // cookie d'impersonation est présent ET que l'acteur est super_admin, donc
+  // quasiment jamais ; contrôler le statut ici la rendrait inconditionnelle sur
+  // le chemin public, celui où CLAUDE.md §10 vise un LCP < 2,5 s. L'application
+  // vit dans les layouts (spec §2), qui lisent le registry en cache :
+  //   - app/(storefront)/layout.tsx        → indisponible (suspendue) / 404 (archivée)
+  //   - app/(dashboard)/layout.tsx         → écran bloquant
+  //   - app/(auth)/connexion/page.tsx      → message, zone dashboard uniquement
+  //   - lib/auth/actions.ts (signIn)       → refus côté action
+  // Ce choix est couvert par les tests « statut de boutique » de proxy.test.ts.
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-tenant-host", hostname);
   // La zone résolue est publiée pour les Server Components : `/connexion` est un

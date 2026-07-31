@@ -166,3 +166,25 @@ describe("proxy — comportement normal, sans impersonation (régression)", () =
     expect(isRedirectTo(response, "/admin/connexion")).toBe(true);
   });
 });
+
+describe("proxy — statut de boutique : décision de conception du spec §2", () => {
+  it("laisse passer une requête de vitrine sans consulter la base : la suspension est l'affaire des layouts", async () => {
+    // identityState reste null (beforeEach) : la zone storefront ne passe
+    // jamais par resolveRequestIdentity (cf. la garde de proxy.ts), donc
+    // aucune requête Prisma n'est même tentée ici.
+    const response = await proxy(makeRequest("/catalogue"));
+
+    // Ni redirection ni blocage : le proxy achemine (rewrite), le layout décide.
+    expect(isRedirectTo(response, "/")).toBe(false);
+    expect(response.headers.get("x-middleware-rewrite")).toBeTruthy();
+  });
+
+  it("achemine une requête dashboard vers le layout plutôt que de la refuser lui-même", async () => {
+    identityState.value = { actor: ownerActor, session: ownerSelfSession, impersonation: null };
+
+    const response = await proxy(makeRequest("/admin/pos"));
+
+    expect(isRedirectTo(response, "/admin/connexion")).toBe(false);
+    expect(response.headers.get("x-middleware-rewrite")).toBeTruthy();
+  });
+});
