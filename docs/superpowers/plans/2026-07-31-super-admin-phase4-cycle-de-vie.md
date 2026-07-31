@@ -1116,7 +1116,6 @@ export function TenantBlockedNotice({
 
   return (
     <main
-      role="alert"
       style={{
         flex: 1,
         display: "flex",
@@ -1180,9 +1179,7 @@ Puis insérer la branche bloquante **après** la résolution du tenant et **apr�
             ).toISOString()}
           />
         )}
-        <div style={{ flex: 1, display: "flex", paddingTop: topOffset }}>
-          <TenantBlockedNotice tenantName={tenant.name} status={tenant.status} />
-        </div>
+        <TenantBlockedNotice tenantName={tenant.name} status={tenant.status} />
       </div>
     );
   }
