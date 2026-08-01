@@ -47,9 +47,11 @@ function PlatformFocusStyles() {
 export function PlatformShell({
   userName,
   children,
+  basePath = "",
 }: {
   userName: string;
   children: React.ReactNode;
+  basePath?: string;
 }) {
   return (
     <div style={{ minHeight: "100vh", background: colors.ivory, color: colors.ink, fontFamily: fonts.ui }}>
@@ -66,7 +68,7 @@ export function PlatformShell({
         }}
       >
         <Link
-          href="/boutiques"
+          href={`${basePath}/boutiques`}
           className="ft-platform-link"
           style={{ fontFamily: fonts.display, fontSize: 18, fontWeight: 600, color: colors.ink, textDecoration: "none" }}
         >
@@ -74,7 +76,7 @@ export function PlatformShell({
         </Link>
 
         <nav style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <Link href="/boutiques" className="ft-platform-link" style={{ fontSize: 14, color: colors.muted, textDecoration: "none" }}>
+          <Link href={`${basePath}/boutiques`} className="ft-platform-link" style={{ fontSize: 14, color: colors.muted, textDecoration: "none" }}>
             Boutiques
           </Link>
           <span style={{ fontSize: 13, color: colors.muted }}>{userName}</span>

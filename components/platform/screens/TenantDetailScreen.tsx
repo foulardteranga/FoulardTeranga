@@ -20,14 +20,16 @@ export function TenantDetailScreen({
   tenant,
   tab,
   children,
+  basePath = "",
 }: {
   tenant: TenantDetail;
   tab: TenantTab;
   children: React.ReactNode;
+  basePath?: string;
 }) {
   return (
     <div>
-      <Link href="/boutiques" className="ft-platform-link" style={{ fontSize: 13, color: colors.muted, textDecoration: "none" }}>
+      <Link href={`${basePath}/boutiques`} className="ft-platform-link" style={{ fontSize: 13, color: colors.muted, textDecoration: "none" }}>
         ← Retour au parc
       </Link>
 
@@ -47,7 +49,7 @@ export function TenantDetailScreen({
           item.available ? (
             <Link
               key={item.id}
-              href={`/boutiques/${tenant.slug}?onglet=${item.id}`}
+              href={`${basePath}/boutiques/${tenant.slug}?onglet=${item.id}`}
               className={tab === item.id ? "ft-platform-tab ft-platform-tab-current" : "ft-platform-tab"}
               style={{
                 padding: "9px 14px",

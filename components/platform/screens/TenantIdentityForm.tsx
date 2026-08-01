@@ -20,7 +20,7 @@ const inputStyle = {
   background: "#fff",
 };
 
-export function TenantIdentityForm({ tenant }: { tenant: TenantDetail }) {
+export function TenantIdentityForm({ tenant, basePath = "" }: { tenant: TenantDetail; basePath?: string }) {
   const router = useRouter();
   const [form, setForm] = useState({
     name: tenant.name,
@@ -72,7 +72,7 @@ export function TenantIdentityForm({ tenant }: { tenant: TenantDetail }) {
     // Le slug fait partie de l'URL : après un changement, rester sur l'ancienne
     // adresse afficherait un 404 au prochain rafraîchissement.
     const nextSlug = normalizeSlug(form.slug);
-    if (nextSlug !== tenant.slug) router.replace(`/boutiques/${nextSlug}?onglet=identite`);
+    if (nextSlug !== tenant.slug) router.replace(`${basePath}/boutiques/${nextSlug}?onglet=identite`);
     else router.refresh();
   }
 

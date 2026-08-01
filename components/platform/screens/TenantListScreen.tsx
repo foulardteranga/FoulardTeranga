@@ -8,9 +8,11 @@ import type { TenantListItem } from "@/lib/platform/queries";
 export function TenantListScreen({
   tenants,
   includeArchived,
+  basePath = "",
 }: {
   tenants: TenantListItem[];
   includeArchived: boolean;
+  basePath?: string;
 }) {
   return (
     <div>
@@ -37,7 +39,7 @@ export function TenantListScreen({
           )}
         </div>
         <Link
-          href="/boutiques/nouvelle"
+          href={`${basePath}/boutiques/nouvelle`}
           className="ft-platform-btn ft-platform-btn-primary"
           style={{
             display: "inline-flex",
@@ -60,7 +62,7 @@ export function TenantListScreen({
 
       <div style={{ marginBottom: 14 }}>
         <Link
-          href={includeArchived ? "/boutiques" : "/boutiques?archivees=1"}
+          href={includeArchived ? `${basePath}/boutiques` : `${basePath}/boutiques?archivees=1`}
           className="ft-platform-link"
           style={{ fontSize: 13, color: colors.muted, textDecoration: "none" }}
         >
@@ -116,7 +118,7 @@ export function TenantListScreen({
                 {tenants.map((tenant) => (
                   <tr key={tenant.id}>
                     <td>
-                      <Link href={`/boutiques/${tenant.slug}`} className="ft-platform-link" style={{ color: colors.primary, fontWeight: 600, textDecoration: "none" }}>
+                      <Link href={`${basePath}/boutiques/${tenant.slug}`} className="ft-platform-link" style={{ color: colors.primary, fontWeight: 600, textDecoration: "none" }}>
                         {tenant.name}
                       </Link>
                       <div style={{ color: colors.muted, fontSize: 12 }}>{tenant.slug}</div>
@@ -139,7 +141,7 @@ export function TenantListScreen({
             {tenants.map((tenant) => (
               <Link
                 key={tenant.id}
-                href={`/boutiques/${tenant.slug}`}
+                href={`${basePath}/boutiques/${tenant.slug}`}
                 className="ft-platform-card-link"
                 style={{ background: colors.surface, border: adminBorder, borderRadius: 14, padding: 16, textDecoration: "none", color: colors.ink, display: "block" }}
               >

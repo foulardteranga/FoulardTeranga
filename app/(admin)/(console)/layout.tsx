@@ -11,10 +11,11 @@ import { PlatformShell } from "@/components/platform/PlatformShell";
  * lui seul protège si le matcher du proxy évolue.
  */
 export default async function PlatformConsoleLayout({ children }: { children: React.ReactNode }) {
+  const hostname = (await headers()).get("host") ?? "localhost";
   const session = await currentSuperAdmin();
   if (!session) {
-    const hostname = (await headers()).get("host") ?? "localhost";
     redirect(platformPath(hostname, "/connexion"));
   }
-  return <PlatformShell userName={session.name}>{children}</PlatformShell>;
+  const basePath = platformPath(hostname, "");
+  return <PlatformShell userName={session.name} basePath={basePath}>{children}</PlatformShell>;
 }

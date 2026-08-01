@@ -39,7 +39,7 @@ function actionButton(danger: boolean, busy: boolean): React.CSSProperties {
  * spec §9 devient la seule source de vérité de ce qui est proposé, et l'écran ne
  * peut pas offrir une action que l'action serveur refusera.
  */
-export function TenantDangerTab({ tenant }: { tenant: TenantDetail }) {
+export function TenantDangerTab({ tenant, basePath = "" }: { tenant: TenantDetail; basePath?: string }) {
   const router = useRouter();
   const [reason, setReason] = useState("");
   const [confirmSlug, setConfirmSlug] = useState("");
@@ -89,7 +89,7 @@ export function TenantDangerTab({ tenant }: { tenant: TenantDetail }) {
       return;
     }
     // La fiche n'existe plus : y rester donnerait un 404.
-    router.push("/boutiques");
+    router.push(`${basePath}/boutiques`);
   }
 
   const deleteConfirmed = confirmSlug.trim() === tenant.slug;

@@ -37,7 +37,7 @@ const inputStyle = {
   background: "#fff",
 };
 
-export function NewTenantScreen() {
+export function NewTenantScreen({ basePath = "" }: { basePath?: string }) {
   const router = useRouter();
   const [form, setForm] = useState(EMPTY);
   const [error, setError] = useState<string | null>(null);
@@ -77,14 +77,14 @@ export function NewTenantScreen() {
       setError(result.error);
       return;
     }
-    router.push(`/boutiques/${result.slug}`);
+    router.push(`${basePath}/boutiques/${result.slug}`);
   }
 
   const previewModules = modulesForPlan(form.plan);
 
   return (
     <form onSubmit={handleSubmit} style={{ maxWidth: 760 }}>
-      <Link href="/boutiques" className="ft-platform-link" style={{ fontSize: 13, color: colors.muted, textDecoration: "none" }}>
+      <Link href={`${basePath}/boutiques`} className="ft-platform-link" style={{ fontSize: 13, color: colors.muted, textDecoration: "none" }}>
         ← Retour au parc
       </Link>
       <h1 style={{ fontFamily: fonts.display, fontSize: 24, fontWeight: 600, margin: "10px 0 24px" }}>
