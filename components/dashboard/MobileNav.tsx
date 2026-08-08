@@ -17,9 +17,9 @@ export function MobileNav({ pendingCount, session }: { pendingCount: number; ses
   const closeMore = useBackoffice((s) => s.closeMore);
 
   const visibleIds = new Set(
-    NAV.filter((n) => (n.id === "equipe" ? session?.role === "owner" : hasModuleAccess(session, n.id))).map(
-      (n) => n.id
-    )
+    NAV.filter((n) =>
+      n.id === "equipe" || n.id === "audit" ? session?.role === "owner" : hasModuleAccess(session, n.id)
+    ).map((n) => n.id)
   );
   const tabs = TAB_IDS.filter((id) => visibleIds.has(id)).map((id) => NAV.find((n) => n.id === id)!);
   const moreItems = MORE_ROUTES.filter((id) => visibleIds.has(id)).map((id) => NAV.find((n) => n.id === id)!);
