@@ -582,6 +582,8 @@ export async function deleteOrderPermanently(
         },
         tx
       );
+      await tx.orderStatusEvent.deleteMany({ where: { orderId: order.id } });
+      await tx.orderLine.deleteMany({ where: { orderId: order.id } });
       await tx.order.delete({ where: { id: order.id } });
     });
 
