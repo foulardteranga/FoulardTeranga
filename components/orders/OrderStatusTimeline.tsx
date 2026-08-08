@@ -22,6 +22,20 @@ export function OrderStatusTimeline({
   events: OrderStatusEventView[];
   showAuthor?: boolean;
 }) {
+  if (status === "archivee") {
+    return (
+      <div style={{ display: "flex", gap: 12, alignItems: "flex-start", background: statusMeta.archivee.bg, borderRadius: 12, padding: "14px 16px" }}>
+        <Icon path={ICONS.infoAlt} size={18} stroke={statusMeta.archivee.color} strokeWidth={2} style={{ flex: "none", marginTop: 1 }} />
+        <div>
+          <div style={{ font: `600 14.5px ${fonts.ui}`, color: statusMeta.archivee.color }}>Commande archivée</div>
+          <div style={{ fontSize: 13, color: colors.muted, marginTop: 2 }}>
+            Restaurez-la pour reprendre son suivi, ou supprimez-la définitivement.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (status === "refusee") {
     return (
       <div style={{ display: "flex", gap: 12, alignItems: "flex-start", background: statusMeta.refusee.bg, borderRadius: 12, padding: "14px 16px" }}>
