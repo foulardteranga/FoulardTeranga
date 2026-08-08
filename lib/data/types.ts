@@ -56,7 +56,8 @@ export type OrderStatus =
   | "confirmee"
   | "preparation"
   | "livree"
-  | "refusee";
+  | "refusee"
+  | "archivee";
 
 export interface OrderLine {
   name: string;

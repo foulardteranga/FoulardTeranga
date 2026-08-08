@@ -33,6 +33,7 @@ enum OrderStatus {
   preparation
   livree
   refusee
+  archivee
 }
 
 enum OrderChannel {
@@ -232,6 +233,8 @@ model Order {
   pointsUsed     Int            @default(0) // nb de points débités
   pointsDiscount Int            @default(0) // FCFA (= pointsUsed × 50 au taux du moment)
   createdAt      DateTime       @default(now())
+  previousStatus OrderStatus?
+  archivedAt     DateTime?
 
   tenant       Tenant             @relation(fields: [tenantId], references: [id])
   customer     Customer?          @relation(fields: [customerId], references: [id])
