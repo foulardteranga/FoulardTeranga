@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatOrderAgo, formatOrderDate } from "@/lib/data/orderStatus";
+import { formatOrderAgo, formatOrderDate, statusMeta } from "@/lib/data/orderStatus";
 
 describe("formatOrderAgo", () => {
   const now = new Date("2026-07-14T10:00:00Z");
@@ -49,5 +49,11 @@ describe("formatOrderDate", () => {
     expect(result).not.toContain("Aujourd'hui");
     expect(result).not.toContain("Hier");
     expect(result).toContain("01/07");
+  });
+});
+
+describe("statusMeta", () => {
+  it("a un badge pour le statut archivee", () => {
+    expect(statusMeta.archivee.label).toBe("Archivée");
   });
 });

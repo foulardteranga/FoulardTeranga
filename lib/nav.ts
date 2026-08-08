@@ -28,10 +28,11 @@ export const NAV: NavDef[] = [
   { id: "vitrine", href: "/admin/vitrine", label: "Vitrine", short: "Vitrine", icon: ICONS.theme },
   { id: "boutique", href: "/admin/boutique", label: "Boutique", short: "Boutique", icon: ICONS.inv },
   { id: "equipe", href: "/admin/equipe", label: "Équipe", short: "Équipe", icon: ICONS.personPlus },
+  { id: "audit", href: "/admin/journal-audit", label: "Journal d'audit", short: "Audit", icon: ICONS.clipboardCheck },
 ];
 
 /** Routes accessibles via l'onglet « Plus » sur mobile. */
-export const MORE_ROUTES = ["cust", "mkt", "fin", "theme", "vitrine", "boutique", "equipe"];
+export const MORE_ROUTES = ["cust", "mkt", "fin", "theme", "vitrine", "boutique", "equipe", "audit"];
 
 /** Titre & sous-titre d'écran par route (barre supérieure). */
 export const SCREEN_META: Record<string, [string, string]> = {
@@ -46,4 +47,5 @@ export const SCREEN_META: Record<string, [string, string]> = {
   "/admin/vitrine": ["Éditeur de vitrine", "Modifiez le contenu de votre page d'accueil"],
   "/admin/boutique": ["Boutique", "Aperçu et raccourcis vers votre boutique en ligne"],
   "/admin/equipe": ["Équipe", "Profils d'accès et employés"],
+  "/admin/journal-audit": ["Journal d'audit", "Historique des archivages et suppressions de commandes"],
 };

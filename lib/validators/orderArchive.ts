@@ -6,6 +6,6 @@ export const orderArchiveSchema = z.object({
 export type OrderArchiveInput = z.infer<typeof orderArchiveSchema>;
 
 export const orderDeleteSchema = z.object({
-  reason: z.string().trim().min(3, "Merci d'indiquer un motif."),
+  reason: z.string().trim().min(3, "Merci d'indiquer un motif.").max(500),
 });
 export type OrderDeleteInput = z.infer<typeof orderDeleteSchema>;

@@ -10,6 +10,7 @@ export const statusMeta: Record<
   preparation: { label: "En préparation", bg: "#FBF1D8", color: "#8a6500", dot: "#E0A400" },
   livree: { label: "Livrée", bg: "#E6F4EE", color: "#0b6e4d", dot: "#0E9F6E" },
   refusee: { label: "Refusée", bg: "#F8E5E3", color: "#9c352d", dot: "#C4453B" },
+  archivee: { label: "Archivée", bg: "#EDEDED", color: "#5c5c5c", dot: "#9A9A9A" },
 };
 
 /** Ancienneté relative d'une commande, affichée dans les listes (« il y a 12 min », « hier »). */

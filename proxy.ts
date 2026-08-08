@@ -54,16 +54,20 @@ export async function proxy(request: NextRequest) {
     }
 
     // Contrôle d'accès par module (profils d'accès personnalisés, cf. design
-    // 2026-07-22). "/equipe" a sa propre garde : owner uniquement, jamais un
-    // module coché dans un EmployeeRole (escalade de privilèges).
+    // 2026-07-22). "/equipe" et "/journal-audit" ont leur propre garde : owner
+    // uniquement, jamais un module coché dans un EmployeeRole (escalade de
+    // privilèges).
     if (zone === "dashboard") {
       const isEquipePath = rewrittenPathname === "/equipe" || rewrittenPathname.startsWith("/equipe/");
+      const isJournalAuditPath =
+        rewrittenPathname === "/journal-audit" || rewrittenPathname.startsWith("/journal-audit/");
       const moduleId = moduleForPath(rewrittenPathname);
-      const moduleAllowed = isEquipePath
-        ? session?.role === "owner"
-        : moduleId
-          ? hasModuleAccess(session, moduleId)
-          : true;
+      const moduleAllowed =
+        isEquipePath || isJournalAuditPath
+          ? session?.role === "owner"
+          : moduleId
+            ? hasModuleAccess(session, moduleId)
+            : true;
 
       if (!moduleAllowed) {
         // Repli sur le premier module autorisé du profil. Peut être vide (ex.

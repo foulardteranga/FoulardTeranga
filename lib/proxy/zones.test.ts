@@ -7,6 +7,7 @@ import {
   platformPath,
   ADMIN_PATHS,
 } from "@/lib/proxy/zones";
+import { NAV } from "@/lib/nav";
 
 describe("resolveZone — dev (localhost, path-prefixed)", () => {
   it("treats the root as storefront", () => {
@@ -135,6 +136,15 @@ describe("platformPath", () => {
 
   it("préfixe aussi sur les URLs de prévisualisation Vercel", () => {
     expect(platformPath("mon-app-abc.vercel.app", "/boutiques")).toBe("/platform/boutiques");
+  });
+});
+
+describe("NAV — couverture des chemins dashboard", () => {
+  it("chaque entrée de NAV (href sans le préfixe /admin) est reconnue comme chemin de la zone dashboard", () => {
+    for (const { href } of NAV) {
+      const path = href.replace(/^\/admin/, "");
+      expect(isPathAllowedForZone("dashboard", path)).toBe(true);
+    }
   });
 });
 

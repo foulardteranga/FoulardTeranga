@@ -10,6 +10,7 @@ import { useBackoffice } from "@/lib/store/useBackoffice";
 import { storefrontOrigin } from "@/lib/storefront/origin";
 import {
   confirmOrder, rejectOrder, updateOrder, markPreparing, markDelivered, getOrderStatusHistoryAction,
+  archiveOrder, restoreOrder, deleteOrderPermanently,
 } from "@/lib/orders/actions";
 import { OrderStatusTimeline } from "@/components/orders/OrderStatusTimeline";
 import type { OrderStatusEventView } from "@/lib/data/orders.server";
@@ -21,6 +22,7 @@ const FILTERS: Array<[string, string, OrderStatus | null]> = [
   ["preparation", "En préparation", "preparation"],
   ["livree", "Livrées", "livree"],
   ["refusee", "Refusées", "refusee"],
+  ["archivees", "Archivées", "archivee"],
   ["all", "Toutes", null],
 ];
 
@@ -28,19 +30,21 @@ export function OrdersScreen({ orders, initialSel }: { orders: Order[]; initialS
   const [filter, setFilter] = useState<string>("toValidate");
   const [selId, setSelId] = useState<string | null>(initialSel ?? null);
   const [editing, setEditing] = useState(false);
+  const [archiving, setArchiving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [historyVersion, setHistoryVersion] = useState(0);
   const router = useRouter();
 
   const showToast = useBackoffice((s) => s.showToast);
 
   const cur = FILTERS.find((f) => f[0] === filter)!;
-  const list = orders.filter((o) => (filter === "all" ? true : o.status === cur[2]));
+  const list = orders.filter((o) => (filter === "all" ? o.status !== "archivee" : o.status === cur[2]));
 
   const selected: Order | undefined =
     orders.find((o) => o.id === selId) ?? list[0] ?? orders[0];
 
   const count = (st: OrderStatus | null) =>
-    st === null ? orders.length : orders.filter((o) => o.status === st).length;
+    st === null ? orders.filter((o) => o.status !== "archivee").length : orders.filter((o) => o.status === st).length;
 
   return (
     <div className="ft-pad">
@@ -69,7 +73,7 @@ export function OrdersScreen({ orders, initialSel }: { orders: Order[]; initialS
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16, overflowX: "auto" }}>
         {FILTERS.map((f) => {
           const on = filter === f[0];
-          const c = f[0] === "all" ? orders.length : count(f[2]);
+          const c = count(f[2]);
           return (
             <button
               key={f[0]}
@@ -221,6 +225,14 @@ export function OrdersScreen({ orders, initialSel }: { orders: Order[]; initialS
                 setHistoryVersion((v) => v + 1);
               }}
               onEdit={() => setEditing(true)}
+              onArchive={() => setArchiving(true)}
+              onRestore={async () => {
+                const result = await restoreOrder(selected.id);
+                if (!result.ok) { showToast(result.error, "error"); return; }
+                showToast("Commande restaurée", "success");
+                setHistoryVersion((v) => v + 1);
+              }}
+              onDelete={() => setDeleting(true)}
             />
           </div>
         )}
@@ -232,6 +244,26 @@ export function OrdersScreen({ orders, initialSel }: { orders: Order[]; initialS
           onClose={() => setEditing(false)}
           onSaved={() => {
             setEditing(false);
+            router.refresh();
+          }}
+        />
+      )}
+      {archiving && selected && (
+        <ArchiveOrderModal
+          order={selected}
+          onClose={() => setArchiving(false)}
+          onArchived={() => {
+            setArchiving(false);
+            router.refresh();
+          }}
+        />
+      )}
+      {deleting && selected && (
+        <DeleteOrderModal
+          order={selected}
+          onClose={() => setDeleting(false)}
+          onDeleted={() => {
+            setDeleting(false);
             router.refresh();
           }}
         />
@@ -270,6 +302,9 @@ function OrderDetail({
   onMarkPreparing,
   onMarkDelivered,
   onEdit,
+  onArchive,
+  onRestore,
+  onDelete,
 }: {
   order: Order;
   status: OrderStatus;
@@ -279,6 +314,9 @@ function OrderDetail({
   onMarkPreparing: () => void;
   onMarkDelivered: () => void;
   onEdit: () => void;
+  onArchive: () => void;
+  onRestore: () => void;
+  onDelete: () => void;
 }) {
   const meta = statusMeta[status];
   const actionable = status === "nouvelle";
@@ -310,21 +348,33 @@ function OrderDetail({
             {o.date} · {o.channel}
           </div>
         </div>
-        <span
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 5,
-            font: `600 12px ${fonts.ui}`,
-            padding: "5px 11px",
-            borderRadius: 999,
-            background: meta.bg,
-            color: meta.color,
-          }}
-        >
-          <span style={{ width: 6, height: 6, borderRadius: 999, background: meta.dot }} />
-          {meta.label}
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+              font: `600 12px ${fonts.ui}`,
+              padding: "5px 11px",
+              borderRadius: 999,
+              background: meta.bg,
+              color: meta.color,
+            }}
+          >
+            <span style={{ width: 6, height: 6, borderRadius: 999, background: meta.dot }} />
+            {meta.label}
+          </span>
+          {status !== "archivee" && (
+            <button
+              type="button"
+              onClick={onArchive}
+              title="Archiver"
+              style={{ width: 32, height: 32, border: `1.5px solid ${colors.borderField}`, borderRadius: 8, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+            >
+              <Icon path={ICONS.archive} size={15} stroke={colors.muted} strokeWidth={1.8} />
+            </button>
+          )}
+        </div>
       </div>
 
       <div style={{ padding: "16px 18px" }}>
@@ -436,7 +486,29 @@ function OrderDetail({
           </a>
         )}
 
-        {actionable ? (
+        {status === "archivee" ? (
+          <>
+            <div style={{ fontSize: 11.5, color: colors.muted, background: colors.rowAlt, border: `1px solid ${colors.borderSoft}`, borderRadius: 8, padding: "8px 11px", marginBottom: 10 }}>
+              Commande archivée{o.archivedAt ? ` le ${o.archivedAt}` : ""}.
+            </div>
+            <div style={{ display: "flex", gap: 9 }}>
+              <button
+                onClick={onRestore}
+                style={{ flex: 1, height: 48, border: `1.5px solid ${colors.borderField}`, borderRadius: 10, background: "#fff", color: colors.primary, font: `600 14px ${fonts.ui}`, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+              >
+                <Icon path={ICONS.refresh} size={16} stroke={colors.primary} strokeWidth={1.9} />
+                Restaurer
+              </button>
+              <button
+                onClick={onDelete}
+                style={{ flex: 1, height: 48, border: `1.5px solid ${colors.danger}`, borderRadius: 10, background: "#fff", color: colors.danger, font: `600 14px ${fonts.ui}`, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+              >
+                <Icon path={ICONS.trash} size={16} stroke={colors.danger} strokeWidth={1.9} />
+                Supprimer
+              </button>
+            </div>
+          </>
+        ) : actionable ? (
           <>
             <div style={{ display: "flex", gap: 9 }}>
               <button
@@ -550,6 +622,127 @@ function EditOrderModal({ order, onClose, onSaved }: { order: Order; onClose: ()
         </div>
       </div>
     </>
+  );
+}
+
+function ArchiveOrderModal({ order, onClose, onArchived }: { order: Order; onClose: () => void; onArchived: () => void }) {
+  const [reason, setReason] = useState("");
+  const [saving, setSaving] = useState(false);
+  const showToast = useBackoffice((s) => s.showToast);
+
+  async function submit() {
+    setSaving(true);
+    const result = await archiveOrder(order.id, reason.trim() || undefined);
+    setSaving(false);
+    if (!result.ok) {
+      showToast(result.error, "error");
+      return;
+    }
+    showToast("Commande archivée", "success");
+    onArchived();
+  }
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(30,27,24,.4)", zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ background: "#fff", borderRadius: 16, width: 420, maxWidth: "92vw", padding: "22px 24px", boxShadow: "0 20px 50px rgba(30,27,24,.24)" }}
+      >
+        <div style={{ fontFamily: fonts.display, fontWeight: 600, fontSize: 18, marginBottom: 4 }}>Archiver la commande</div>
+        <div style={{ fontSize: 12.5, color: colors.muted, marginBottom: 14 }}>{order.id}</div>
+
+        <div style={{ background: colors.bgInfo, color: colors.fgInfo, borderRadius: 10, padding: "10px 13px", fontSize: 12.5, marginBottom: 14 }}>
+          La commande quitte la liste active. Si du stock avait déjà été déduit, il sera restauré automatiquement. Vous pourrez la restaurer depuis l&apos;onglet « Archivées ».
+        </div>
+
+        <label style={modalLabel}>Motif (optionnel)</label>
+        <textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="Raison de l'archivage…"
+          maxLength={200}
+          style={{ ...modalField, height: 72, padding: "10px 13px", resize: "none" }}
+        />
+
+        <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
+          <button
+            onClick={onClose}
+            disabled={saving}
+            style={{ flex: 1, height: 46, border: `1.5px solid ${colors.borderField}`, borderRadius: 10, background: "#fff", color: colors.primary, font: `600 14px ${fonts.ui}`, cursor: saving ? "default" : "pointer" }}
+          >
+            Annuler
+          </button>
+          <button
+            onClick={submit}
+            disabled={saving}
+            style={{ flex: 2, height: 46, border: "none", borderRadius: 10, background: colors.primary, color: "#fff", font: `600 14px ${fonts.ui}`, cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1 }}
+          >
+            {saving ? "Archivage…" : "Archiver"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DeleteOrderModal({ order, onClose, onDeleted }: { order: Order; onClose: () => void; onDeleted: () => void }) {
+  const [reason, setReason] = useState("");
+  const [saving, setSaving] = useState(false);
+  const showToast = useBackoffice((s) => s.showToast);
+
+  async function submit() {
+    setSaving(true);
+    const result = await deleteOrderPermanently(order.id, reason);
+    setSaving(false);
+    if (!result.ok) {
+      showToast(result.error, "error");
+      return;
+    }
+    showToast("Commande supprimée définitivement", "success");
+    onDeleted();
+  }
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(30,27,24,.4)", zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ background: "#fff", borderRadius: 16, width: 420, maxWidth: "92vw", padding: "22px 24px", boxShadow: "0 20px 50px rgba(30,27,24,.24)" }}
+      >
+        <div style={{ fontFamily: fonts.display, fontWeight: 600, fontSize: 18, marginBottom: 4 }}>Supprimer définitivement</div>
+        <div style={{ fontSize: 12.5, color: colors.muted, marginBottom: 14 }}>{order.id}</div>
+
+        <div style={{ background: colors.bgDanger, color: colors.fgDanger, borderRadius: 10, padding: "10px 13px", fontSize: 12.5, marginBottom: 14 }}>
+          Cette action est irréversible : la commande sera définitivement supprimée.
+        </div>
+
+        <label style={modalLabel}>Motif de la suppression</label>
+        <textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="Pourquoi supprimer cette commande ?"
+          maxLength={500}
+          style={{ ...modalField, height: 72, padding: "10px 13px", resize: "none" }}
+        />
+        <div style={{ fontSize: 12.5, color: colors.muted, marginTop: 4 }}>Minimum 3 caractères.</div>
+
+        <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
+          <button
+            onClick={onClose}
+            disabled={saving}
+            style={{ flex: 1, height: 46, border: `1.5px solid ${colors.borderField}`, borderRadius: 10, background: "#fff", color: colors.primary, font: `600 14px ${fonts.ui}`, cursor: saving ? "default" : "pointer" }}
+          >
+            Annuler
+          </button>
+          <button
+            onClick={submit}
+            disabled={saving || reason.trim().length < 3}
+            style={{ flex: 2, height: 46, border: "none", borderRadius: 10, background: colors.danger, color: "#fff", font: `600 14px ${fonts.ui}`, cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1 }}
+          >
+            {saving ? "Suppression…" : "Supprimer définitivement"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

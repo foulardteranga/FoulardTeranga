@@ -44,6 +44,7 @@ function toOrder(row: PrismaOrderWithLines, promoValidity: Map<string, boolean>)
     pointsUsed: row.pointsUsed,
     pointsDiscount: row.pointsDiscount,
     promoStillValid: promoValidity.get(row.id) ?? true,
+    archivedAt: row.archivedAt ? formatOrderDate(row.archivedAt) : null,
   };
 }
 

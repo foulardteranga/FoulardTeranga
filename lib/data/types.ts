@@ -56,7 +56,8 @@ export type OrderStatus =
   | "confirmee"
   | "preparation"
   | "livree"
-  | "refusee";
+  | "refusee"
+  | "archivee";
 
 export interface OrderLine {
   name: string;
@@ -93,4 +94,6 @@ export interface Order {
   pointsDiscount: number;
   /** false SEULEMENT pour une commande `nouvelle` dont le code ne passe plus (écart à afficher). */
   promoStillValid: boolean;
+  /** Date/heure d'archivage formatée, `null` si la commande n'est pas (ou plus) archivée. */
+  archivedAt: string | null;
 }

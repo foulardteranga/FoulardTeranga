@@ -31,7 +31,7 @@ export function Sidebar({
   const toggleOffline = useBackoffice((s) => s.toggleOffline);
 
   const visibleNav = NAV.filter((n) =>
-    n.id === "equipe" ? session?.role === "owner" : hasModuleAccess(session, n.id)
+    n.id === "equipe" || n.id === "audit" ? session?.role === "owner" : hasModuleAccess(session, n.id)
   );
 
   return (
