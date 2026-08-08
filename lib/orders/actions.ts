@@ -20,6 +20,12 @@ import { findPromoByCode } from "@/lib/data/promos.server";
 import { discountRequestSchema } from "@/lib/validators/discounts";
 import { getOrderStatusHistory, type OrderStatusEventView } from "@/lib/data/orders.server";
 import { LOW_STOCK_THRESHOLD } from "@/lib/inventory/lowStockThreshold";
+import { orderArchiveSchema, orderDeleteSchema } from "@/lib/validators/orderArchive";
+import { recordOrderAuditLog } from "./audit";
+import type { OrderStatus } from "@/lib/generated/prisma/enums";
+
+/** Statuts pour lesquels confirmOrder a déjà déduit le stock (miroir de la condition dans confirmOrder). */
+const STOCK_DEDUCTED_STATUSES: ReadonlyArray<OrderStatus> = ["confirmee", "preparation", "livree"];
 
 export async function submitWebOrder(
   kyc: KycInput,
@@ -384,4 +390,207 @@ export async function getOrderStatusHistoryAction(
   if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
   const events = await getOrderStatusHistory(ref);
   return { ok: true, events };
+}
+
+/** Archive une commande (n'importe quel statut). Restaure le stock si déjà déduit. Idempotent. */
+export async function archiveOrder(
+  ref: string,
+  reason?: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { allowed } = await requireZone("dashboard");
+  if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+
+  const session = await getSession();
+  if (!session) return { ok: false, error: "Une erreur est survenue, réessayez." };
+  const writable = await requireWritableSession();
+  if (!writable.ok) return { ok: false, error: writable.error };
+
+  const parsed = orderArchiveSchema.safeParse({ reason });
+  if (!parsed.success) return { ok: false, error: "Informations invalides." };
+
+  try {
+    const tenant = await getCurrentTenant();
+    await prisma.$transaction(
+      async (tx) => {
+        const order = await tx.order.findFirst({ where: { ref, tenantId: tenant.id }, include: { lines: true } });
+        if (!order) throw new Error("Commande introuvable.");
+        if (order.status === "archivee") return; // idempotent : déjà archivée
+
+        const stockReconciled = STOCK_DEDUCTED_STATUSES.includes(order.status);
+        if (stockReconciled) {
+          const demand = aggregateQtyByProduct(order.lines);
+          for (const [productId, { qty }] of demand) {
+            await tx.product.update({ where: { id: productId }, data: { stock: { increment: qty } } });
+            await tx.stockMovement.create({
+              data: {
+                tenantId: tenant.id,
+                productId,
+                authorId: session.userId,
+                delta: qty,
+                reason: "correction",
+                note: `Archivage ${order.ref}`,
+              },
+            });
+          }
+        }
+
+        const previousStatus = order.status;
+        await tx.order.update({
+          where: { id: order.id },
+          data: { status: "archivee", previousStatus, archivedAt: new Date() },
+        });
+        await tx.orderStatusEvent.create({
+          data: { tenantId: tenant.id, orderId: order.id, authorId: session.userId, status: "archivee" },
+        });
+        await recordOrderAuditLog(
+          {
+            tenantId: tenant.id,
+            orderRef: order.ref,
+            action: "archived",
+            actorId: session.userId,
+            actorRole: session.role,
+            stockReconciled,
+            reason: parsed.data.reason,
+            orderSnapshot: order,
+          },
+          tx
+        );
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10000, timeout: 10000 }
+    );
+
+    revalidatePath("/admin/commandes");
+    revalidatePath("/admin/inventaire");
+    revalidatePath("/admin/tableau-de-bord");
+    return { ok: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "";
+    return { ok: false, error: message === "Commande introuvable." ? message : "Une erreur est survenue, réessayez." };
+  }
+}
+
+/** Restaure une commande archivée à son statut précédent. Re-déduit le stock si nécessaire. Idempotent. */
+export async function restoreOrder(ref: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { allowed } = await requireZone("dashboard");
+  if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+
+  const session = await getSession();
+  if (!session) return { ok: false, error: "Une erreur est survenue, réessayez." };
+  const writable = await requireWritableSession();
+  if (!writable.ok) return { ok: false, error: writable.error };
+
+  try {
+    const tenant = await getCurrentTenant();
+    await prisma.$transaction(
+      async (tx) => {
+        const order = await tx.order.findFirst({ where: { ref, tenantId: tenant.id }, include: { lines: true } });
+        if (!order) throw new Error("Commande introuvable.");
+        if (order.status !== "archivee" || !order.previousStatus) return; // idempotent : pas (ou plus) archivée
+
+        const restoredStatus = order.previousStatus;
+        const stockReconciled = STOCK_DEDUCTED_STATUSES.includes(restoredStatus);
+        if (stockReconciled) {
+          const demand = aggregateQtyByProduct(order.lines);
+          for (const [productId, { qty, nameAtOrder }] of demand) {
+            const product = await tx.product.findUnique({ where: { id: productId } });
+            if (!product || product.stock < qty) {
+              throw new Error(`Stock insuffisant pour ${nameAtOrder}.`);
+            }
+          }
+          for (const [productId, { qty }] of demand) {
+            await tx.product.update({ where: { id: productId }, data: { stock: { decrement: qty } } });
+            await tx.stockMovement.create({
+              data: {
+                tenantId: tenant.id,
+                productId,
+                authorId: session.userId,
+                delta: -qty,
+                reason: "correction",
+                note: `Restauration ${order.ref}`,
+              },
+            });
+          }
+        }
+
+        await tx.order.update({
+          where: { id: order.id },
+          data: { status: restoredStatus, previousStatus: null, archivedAt: null },
+        });
+        await tx.orderStatusEvent.create({
+          data: { tenantId: tenant.id, orderId: order.id, authorId: session.userId, status: restoredStatus },
+        });
+        await recordOrderAuditLog(
+          {
+            tenantId: tenant.id,
+            orderRef: order.ref,
+            action: "restored",
+            actorId: session.userId,
+            actorRole: session.role,
+            stockReconciled,
+            orderSnapshot: order,
+          },
+          tx
+        );
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10000, timeout: 10000 }
+    );
+
+    revalidatePath("/admin/commandes");
+    revalidatePath("/admin/inventaire");
+    revalidatePath("/admin/tableau-de-bord");
+    return { ok: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "";
+    const known = message === "Commande introuvable." || message.startsWith("Stock insuffisant pour ");
+    return { ok: false, error: known ? message : "Une erreur est survenue, réessayez." };
+  }
+}
+
+/** Supprime définitivement une commande déjà archivée. Motif obligatoire, snapshot conservé dans le journal. */
+export async function deleteOrderPermanently(
+  ref: string,
+  reason: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { allowed } = await requireZone("dashboard");
+  if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+
+  const session = await getSession();
+  if (!session) return { ok: false, error: "Une erreur est survenue, réessayez." };
+  const writable = await requireWritableSession();
+  if (!writable.ok) return { ok: false, error: writable.error };
+
+  const parsed = orderDeleteSchema.safeParse({ reason });
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Informations invalides." };
+
+  try {
+    const tenant = await getCurrentTenant();
+    await prisma.$transaction(async (tx) => {
+      const order = await tx.order.findFirst({ where: { ref, tenantId: tenant.id }, include: { lines: true } });
+      if (!order) throw new Error("Commande introuvable.");
+      if (order.status !== "archivee") throw new Error("Seule une commande archivée peut être supprimée.");
+
+      await recordOrderAuditLog(
+        {
+          tenantId: tenant.id,
+          orderRef: order.ref,
+          action: "deleted",
+          actorId: session.userId,
+          actorRole: session.role,
+          stockReconciled: false,
+          reason: parsed.data.reason,
+          orderSnapshot: order,
+        },
+        tx
+      );
+      await tx.order.delete({ where: { id: order.id } });
+    });
+
+    revalidatePath("/admin/commandes");
+    return { ok: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "";
+    const known =
+      message === "Commande introuvable." || message === "Seule une commande archivée peut être supprimée.";
+    return { ok: false, error: known ? message : "Une erreur est survenue, réessayez." };
+  }
 }
