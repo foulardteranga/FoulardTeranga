@@ -100,6 +100,12 @@ enum PlatformAction {
   announcement_sent
 }
 
+enum OrderAuditAction {
+  archived
+  restored
+  deleted
+}
+
 model Tenant {
   id            String   @id @default(cuid())
   slug          String   @unique
@@ -359,4 +365,24 @@ model PlatformAuditLog {
 
   @@index([tenantId, createdAt])
   @@index([actorId, createdAt])
+}
+
+/// Journal des archivages/restaurations/suppressions de commandes, réservé à
+/// owner. Volontairement sans clé étrangère vers Order (miroir de
+/// PlatformAuditLog ci-dessus) : la trace doit survivre à la suppression
+/// définitive d'une commande, or une FK la ferait disparaître en cascade.
+model OrderAuditLog {
+  id              String            @id @default(cuid())
+  tenantId        String
+  orderRef        String
+  action          OrderAuditAction
+  reason          String?
+  actorId         String            @db.Uuid
+  actorRole       Role
+  stockReconciled Boolean           @default(false)
+  orderSnapshot   Json
+  createdAt       DateTime          @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([orderRef])
 }
