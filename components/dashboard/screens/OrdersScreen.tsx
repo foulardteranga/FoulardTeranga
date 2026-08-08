@@ -660,6 +660,7 @@ function ArchiveOrderModal({ order, onClose, onArchived }: { order: Order; onClo
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           placeholder="Raison de l'archivage…"
+          maxLength={200}
           style={{ ...modalField, height: 72, padding: "10px 13px", resize: "none" }}
         />
 
@@ -719,8 +720,10 @@ function DeleteOrderModal({ order, onClose, onDeleted }: { order: Order; onClose
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           placeholder="Pourquoi supprimer cette commande ?"
+          maxLength={500}
           style={{ ...modalField, height: 72, padding: "10px 13px", resize: "none" }}
         />
+        <div style={{ fontSize: 12.5, color: colors.muted, marginTop: 4 }}>Minimum 3 caractères.</div>
 
         <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
           <button

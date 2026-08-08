@@ -29,7 +29,9 @@ export function OrderStatusTimeline({
         <div>
           <div style={{ font: `600 14.5px ${fonts.ui}`, color: statusMeta.archivee.color }}>Commande archivée</div>
           <div style={{ fontSize: 13, color: colors.muted, marginTop: 2 }}>
-            Restaurez-la pour reprendre son suivi, ou supprimez-la définitivement.
+            {showAuthor
+              ? "Restaurez-la pour reprendre son suivi, ou supprimez-la définitivement."
+              : "Cette demande n'est plus suivie. Contactez la boutique pour plus de détails."}
           </div>
         </div>
       </div>

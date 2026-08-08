@@ -462,6 +462,8 @@ export async function archiveOrder(
     revalidatePath("/admin/commandes");
     revalidatePath("/admin/inventaire");
     revalidatePath("/admin/tableau-de-bord");
+    revalidatePath("/admin/journal-audit");
+    revalidatePath("/confirmation");
     return { ok: true };
   } catch (err) {
     const message = err instanceof Error ? err.message : "";
@@ -538,6 +540,8 @@ export async function restoreOrder(ref: string): Promise<{ ok: true } | { ok: fa
     revalidatePath("/admin/commandes");
     revalidatePath("/admin/inventaire");
     revalidatePath("/admin/tableau-de-bord");
+    revalidatePath("/admin/journal-audit");
+    revalidatePath("/confirmation");
     return { ok: true };
   } catch (err) {
     const message = err instanceof Error ? err.message : "";
@@ -565,7 +569,10 @@ export async function deleteOrderPermanently(
   try {
     const tenant = await getCurrentTenant();
     await prisma.$transaction(async (tx) => {
-      const order = await tx.order.findFirst({ where: { ref, tenantId: tenant.id }, include: { lines: true } });
+      const order = await tx.order.findFirst({
+        where: { ref, tenantId: tenant.id },
+        include: { lines: true, statusEvents: true },
+      });
       if (!order) throw new Error("Commande introuvable.");
       if (order.status !== "archivee") throw new Error("Seule une commande archivée peut être supprimée.");
 
@@ -588,6 +595,7 @@ export async function deleteOrderPermanently(
     });
 
     revalidatePath("/admin/commandes");
+    revalidatePath("/admin/journal-audit");
     return { ok: true };
   } catch (err) {
     const message = err instanceof Error ? err.message : "";
