@@ -10,6 +10,9 @@ const supabaseHostname = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).hostname
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  turbopack: {
+    root: process.cwd(),
+  },
   images: {
     remotePatterns: [
       {
