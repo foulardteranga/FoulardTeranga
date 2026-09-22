@@ -13,7 +13,9 @@ import { buildTicketMessage } from "@/lib/pos/ticketMessage";
 import { previewPosDiscount, type DiscountPreview } from "@/lib/discounts/actions";
 import { POINT_VALUE_FCFA } from "@/lib/customers/loyalty";
 import { PAYMENT_LABELS, type PosPaymentMethod } from "@/lib/payments/labels";
-import type { Customer, Product } from "@/lib/data/types";
+import type { Customer, Product, ProductVariantData } from "@/lib/data/types";
+import { PosVariantPickerModal } from "@/components/pos/PosVariantPickerModal";
+import { shouldOpenVariantPicker } from "@/components/pos/posVariantSelection";
 
 const PAY_DEF: ReadonlyArray<{ id: PosPaymentMethod; label: string; icon: string }> = [
   { id: "espece", label: "Espèces", icon: ICONS.cash },
@@ -27,13 +29,24 @@ const PAY_DEF: ReadonlyArray<{ id: PosPaymentMethod; label: string; icon: string
 export function PosScreen({ products, customers }: { products: Product[]; customers: Customer[] }) {
   const [query, setQuery] = useState("");
   const [cat, setCat] = useState<(typeof categories)[number]>("Tous");
+  const [variantPickerProduct, setVariantPickerProduct] = useState<Product | null>(null);
 
   const cart = useBackoffice((s) => s.cart);
+  const addToCart = useBackoffice((s) => s.addToCart);
   const cartOpen = useBackoffice((s) => s.cartOpen);
   const showToast = useBackoffice((s) => s.showToast);
   const openCart = useBackoffice((s) => s.openCart);
   const closeCart = useBackoffice((s) => s.closeCart);
   const client = useBackoffice((s) => s.client);
+
+  function handleProductClick(p: Product) {
+    if (shouldOpenVariantPicker(p)) {
+      setVariantPickerProduct(p);
+    } else {
+      const activeVariant = p.variants?.find((v) => v.active);
+      addToCart(p, activeVariant);
+    }
+  }
 
   const [promoCode, setPromoCode] = useState("");
   const [pointsReq, setPointsReq] = useState("0");
@@ -185,11 +198,21 @@ export function PosScreen({ products, customers }: { products: Product[]; custom
         ) : (
           <div className="ft-pos-grid">
             {filtered.map((p) => (
-              <ProductCard key={p.id} product={p} />
+              <ProductCard key={p.id} product={p} onClick={() => handleProductClick(p)} />
             ))}
           </div>
         )}
       </div>
+
+      {/* Modal tactile de sélection rapide de variante */}
+      <PosVariantPickerModal
+        product={variantPickerProduct}
+        isOpen={!!variantPickerProduct}
+        onClose={() => setVariantPickerProduct(null)}
+        onSelectVariant={(p, v) => {
+          addToCart(p, v);
+        }}
+      />
 
       {/* cart desktop */}
       <CartPanelDesktop
@@ -274,11 +297,13 @@ export function PosScreen({ products, customers }: { products: Product[]; custom
   );
 }
 
-function ProductCard({ product: p }: { product: Product }) {
-  const addToCart = useBackoffice((s) => s.addToCart);
+function ProductCard({ product: p, onClick }: { product: Product; onClick: () => void }) {
+  const hasMultipleVariants = shouldOpenVariantPicker(p);
+  const activeVariantsCount = p.variants ? p.variants.filter((v) => v.active).length : 0;
+
   return (
     <div
-      onClick={() => addToCart(p)}
+      onClick={onClick}
       className="ft-card-hover"
       style={{
         background: "#fff",
@@ -320,6 +345,27 @@ function ProductCard({ product: p }: { product: Product }) {
             }}
           >
             Stock {p.stock}
+          </span>
+        )}
+        {hasMultipleVariants && (
+          <span
+            style={{
+              position: "absolute",
+              bottom: 8,
+              right: 8,
+              font: `600 10.5px ${fonts.ui}`,
+              padding: "3px 7px",
+              borderRadius: 6,
+              background: "rgba(255,255,255,.94)",
+              color: colors.ink,
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              boxShadow: "0 2px 5px rgba(0,0,0,0.12)",
+            }}
+          >
+            <span style={{ width: 6, height: 6, borderRadius: 999, background: p.swatch }} />
+            {activeVariantsCount} teintes
           </span>
         )}
       </div>
@@ -560,7 +606,14 @@ function PayButton({
   async function handlePay() {
     setSaving(true);
     const result = await encaisserVente({
-      lines: cart.map((l) => ({ productId: l.id, qty: l.qty, discounted: l.discount > 0 })),
+      lines: cart.map((l) => ({
+        productId: l.productId || l.id,
+        variantId: l.variantId ?? null,
+        variantName: l.variantName ?? null,
+        colorHex: l.colorHex ?? null,
+        qty: l.qty,
+        discounted: l.discount > 0,
+      })),
       paymentMethod: pay,
       customerId: client?.id ?? null,
       promoCode: promoCode.trim() || undefined,
@@ -786,7 +839,12 @@ function CartPanelDesktop({
         {cart.length === 0 ? (
           <EmptyCart />
         ) : (
-          cart.map((l) => <CartLineDesktop key={l.id} line={l} stock={products.find((p) => p.id === l.id)?.stock} />)
+          cart.map((l) => {
+            const product = products.find((p) => p.id === (l.productId || l.id));
+            const variant = l.variantId ? product?.variants?.find((v) => v.id === l.variantId) : null;
+            const lineStock = variant ? variant.stock : product?.stock;
+            return <CartLineDesktop key={l.id} line={l} stock={lineStock} />;
+          })
         )}
       </div>
 
@@ -864,8 +922,22 @@ function CartLineDesktop({ line: l, stock }: { line: CartLine; stock?: number })
       <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 7 }}>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontWeight: 600, fontSize: 13.5, lineHeight: 1.25 }}>{l.name}</div>
-          <div style={{ fontSize: 11.5, color: colors.muted }}>
-            {l.variant} · {money(l.price)}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+            {l.colorHex && (
+              <span
+                style={{
+                  width: 11,
+                  height: 11,
+                  borderRadius: 3,
+                  background: l.colorHex,
+                  border: "1px solid rgba(0,0,0,0.15)",
+                  flex: "none",
+                }}
+              />
+            )}
+            <span style={{ fontSize: 11.5, color: colors.muted }}>
+              {l.variant} · {money(l.price)}
+            </span>
           </div>
         </div>
         <button
@@ -974,37 +1046,72 @@ function CartSheetMobile({
               <div style={{ fontSize: 13 }}>Touchez un produit pour l&apos;ajouter.</div>
             </div>
           ) : (
-            cart.map((l) => (
-              <div
-                key={l.id}
-                style={{
-                  padding: "12px 18px",
-                  borderBottom: `1px solid ${colors.faintLine}`,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: 12,
-                }}
-              >
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 14 }}>{l.name}</div>
-                  <div style={{ fontSize: 12, color: colors.muted }}>{money(l.price)}</div>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <QtyStepper qty={l.qty} size="md" onChange={(qty) => incLine(l.id, qty - l.qty)} max={products.find((p) => p.id === l.id)?.stock} />
-                  <div style={{ fontWeight: 700, fontSize: 14, minWidth: 70, textAlign: "right" }}>
-                    {money((l.price - l.discount) * l.qty)}
+            cart.map((l) => {
+              const product = products.find((p) => p.id === (l.productId || l.id));
+              const variant = l.variantId ? product?.variants?.find((v) => v.id === l.variantId) : null;
+              const lineStock = variant ? variant.stock : product?.stock;
+
+              return (
+                <div
+                  key={l.id}
+                  style={{
+                    padding: "12px 18px",
+                    borderBottom: `1px solid ${colors.faintLine}`,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 12,
+                  }}
+                >
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: 14 }}>{l.name}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                      {l.colorHex && (
+                        <span
+                          style={{
+                            width: 10,
+                            height: 10,
+                            borderRadius: 3,
+                            background: l.colorHex,
+                            border: "1px solid rgba(0,0,0,0.15)",
+                            flex: "none",
+                          }}
+                        />
+                      )}
+                      <span style={{ fontSize: 12, color: colors.muted }}>
+                        {l.variant} · {money(l.price)}
+                      </span>
+                    </div>
                   </div>
-                  <button
-                    onClick={() => rmLine(l.id)}
-                    aria-label="Retirer l'article"
-                    style={{ border: "none", background: "none", cursor: "pointer", color: "#B6AEA1", fontSize: 18, flex: "none", padding: "0 2px" }}
-                  >
-                    ×
-                  </button>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <QtyStepper
+                      qty={l.qty}
+                      size="md"
+                      onChange={(qty) => incLine(l.id, qty - l.qty)}
+                      max={lineStock}
+                    />
+                    <div style={{ fontWeight: 700, fontSize: 14, minWidth: 70, textAlign: "right" }}>
+                      {money((l.price - l.discount) * l.qty)}
+                    </div>
+                    <button
+                      onClick={() => rmLine(l.id)}
+                      aria-label="Retirer l'article"
+                      style={{
+                        border: "none",
+                        background: "none",
+                        cursor: "pointer",
+                        color: "#B6AEA1",
+                        fontSize: 18,
+                        flex: "none",
+                        padding: "0 2px",
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 

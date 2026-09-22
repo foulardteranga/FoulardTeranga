@@ -4,6 +4,10 @@ import type { PosPaymentMethod } from "@/lib/payments/labels";
 
 export interface CartLine {
   id: string;
+  productId?: string;
+  variantId?: string | null;
+  variantName?: string | null;
+  colorHex?: string | null;
   name: string;
   variant: string;
   price: number;
@@ -47,7 +51,10 @@ interface BackofficeState {
   ticket: Ticket | null;
 
   // Actions
-  addToCart: (p: Product) => void;
+  addToCart: (
+    p: Product,
+    variant?: { id: string; colorName: string; colorHex: string; image?: string | null }
+  ) => void;
   incLine: (id: string, delta: number) => void;
   rmLine: (id: string) => void;
   toggleDiscount: (id: string) => void;
@@ -82,14 +89,27 @@ export const useBackoffice = create<BackofficeState>((set, get) => ({
   toast: null,
   ticket: null,
 
-  addToCart: (p) =>
+  addToCart: (p, variant) =>
     set((s) => {
+      const lineId = variant ? `${p.id}::${variant.id}` : p.id;
       const cart = s.cart.map((l) => ({ ...l }));
-      const ex = cart.find((l) => l.id === p.id);
+      const ex = cart.find((l) => l.id === lineId);
       if (ex) {
         ex.qty += 1;
       } else {
-        cart.push({ id: p.id, name: p.name, variant: p.variant, price: p.price, qty: 1, discount: 0, image: p.image });
+        cart.push({
+          id: lineId,
+          productId: p.id,
+          variantId: variant?.id ?? null,
+          variantName: variant?.colorName ?? null,
+          colorHex: variant?.colorHex ?? null,
+          name: p.name,
+          variant: variant ? `${p.variant} · ${variant.colorName}` : p.variant,
+          price: p.price,
+          qty: 1,
+          discount: 0,
+          image: variant?.image ?? p.image,
+        });
       }
       return { cart };
     }),
