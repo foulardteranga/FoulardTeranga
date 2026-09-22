@@ -18,6 +18,8 @@ export function ProductCard({
   onAdd: () => void;
 }) {
   const soldOut = stock <= 0;
+  const activeVariants = product.variants ? product.variants.filter((v) => v.active) : [];
+  const hasMultipleVariants = activeVariants.length > 1;
 
   return (
     <div style={{ background: "#fff", border: "1px solid rgba(30,27,24,.08)", borderRadius: 14, overflow: "hidden", boxShadow: "0 1px 3px rgba(60,40,20,.08)" }}>
@@ -40,6 +42,27 @@ export function ProductCard({
             }}
           >
             {product.badge}
+          </span>
+        )}
+        {hasMultipleVariants && (
+          <span
+            style={{
+              position: "absolute",
+              bottom: 8,
+              right: 8,
+              font: `600 10.5px ${fonts.ui}`,
+              padding: "3px 7px",
+              borderRadius: 6,
+              background: "rgba(255,255,255,.94)",
+              color: colors.ink,
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              boxShadow: "0 2px 5px rgba(0,0,0,0.12)",
+            }}
+          >
+            <span style={{ width: 6, height: 6, borderRadius: 999, background: product.swatch }} />
+            {activeVariants.length} teintes
           </span>
         )}
         {soldOut && (

@@ -65,7 +65,21 @@ export function CartView() {
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontFamily: fonts.display, fontWeight: 600, fontSize: 16 }}>{line.name}</div>
-                    <div style={{ fontSize: 12.5, color: colors.muted, margin: "3px 0 10px" }}>{line.variant}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, margin: "3px 0 10px" }}>
+                      {line.colorHex && (
+                        <span
+                          style={{
+                            width: 12,
+                            height: 12,
+                            borderRadius: 3,
+                            background: line.colorHex,
+                            border: "1px solid rgba(0,0,0,0.15)",
+                            flex: "none",
+                          }}
+                        />
+                      )}
+                      <span style={{ fontSize: 12.5, color: colors.muted }}>{line.variant}</span>
+                    </div>
                     <QtyStepper qty={line.qty} size="md" onChange={(qty) => incLine(line.key, qty - line.qty)} />
                   </div>
                   <div style={{ textAlign: "right" }}>

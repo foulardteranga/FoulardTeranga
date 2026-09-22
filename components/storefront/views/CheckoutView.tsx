@@ -72,7 +72,13 @@ export function CheckoutView() {
     setSubmitError(null);
     setSending(true);
 
-    const lines = cart.map((l) => ({ productId: l.productId, qty: l.qty }));
+    const lines = cart.map((l) => ({
+      productId: l.productId,
+      variantId: l.variantId ?? null,
+      variantName: l.variantName ?? null,
+      colorHex: l.colorHex ?? null,
+      qty: l.qty,
+    }));
     const response = await submitWebOrder(result.data, lines, {
       promoCode: promoCode.trim() || undefined,
       pointsRequested: Number(pointsReq) || 0,
@@ -183,7 +189,23 @@ export function CheckoutView() {
                 )}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ font: `600 13.5px ${fonts.ui}`, lineHeight: 1.2 }}>{line.name}</div>
-                  <div style={{ fontSize: 11.5, color: colors.muted }}>× {line.qty} · {line.variant}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 3 }}>
+                    {line.colorHex && (
+                      <span
+                        style={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: 2.5,
+                          background: line.colorHex,
+                          border: "1px solid rgba(0,0,0,0.15)",
+                          flex: "none",
+                        }}
+                      />
+                    )}
+                    <span style={{ fontSize: 11.5, color: colors.muted }}>
+                      × {line.qty} · {line.variant}
+                    </span>
+                  </div>
                 </div>
                 <div style={{ font: `700 13.5px ${fonts.ui}`, color: colors.primary }}>{fmt(line.price * line.qty)}</div>
               </div>

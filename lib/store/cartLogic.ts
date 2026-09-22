@@ -1,6 +1,8 @@
 export interface StoreCartLine {
   key: string;
   productId: string;
+  variantId?: string | null;
+  variantName?: string | null;
   name: string;
   variant: string;
   colorHex: string;
@@ -10,7 +12,8 @@ export interface StoreCartLine {
   image?: string;
 }
 
-export function cartKey(productId: string, variant: string): string {
+export function cartKey(productId: string, variant: string, variantId?: string | null): string {
+  if (variantId) return `${productId}|${variantId}`;
   return `${productId}|${variant}`;
 }
 
@@ -18,7 +21,7 @@ export function addLine(
   cart: StoreCartLine[],
   line: Omit<StoreCartLine, "qty" | "key"> & { qty?: number }
 ): StoreCartLine[] {
-  const key = cartKey(line.productId, line.variant);
+  const key = cartKey(line.productId, line.variant, line.variantId);
   const qty = line.qty ?? 1;
   const existing = cart.find((l) => l.key === key);
   if (existing) {

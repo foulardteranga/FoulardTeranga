@@ -8,6 +8,10 @@ describe("cartKey", () => {
   it("combines productId and variant", () => {
     expect(cartKey("p1", "Indigo")).toBe("p1|Indigo");
   });
+
+  it("uses variantId when provided", () => {
+    expect(cartKey("p1", "Indigo", "var-123")).toBe("p1|var-123");
+  });
 });
 
 describe("addLine", () => {
