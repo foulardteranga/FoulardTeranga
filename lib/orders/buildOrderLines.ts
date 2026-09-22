@@ -1,18 +1,31 @@
 export interface WebCartLineInput {
   productId: string;
+  variantId?: string | null;
+  variantName?: string | null;
+  colorHex?: string | null;
   qty: number;
   /** Remise POS de 10% appliquée à cette ligne — absent/false pour une commande web. */
   discounted?: boolean;
+}
+
+export interface VariantLookup {
+  id: string;
+  colorName: string;
+  colorHex: string;
 }
 
 export interface PriceLookup {
   id: string;
   name: string;
   price: number;
+  variants?: VariantLookup[];
 }
 
 export interface OrderLineData {
   productId: string;
+  variantId?: string | null;
+  variantName?: string | null;
+  colorHex?: string | null;
   nameAtOrder: string;
   qty: number;
   unitPrice: number;
@@ -47,9 +60,19 @@ export function buildOrderLines(
     if (!product) {
       return { ok: false, error: `Produit introuvable : ${line.productId}` };
     }
+
+    const matchedVariant =
+      line.variantId && product.variants ? product.variants.find((v) => v.id === line.variantId) : null;
+    const variantId = matchedVariant?.id ?? line.variantId ?? null;
+    const variantName = matchedVariant?.colorName ?? line.variantName ?? null;
+    const colorHex = matchedVariant?.colorHex ?? line.colorHex ?? null;
+
     const discount = line.discounted ? Math.round(product.price * POS_DISCOUNT_RATE) : 0;
     lines.push({
       productId: product.id,
+      variantId,
+      variantName,
+      colorHex,
       nameAtOrder: product.name,
       qty: line.qty,
       unitPrice: product.price,

@@ -8,7 +8,7 @@ import { requireZone, getSession } from "@/lib/auth";
 import { requireWritableSession } from "@/lib/impersonation/guards";
 import { posSaleSchema, type PosSaleInput } from "@/lib/validators/pos";
 import { buildOrderLines } from "@/lib/orders/buildOrderLines";
-import { aggregateQtyByProduct } from "@/lib/orders/stockCheck";
+import { aggregateQtyByProduct, aggregateQtyByVariant } from "@/lib/orders/stockCheck";
 import { applyLoyaltyOrder } from "@/lib/customers/applyLoyaltyOrder";
 import { validatePromo, applyDiscounts } from "@/lib/discounts/engine";
 import { findPromoByCode } from "@/lib/data/promos.server";
@@ -45,10 +45,21 @@ export async function encaisserVente(
     const result = await prisma.$transaction(async (tx) => {
       const products = await tx.product.findMany({
         where: { tenantId: tenant.id, id: { in: parsed.data.lines.map((l) => l.productId) } },
+        include: { variants: true },
       });
       const built = buildOrderLines(parsed.data.lines, products);
       if (!built.ok) throw new Error(built.error);
 
+      // Vérifier le stock par variante (couleur)
+      const variantDemand = aggregateQtyByVariant(built.lines);
+      for (const [variantId, { qty, nameAtOrder, variantName }] of variantDemand) {
+        const variant = await tx.productVariant.findUnique({ where: { id: variantId } });
+        if (!variant || variant.stock < qty) {
+          throw new Error(`Stock insuffisant pour ${nameAtOrder}${variantName ? ` (${variantName})` : ""}.`);
+        }
+      }
+
+      // Vérifier le stock global par produit
       const demand = aggregateQtyByProduct(built.lines);
       for (const [productId, { qty, nameAtOrder }] of demand) {
         const product = products.find((p) => p.id === productId);
@@ -56,6 +67,16 @@ export async function encaisserVente(
           throw new Error(`Stock insuffisant pour ${nameAtOrder}.`);
         }
       }
+
+      // Décrémenter les variantes
+      for (const [variantId, { qty }] of variantDemand) {
+        await tx.productVariant.update({
+          where: { id: variantId },
+          data: { stock: { decrement: qty } },
+        });
+      }
+
+      // Décrémenter les produits et tracer les mouvements
       for (const [productId, { qty }] of demand) {
         await tx.product.update({ where: { id: productId }, data: { stock: { decrement: qty } } });
         await tx.stockMovement.create({
@@ -159,7 +180,7 @@ export async function encaisserVente(
       ticket: {
         shopName: tenant.name,
         lines: result.built.lines.map((l) => ({
-          name: l.nameAtOrder,
+          name: l.variantName ? `${l.nameAtOrder} · ${l.variantName}` : l.nameAtOrder,
           qty: l.qty,
           lineTotal: l.unitPrice * l.qty,
         })),

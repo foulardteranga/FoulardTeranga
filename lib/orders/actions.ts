@@ -9,7 +9,7 @@ import { requireWritableSession } from "@/lib/impersonation/guards";
 import { kycSchema, type KycInput } from "@/lib/validators/kyc";
 import { orderEditSchema, type OrderEditInput } from "@/lib/validators/orderEdit";
 import { buildOrderLines, type WebCartLineInput } from "./buildOrderLines";
-import { aggregateQtyByProduct } from "./stockCheck";
+import { aggregateQtyByProduct, aggregateQtyByVariant } from "./stockCheck";
 import { money } from "@/lib/format";
 import { applyLoyaltyOrder } from "@/lib/customers/applyLoyaltyOrder";
 import { normalizePhone } from "@/lib/customers/normalizePhone";
@@ -55,6 +55,7 @@ export async function submitWebOrder(
     const order = await prisma.$transaction(async (tx) => {
       const products = await tx.product.findMany({
         where: { tenantId: tenant.id, id: { in: cartLines.map((l) => l.productId) } },
+        include: { variants: true },
       });
       const built = buildOrderLines(cartLines, products);
       if (!built.ok) throw new Error(built.error);
@@ -147,10 +148,17 @@ export async function confirmOrder(ref: string): Promise<{ ok: true } | { ok: fa
       if (!order) throw new Error("Commande introuvable.");
       if (order.status !== "nouvelle") return { lowStock: [] as Array<{ name: string; stock: number }> }; // idempotent : déjà traitée
 
-      // Agrégation par produit : une commande peut contenir plusieurs lignes
-      // pour le même produit (variantes/longueurs différentes), donc vérifier
-      // chaque ligne isolément contre le stock courant laisserait passer une
-      // demande dont la somme dépasse le stock réel.
+      // Agrégation par variante (couleur) et par produit :
+      // une commande peut contenir plusieurs lignes pour le même produit
+      // ou la même variante, d'où l'agrégation avant vérification.
+      const variantDemand = aggregateQtyByVariant(order.lines);
+      for (const [variantId, { qty, nameAtOrder, variantName }] of variantDemand) {
+        const variant = await tx.productVariant.findUnique({ where: { id: variantId } });
+        if (!variant || variant.stock < qty) {
+          throw new Error(`Stock insuffisant pour ${nameAtOrder}${variantName ? ` (${variantName})` : ""}.`);
+        }
+      }
+
       const demand = aggregateQtyByProduct(order.lines);
       for (const [productId, { qty, nameAtOrder }] of demand) {
         const product = await tx.product.findUnique({ where: { id: productId } });
@@ -158,6 +166,15 @@ export async function confirmOrder(ref: string): Promise<{ ok: true } | { ok: fa
           throw new Error(`Stock insuffisant pour ${nameAtOrder}.`);
         }
       }
+
+      // Décrémenter le stock spécifique des variantes
+      for (const [variantId, { qty }] of variantDemand) {
+        await tx.productVariant.update({
+          where: { id: variantId },
+          data: { stock: { decrement: qty } },
+        });
+      }
+
       const lowStock: Array<{ name: string; stock: number }> = [];
       for (const [productId, { qty, nameAtOrder }] of demand) {
         const updated = await tx.product.update({
@@ -418,6 +435,17 @@ export async function archiveOrder(
 
         const stockReconciled = STOCK_DEDUCTED_STATUSES.includes(order.status);
         if (stockReconciled) {
+          const variantDemand = aggregateQtyByVariant(order.lines);
+          for (const [variantId, { qty }] of variantDemand) {
+            const variant = await tx.productVariant.findUnique({ where: { id: variantId } });
+            if (variant) {
+              await tx.productVariant.update({
+                where: { id: variantId },
+                data: { stock: { increment: qty } },
+              });
+            }
+          }
+
           const demand = aggregateQtyByProduct(order.lines);
           for (const [productId, { qty }] of demand) {
             await tx.product.update({ where: { id: productId }, data: { stock: { increment: qty } } });
@@ -492,6 +520,14 @@ export async function restoreOrder(ref: string): Promise<{ ok: true } | { ok: fa
         const restoredStatus = order.previousStatus;
         const stockReconciled = STOCK_DEDUCTED_STATUSES.includes(restoredStatus);
         if (stockReconciled) {
+          const variantDemand = aggregateQtyByVariant(order.lines);
+          for (const [variantId, { qty, nameAtOrder, variantName }] of variantDemand) {
+            const variant = await tx.productVariant.findUnique({ where: { id: variantId } });
+            if (!variant || variant.stock < qty) {
+              throw new Error(`Stock insuffisant pour ${nameAtOrder}${variantName ? ` (${variantName})` : ""}.`);
+            }
+          }
+
           const demand = aggregateQtyByProduct(order.lines);
           for (const [productId, { qty, nameAtOrder }] of demand) {
             const product = await tx.product.findUnique({ where: { id: productId } });
@@ -499,6 +535,14 @@ export async function restoreOrder(ref: string): Promise<{ ok: true } | { ok: fa
               throw new Error(`Stock insuffisant pour ${nameAtOrder}.`);
             }
           }
+
+          for (const [variantId, { qty }] of variantDemand) {
+            await tx.productVariant.update({
+              where: { id: variantId },
+              data: { stock: { decrement: qty } },
+            });
+          }
+
           for (const [productId, { qty }] of demand) {
             await tx.product.update({ where: { id: productId }, data: { stock: { decrement: qty } } });
             await tx.stockMovement.create({

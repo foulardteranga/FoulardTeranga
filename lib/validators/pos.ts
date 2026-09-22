@@ -3,6 +3,9 @@ import { POS_PAYMENT_METHODS } from "@/lib/payments/labels";
 
 export const posSaleLineSchema = z.object({
   productId: z.string().min(1),
+  variantId: z.string().optional().nullable(),
+  variantName: z.string().optional().nullable(),
+  colorHex: z.string().optional().nullable(),
   qty: z.coerce.number().int().positive(),
   discounted: z.boolean().default(false),
 });

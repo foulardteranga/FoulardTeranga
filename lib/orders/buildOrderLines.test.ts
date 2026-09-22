@@ -15,8 +15,28 @@ describe("buildOrderLines", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.lines).toEqual([
-      { productId: "p1", nameAtOrder: "Foulard Wax Abidjan", qty: 2, unitPrice: 12500, discount: 0, lineTotal: 25000 },
-      { productId: "p9", nameAtOrder: "Broche dorée", qty: 1, unitPrice: 4500, discount: 0, lineTotal: 4500 },
+      {
+        productId: "p1",
+        variantId: null,
+        variantName: null,
+        colorHex: null,
+        nameAtOrder: "Foulard Wax Abidjan",
+        qty: 2,
+        unitPrice: 12500,
+        discount: 0,
+        lineTotal: 25000,
+      },
+      {
+        productId: "p9",
+        variantId: null,
+        variantName: null,
+        colorHex: null,
+        nameAtOrder: "Broche dorée",
+        qty: 1,
+        unitPrice: 4500,
+        discount: 0,
+        lineTotal: 4500,
+      },
     ]);
     expect(result.total).toBe(29500);
   });
@@ -27,7 +47,17 @@ describe("buildOrderLines", () => {
     if (!result.ok) return;
     // 12500 * 0.1 = 1250 discount per unit → (12500 - 1250) * 2 = 22500
     expect(result.lines).toEqual([
-      { productId: "p1", nameAtOrder: "Foulard Wax Abidjan", qty: 2, unitPrice: 12500, discount: 1250, lineTotal: 22500 },
+      {
+        productId: "p1",
+        variantId: null,
+        variantName: null,
+        colorHex: null,
+        nameAtOrder: "Foulard Wax Abidjan",
+        qty: 2,
+        unitPrice: 12500,
+        discount: 1250,
+        lineTotal: 22500,
+      },
     ]);
     expect(result.total).toBe(22500);
   });
@@ -54,5 +84,37 @@ describe("buildOrderLines", () => {
   it("fails cleanly on an empty cart", () => {
     const result = buildOrderLines([], PRODUCTS);
     expect(result.ok).toBe(false);
+  });
+
+  it("propagates variant info matching server lookup", () => {
+    const productsWithVariants = [
+      {
+        id: "p1",
+        name: "Foulard Satin",
+        price: 15000,
+        variants: [
+          { id: "v-bordeaux", colorName: "Bordeaux", colorHex: "#6B1D2F" },
+          { id: "v-bleu", colorName: "Bleu nuit", colorHex: "#0D1B2A" },
+        ],
+      },
+    ];
+
+    const result = buildOrderLines(
+      [{ productId: "p1", variantId: "v-bordeaux", qty: 2 }],
+      productsWithVariants
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.lines[0]).toEqual({
+      productId: "p1",
+      variantId: "v-bordeaux",
+      variantName: "Bordeaux",
+      colorHex: "#6B1D2F",
+      nameAtOrder: "Foulard Satin",
+      qty: 2,
+      unitPrice: 15000,
+      discount: 0,
+      lineTotal: 30000,
+    });
   });
 });
