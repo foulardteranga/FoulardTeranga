@@ -135,6 +135,7 @@ model Tenant {
   stockMovements    StockMovement[]
   orderStatusEvents OrderStatusEvent[]
   employeeRoles     EmployeeRole[]
+  customColors      TenantCustomColor[]
 }
 
 model Profile {
@@ -195,6 +196,7 @@ model Product {
   tenant         Tenant          @relation(fields: [tenantId], references: [id])
   orderLines     OrderLine[]
   stockMovements StockMovement[]
+  variants       ProductVariant[]
 
   @@index([tenantId])
 }
@@ -305,17 +307,20 @@ model StockMovement {
   id        String              @id @default(cuid())
   tenantId  String
   productId String
+  variantId String?
   authorId  String              @db.Uuid
   delta     Int
   reason    StockMovementReason
   note      String?
   createdAt DateTime            @default(now())
 
-  tenant  Tenant  @relation(fields: [tenantId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
-  author  Profile @relation(fields: [authorId], references: [id])
+  tenant  Tenant          @relation(fields: [tenantId], references: [id])
+  product Product         @relation(fields: [productId], references: [id])
+  variant ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  author  Profile         @relation(fields: [authorId], references: [id])
 
   @@index([tenantId, productId, createdAt])
+  @@index([variantId])
 }
 
 /** Journal append-only des changements de statut d'une commande (miroir de StockMovement). */
@@ -335,20 +340,25 @@ model OrderStatusEvent {
 }
 
 model OrderLine {
-  id          String @id @default(cuid())
+  id          String  @id @default(cuid())
   orderId     String
   productId   String
+  variantId   String?
+  variantName String?
+  colorHex    String?
   nameAtOrder String
   qty         Int
   unitPrice   Int
-  discount    Int    @default(0)
+  discount    Int     @default(0)
   lineTotal   Int
 
-  order   Order   @relation(fields: [orderId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
+  order   Order           @relation(fields: [orderId], references: [id])
+  product Product         @relation(fields: [productId], references: [id])
+  variant ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
 
   @@index([orderId])
   @@index([productId])
+  @@index([variantId])
 }
 
 /// Journal des actions du prestataire. Volontairement sans clé étrangère vers
@@ -385,4 +395,40 @@ model OrderAuditLog {
 
   @@index([tenantId, createdAt])
   @@index([orderRef])
+}
+
+model ProductVariant {
+  id         String   @id @default(cuid())
+  productId  String
+  colorName  String
+  colorHex   String
+  stock      Int      @default(0)
+  sku        String?
+  image      String?
+  active     Boolean  @default(true)
+  position   Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  product        Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderLines     OrderLine[]
+  stockMovements StockMovement[]
+
+  @@index([productId])
+  @@index([active])
+}
+
+model TenantCustomColor {
+  id         String   @id @default(cuid())
+  tenantId   String
+  name       String
+  hex        String
+  family     String?
+  isFavorite Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
 }
