@@ -79,3 +79,38 @@ describe("productImagesSchema", () => {
     expect(productImagesSchema.safeParse({ image: null, gallery: [outsideBucket] }).success).toBe(false);
   });
 });
+
+describe("productVariantInputSchema", () => {
+  it("valide une variante avec les champs requis", () => {
+    const variant = {
+      colorName: "Bordeaux",
+      colorHex: "#6B1D2F",
+      stock: 12,
+    };
+    const parsed = productSchema.parse({
+      ...BASE,
+      variants: [variant],
+    });
+    expect(parsed.variants).toHaveLength(1);
+    expect(parsed.variants[0].colorName).toBe("Bordeaux");
+    expect(parsed.variants[0].colorHex).toBe("#6B1D2F");
+    expect(parsed.variants[0].stock).toBe(12);
+    expect(parsed.variants[0].active).toBe(true);
+  });
+
+  it("rejette un code HEX invalide", () => {
+    const res = productSchema.safeParse({
+      ...BASE,
+      variants: [{ colorName: "Bleu", colorHex: "bleu-ciel", stock: 5 }],
+    });
+    expect(res.success).toBe(false);
+  });
+
+  it("rejette un stock négatif", () => {
+    const res = productSchema.safeParse({
+      ...BASE,
+      variants: [{ colorName: "Bleu", colorHex: "#123456", stock: -1 }],
+    });
+    expect(res.success).toBe(false);
+  });
+});

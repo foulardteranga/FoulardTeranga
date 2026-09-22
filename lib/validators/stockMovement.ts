@@ -5,6 +5,7 @@ export const MANUAL_STOCK_REASONS = ["reception", "perte", "correction"] as cons
 
 export const stockAdjustmentSchema = z.object({
   productId: z.string().min(1),
+  variantId: z.string().optional(),
   delta: z.coerce
     .number()
     .int()

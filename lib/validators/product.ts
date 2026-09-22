@@ -11,6 +11,18 @@ function isAllowedProductImageUrl(url: string): boolean {
 
 const productImageUrl = z.url().refine(isAllowedProductImageUrl, "URL d'image non autorisée.");
 
+export const productVariantInputSchema = z.object({
+  id: z.string().optional(),
+  colorName: z.string().trim().min(1, "Nom de couleur requis."),
+  colorHex: z.string().trim().regex(/^#[0-9a-fA-F]{6}$/, "Couleur HEX invalide."),
+  stock: z.coerce.number().int().min(0, "Stock invalide."),
+  sku: z.string().trim().optional().nullable(),
+  image: productImageUrl.optional().nullable(),
+  active: z.boolean().default(true),
+  position: z.coerce.number().int().default(0),
+});
+export type ProductVariantInput = z.infer<typeof productVariantInputSchema>;
+
 export const productSchema = z.object({
   category: z.enum(PRODUCT_CATEGORIES),
   name: z.string().trim().min(2, "Nom du produit requis."),
@@ -23,6 +35,7 @@ export const productSchema = z.object({
   gallery: z.array(productImageUrl).default([]),
   lengths: z.string().trim().default(""),
   description: z.string().trim().default(""),
+  variants: z.array(productVariantInputSchema).default([]),
 });
 
 export type ProductInput = z.infer<typeof productSchema>;
