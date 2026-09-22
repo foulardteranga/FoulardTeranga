@@ -6,11 +6,12 @@ import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { money } from "@/lib/format";
 import { useBackoffice } from "@/lib/store/useBackoffice";
-import { createProduct, updateProductImages, adjustStock, getProductStockMovements } from "@/lib/inventory/actions";
+import { createProduct, updateProductImages, updateProductVariants, adjustStock, getProductStockMovements } from "@/lib/inventory/actions";
 import type { StockMovementView } from "@/lib/data/stockMovements.server";
 import { PRODUCT_CATEGORIES } from "@/lib/validators/product";
 import { MANUAL_STOCK_REASONS } from "@/lib/validators/stockMovement";
 import { ProductPhotosField } from "@/components/dashboard/ProductPhotosField";
+import { ProductVariantsField, type ProductVariantItem } from "@/components/dashboard/ProductVariantsField";
 import { NumericField } from "@/components/ui/NumericField";
 import type { Product } from "@/lib/data/types";
 import { LOW_STOCK_THRESHOLD } from "@/lib/inventory/lowStockThreshold";
@@ -134,7 +135,34 @@ export function InventoryScreen({ products }: { products: Product[] }) {
                         </div>
                       </div>
                     </td>
-                    <td style={{ padding: 10, color: colors.muted }}>{p.variant}</td>
+                    <td style={{ padding: 10, color: colors.muted }}>
+                      <div style={{ fontWeight: 500, color: colors.ink }}>{p.variant}</div>
+                      {p.variants && p.variants.length > 0 && (
+                        <div style={{ display: "flex", gap: 4, alignItems: "center", marginTop: 4 }}>
+                          {p.variants.slice(0, 5).map((v) => (
+                            <span
+                              key={v.id || v.colorHex}
+                              title={`${v.colorName} (${v.stock} en stock)`}
+                              style={{
+                                width: 13,
+                                height: 13,
+                                borderRadius: 3,
+                                background: v.colorHex,
+                                border: "1px solid rgba(0,0,0,0.15)",
+                                display: "inline-block",
+                                opacity: v.stock === 0 ? 0.35 : 1,
+                              }}
+                            />
+                          ))}
+                          {p.variants.length > 5 && (
+                            <span style={{ fontSize: 10, color: colors.muted }}>+{p.variants.length - 5}</span>
+                          )}
+                          <span style={{ fontSize: 11, color: colors.muted, marginLeft: 2 }}>
+                            ({p.variants.length} teinte{p.variants.length > 1 ? "s" : ""})
+                          </span>
+                        </div>
+                      )}
+                    </td>
                     <StockCell value={p.stock} dot={lvlDot(p.stock, LOW_STOCK_THRESHOLD)} />
                     <td style={{ padding: 10, textAlign: "right", fontWeight: 600 }}>{money(p.price)}</td>
                     <td style={{ padding: "10px 16px", textAlign: "right" }}>
@@ -301,26 +329,35 @@ const EMPTY_PRODUCT_FORM: NewProductForm = {
 
 function NewProductDrawer({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const [form, setForm] = useState<NewProductForm>(EMPTY_PRODUCT_FORM);
+  const [variants, setVariants] = useState<ProductVariantItem[]>([
+    { colorName: "Bordeaux", colorHex: "#6B1D2F", stock: 10, active: true, position: 0 },
+  ]);
   const [saving, setSaving] = useState(false);
   const showToast = useBackoffice((s) => s.showToast);
   const set = <K extends keyof NewProductForm>(k: K, v: NewProductForm[K]) =>
     setForm((s) => ({ ...s, [k]: v }));
+
+  const totalVariantStock = variants
+    .filter((v) => v.active)
+    .reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
 
   async function submit() {
     setSaving(true);
     const result = await createProduct({
       ...form,
       price: Number(form.price),
-      stock: Number(form.stock),
+      stock: totalVariantStock,
+      swatch: variants[0]?.colorHex ?? form.swatch,
       image: form.image || undefined,
       gallery: form.gallery,
+      variants,
     });
     setSaving(false);
     if (!result.ok) {
       showToast(result.error, "error");
       return;
     }
-    showToast("Produit ajouté", "success");
+    showToast("Produit ajouté avec ses variantes", "success");
     onCreated();
   }
 
@@ -336,7 +373,7 @@ function NewProductDrawer({ onClose, onCreated }: { onClose: () => void; onCreat
           bottom: 0,
           zIndex: 51,
           maxWidth: "100vw",
-          width: 420,
+          width: 440,
           background: "#fff",
           boxShadow: "-8px 0 32px rgba(60,40,20,.18)",
           display: "flex",
@@ -379,8 +416,8 @@ function NewProductDrawer({ onClose, onCreated }: { onClose: () => void; onCreat
           </FormField>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <FormField label="Variante">
-              <input value={form.variant} onChange={(e) => set("variant", e.target.value)} style={textField} placeholder="Coton · Bleu nuit" />
+            <FormField label="Variante (modèle)">
+              <input value={form.variant} onChange={(e) => set("variant", e.target.value)} style={textField} placeholder="Coton · Élégance" />
             </FormField>
             <FormField label="Motif">
               <input value={form.motif} onChange={(e) => set("motif", e.target.value)} style={textField} placeholder="Wax, Uni…" />
@@ -391,8 +428,23 @@ function NewProductDrawer({ onClose, onCreated }: { onClose: () => void; onCreat
             <FormField label="Prix (FCFA)">
               <NumericField mode="money" value={form.price} onChange={(v) => set("price", v)} placeholder="15000" min={0} />
             </FormField>
-            <FormField label="Stock initial">
-              <NumericField mode="integer" value={form.stock} onChange={(v) => set("stock", v)} placeholder="10" min={0} />
+            <FormField label="Stock consolidé">
+              <div
+                style={{
+                  height: 42,
+                  display: "flex",
+                  alignItems: "center",
+                  padding: "0 13px",
+                  background: colors.ivory,
+                  borderRadius: 10,
+                  border: `1.5px solid ${colors.borderField}`,
+                  fontWeight: 600,
+                  fontSize: 14,
+                  color: colors.primary,
+                }}
+              >
+                {totalVariantStock} unité{totalVariantStock > 1 ? "s" : ""}
+              </div>
             </FormField>
           </div>
 
@@ -400,17 +452,11 @@ function NewProductDrawer({ onClose, onCreated }: { onClose: () => void; onCreat
             <input value={form.lengths} onChange={(e) => set("lengths", e.target.value)} style={textField} placeholder="Taille unique" />
           </FormField>
 
-          <FormField label="Couleur">
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {SWATCH_PALETTE.map((h) => (
-                <button
-                  key={h}
-                  onClick={() => set("swatch", h)}
-                  aria-label={h}
-                  style={{ width: 34, height: 34, borderRadius: 9, cursor: "pointer", background: h, border: `3px solid ${form.swatch === h ? colors.ink : "transparent"}` }}
-                />
-              ))}
-            </div>
+          <FormField label="Couleurs & Variantes">
+            <ProductVariantsField
+              variants={variants}
+              onChange={setVariants}
+            />
           </FormField>
 
           <FormField label="Description">
@@ -433,7 +479,7 @@ function NewProductDrawer({ onClose, onCreated }: { onClose: () => void; onCreat
           </button>
           <button
             onClick={submit}
-            disabled={saving || !form.name || !form.variant || !form.motif || !form.price || !form.stock}
+            disabled={saving || !form.name || !form.variant || !form.motif || !form.price || variants.length === 0}
             style={{ flex: 2, height: 46, border: "none", borderRadius: 10, background: colors.primary, color: "#fff", font: `600 14px ${fonts.ui}`, cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1 }}
           >
             {saving ? "Création…" : "Créer le produit"}
@@ -469,6 +515,46 @@ function EditDrawer({ product: p, onClose }: { product: Product; onClose: () => 
   const [savingPhotos, setSavingPhotos] = useState(false);
   const photosDirty = photos.image !== (p.image ?? "") || photos.gallery.join("|") !== p.gallery.join("|");
 
+  const initialVariants: ProductVariantItem[] = useMemo(() => {
+    if (p.variants && p.variants.length > 0) {
+      return p.variants.map((v) => ({
+        id: v.id,
+        colorName: v.colorName,
+        colorHex: v.colorHex,
+        stock: v.stock,
+        active: v.active,
+        sku: v.sku,
+        image: v.image,
+        position: v.position,
+      }));
+    }
+    return [
+      {
+        colorName: p.variant || "Couleur unique",
+        colorHex: p.swatch,
+        stock: p.stock,
+        active: true,
+        position: 0,
+      },
+    ];
+  }, [p]);
+
+  const [variants, setVariants] = useState<ProductVariantItem[]>(initialVariants);
+  const [savingVariants, setSavingVariants] = useState(false);
+  const variantsDirty = JSON.stringify(variants) !== JSON.stringify(initialVariants);
+
+  async function saveVariants() {
+    setSavingVariants(true);
+    const res = await updateProductVariants(p.id, variants);
+    setSavingVariants(false);
+    if (!res.ok) {
+      showToast(res.error, "error");
+      return;
+    }
+    showToast("Variantes enregistrées", "success");
+    router.refresh();
+  }
+
   const [movements, setMovements] = useState<StockMovementView[]>([]);
   const [movementsVersion, setMovementsVersion] = useState(0);
 
@@ -483,6 +569,7 @@ function EditDrawer({ product: p, onClose }: { product: Product; onClose: () => 
   }, [p.id, movementsVersion]);
 
   const [adjusting, setAdjusting] = useState(false);
+  const [adjustVariantId, setAdjustVariantId] = useState("");
   const [adjustReason, setAdjustReason] = useState<(typeof MANUAL_STOCK_REASONS)[number]>("reception");
   const [adjustSign, setAdjustSign] = useState<"+" | "-">("+");
   const [adjustQty, setAdjustQty] = useState("1");
@@ -497,6 +584,7 @@ function EditDrawer({ product: p, onClose }: { product: Product; onClose: () => 
     const delta = adjustSign === "+" ? magnitude : -magnitude;
     const res = await adjustStock({
       productId: p.id,
+      variantId: adjustVariantId || undefined,
       delta,
       reason: adjustReason,
       note: adjustNote.trim() || undefined,
@@ -583,14 +671,41 @@ function EditDrawer({ product: p, onClose }: { product: Product; onClose: () => 
             )}
           </div>
 
-          <div style={sectionLabel}>Stock</div>
+          <div style={sectionLabel}>Couleurs & Variantes</div>
+          <div style={{ marginBottom: 22 }}>
+            <ProductVariantsField variants={variants} onChange={setVariants} />
+            {variantsDirty && (
+              <button
+                type="button"
+                onClick={saveVariants}
+                disabled={savingVariants}
+                className="ft-primary-btn"
+                style={{
+                  marginTop: 10,
+                  height: 40,
+                  padding: "0 16px",
+                  border: "none",
+                  borderRadius: 9,
+                  background: colors.primary,
+                  color: "#fff",
+                  font: `600 13px ${fonts.ui}`,
+                  cursor: savingVariants ? "default" : "pointer",
+                  opacity: savingVariants ? 0.7 : 1,
+                }}
+              >
+                {savingVariants ? "Enregistrement…" : "Enregistrer les variantes"}
+              </button>
+            )}
+          </div>
+
+          <div style={sectionLabel}>Stock consolidé</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 22 }}>
             <div
               style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", border: `1px solid ${colors.borderSoft}`, borderRadius: 12 }}
             >
               <span style={{ width: 9, height: 9, borderRadius: 999, background: lvlDot(p.stock, LOW_STOCK_THRESHOLD), flex: "none" }} />
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 13.5 }}>Stock actuel</div>
+                <div style={{ fontWeight: 600, fontSize: 13.5 }}>Stock total</div>
                 <div style={{ fontSize: 11.5, color: colors.muted }}>Seuil d&apos;alerte {LOW_STOCK_THRESHOLD}</div>
               </div>
               <span style={{ fontFamily: fonts.display, fontWeight: 700, fontSize: 22, color: lvlDot(p.stock, LOW_STOCK_THRESHOLD) }}>{p.stock}</span>
@@ -625,6 +740,22 @@ function EditDrawer({ product: p, onClose }: { product: Product; onClose: () => 
 
           {adjusting && (
             <div style={{ border: `1px solid ${colors.borderSoft}`, borderRadius: 12, padding: 14, marginBottom: 16 }}>
+              {variants.length > 0 && (
+                <FormField label="Variante ciblée">
+                  <select
+                    value={adjustVariantId}
+                    onChange={(e) => setAdjustVariantId(e.target.value)}
+                    style={textField}
+                  >
+                    <option value="">Ajustement global (produit entier)</option>
+                    {variants.map((v) => (
+                      <option key={v.id || v.colorHex} value={v.id ?? ""}>
+                        {v.colorName} ({v.colorHex}) — Stock : {v.stock}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+              )}
               <FormField label="Raison">
                 <select
                   value={adjustReason}

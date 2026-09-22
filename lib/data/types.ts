@@ -27,6 +27,20 @@ export interface Product {
   image?: string;
   /** Photos secondaires affichées dans la galerie de la fiche produit. */
   gallery: string[];
+  /** Variantes de couleurs et stocks unitaires associés. */
+  variants?: ProductVariantData[];
+}
+
+export interface ProductVariantData {
+  id: string;
+  productId: string;
+  colorName: string;
+  colorHex: string;
+  stock: number;
+  sku?: string | null;
+  image?: string | null;
+  active: boolean;
+  position: number;
 }
 
 export type CustomerSegment = "VIP" | "Fidèle" | "Nouvelle";

@@ -90,6 +90,8 @@ const EXEMPT: Record<string, string[]> = {
   "discounts/actions.ts": ["previewPosDiscount"],
   // lecture pure côté vitrine, aucune écriture (cf. discounts/actions.ts:previewPosDiscount, même nature)
   "discounts/webActions.ts": ["previewWebDiscount"],
+  // lecture pure des teintes personnalisées et favorites de la boutique
+  "colors/actions.ts": ["getTenantColors"],
   "impersonation/actions.ts": ["startImpersonation", "unlockImpersonationWrite", "endImpersonation"],
 };
 
