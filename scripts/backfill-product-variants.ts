@@ -1,5 +1,5 @@
 import { prisma } from "../lib/db/client";
-import { buildDefaultVariantsForProduct } from "../lib/inventory/variantsMigration.test";
+import { buildDefaultVariantsForProduct } from "../lib/inventory/variantsMigration";
 
 /**
  * Script de migration des données existantes :
