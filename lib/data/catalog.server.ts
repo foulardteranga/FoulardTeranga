@@ -26,6 +26,8 @@ export function toProduct(row: PrismaProductWithVariants): Product {
     featured: row.featured,
     image: row.image ?? undefined,
     gallery: row.gallery,
+    active: row.active ?? true,
+    archivedAt: row.archivedAt ? row.archivedAt.toISOString() : null,
     variants: row.variants
       ? row.variants.map((v) => ({
           id: v.id,
@@ -43,26 +45,41 @@ export function toProduct(row: PrismaProductWithVariants): Product {
 }
 
 /**
- * Lit tout le catalogue depuis Postgres. `tenantId` explicite pour les appelants
- * hors requête HTTP (ex. `generateStaticParams`, exécuté au build — `headers()`
- * n'y est pas disponible) ; sinon résolu depuis la requête courante via `proxy.ts`.
+ * Lit le catalogue depuis Postgres.
+ * Par défaut, filtre sur les produits actifs (active: true).
+ * Passer `{ includeArchived: true }` pour l'inventaire back-office.
  */
-export async function getCatalog(tenantId?: string): Promise<Product[]> {
+export async function getCatalog(
+  tenantId?: string,
+  options?: { includeArchived?: boolean }
+): Promise<Product[]> {
   const id = tenantId ?? (await getCurrentTenant()).id;
+  const where: { tenantId: string; active?: boolean } = { tenantId: id };
+  if (!options?.includeArchived) {
+    where.active = true;
+  }
   const rows = await prisma.product.findMany({
-    where: { tenantId: id },
+    where,
     include: { variants: { orderBy: { position: "asc" } } },
     orderBy: { createdAt: "asc" },
   });
   return rows.map(toProduct);
 }
 
-/** Lit un seul produit par id, scopé au tenant courant. `null` si absent. */
-export async function getProductById(id: string): Promise<Product | null> {
-  const tenant = await getCurrentTenant();
+/** Lit un seul produit par id, scopé au tenant courant. `null` si absent ou archivé (sauf si includeArchived: true). */
+export async function getProductById(
+  id: string,
+  options?: { includeArchived?: boolean; tenantId?: string }
+): Promise<Product | null> {
+  const tenantId = options?.tenantId ?? (await getCurrentTenant()).id;
+  const where: { id: string; tenantId: string; active?: boolean } = { id, tenantId };
+  if (!options?.includeArchived) {
+    where.active = true;
+  }
   const row = await prisma.product.findFirst({
-    where: { id, tenantId: tenant.id },
+    where,
     include: { variants: { orderBy: { position: "asc" } } },
   });
   return row ? toProduct(row) : null;
 }
+

@@ -13,14 +13,19 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: process.cwd(),
   },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "15mb",
+    },
+  },
   images: {
+    contentDispositionType: "inline",
     remotePatterns: [
       {
         protocol: "https",
         hostname: supabaseHostname,
         port: "",
         pathname: "/storage/v1/object/public/storefront-images/**",
-        search: "",
       },
     ],
   },

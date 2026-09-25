@@ -6,7 +6,17 @@ import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { money } from "@/lib/format";
 import { useBackoffice } from "@/lib/store/useBackoffice";
-import { createProduct, updateProductImages, updateProductVariants, adjustStock, getProductStockMovements } from "@/lib/inventory/actions";
+import {
+  createProduct,
+  updateProductImages,
+  updateProductVariants,
+  adjustStock,
+  getProductStockMovements,
+  archiveProduct,
+  restoreProduct,
+  deleteProduct,
+  deleteProductImage,
+} from "@/lib/inventory/actions";
 import type { StockMovementView } from "@/lib/data/stockMovements.server";
 import { PRODUCT_CATEGORIES } from "@/lib/validators/product";
 import { MANUAL_STOCK_REASONS } from "@/lib/validators/stockMovement";
@@ -26,18 +36,31 @@ const PAGE_SIZE = 8;
 
 export function InventoryScreen({ products }: { products: Product[] }) {
   const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "archived">("all");
   const [drawerId, setDrawerId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const router = useRouter();
+  const showToast = useBackoffice((s) => s.showToast);
+
+  const totalCount = products.length;
+  const activeCount = useMemo(() => products.filter((p) => p.active !== false).length, [products]);
+  const archivedCount = useMemo(() => products.filter((p) => p.active === false).length, [products]);
 
   const q = query.trim().toLowerCase();
   const filtered = useMemo(
     () =>
-      products.filter(
-        (p) => !q || p.name.toLowerCase().includes(q) || p.id.toLowerCase().includes(q)
-      ),
-    [products, q]
+      products.filter((p) => {
+        const matchesQuery = !q || p.name.toLowerCase().includes(q) || p.id.toLowerCase().includes(q);
+        if (!matchesQuery) return false;
+        const isActive = p.active !== false;
+        if (statusFilter === "active") return isActive;
+        if (statusFilter === "archived") return !isActive;
+        return true;
+      }),
+    [products, q, statusFilter]
   );
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -46,10 +69,34 @@ export function InventoryScreen({ products }: { products: Product[] }) {
 
   const drawerProduct = drawerId ? products.find((p) => p.id === drawerId) ?? null : null;
 
+  async function handleToggleActive(p: Product, e: React.MouseEvent) {
+    e.stopPropagation();
+    setTogglingId(p.id);
+    const isActive = p.active !== false;
+    if (isActive) {
+      const res = await archiveProduct(p.id);
+      setTogglingId(null);
+      if (!res.ok) {
+        showToast(res.error, "error");
+        return;
+      }
+      showToast(`« ${p.name} » a été désactivé et masqué de la vitrine.`, "success");
+    } else {
+      const res = await restoreProduct(p.id);
+      setTogglingId(null);
+      if (!res.ok) {
+        showToast(res.error, "error");
+        return;
+      }
+      showToast(`« ${p.name} » a été réactivé sur la vitrine.`, "success");
+    }
+    router.refresh();
+  }
+
   return (
     <div className="ft-pad">
       {/* toolbar */}
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 16 }}>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 14 }}>
         <div
           style={{
             flex: 1,
@@ -99,10 +146,58 @@ export function InventoryScreen({ products }: { products: Product[] }) {
         </button>
       </div>
 
+      {/* tabs de statut */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 14, overflowX: "auto" }}>
+        {[
+          { key: "all", label: "Tous", count: totalCount },
+          { key: "active", label: "Actifs", count: activeCount },
+          { key: "archived", label: "Archivés", count: archivedCount },
+        ].map((tab) => {
+          const on = statusFilter === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => {
+                setStatusFilter(tab.key as "all" | "active" | "archived");
+                setPage(1);
+              }}
+              style={{
+                height: 36,
+                padding: "0 13px",
+                borderRadius: 10,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                border: `1.5px solid ${on ? colors.primary : colors.borderField}`,
+                background: on ? colors.primary : "#fff",
+                color: on ? "#fff" : colors.muted,
+                font: `600 12.5px ${fonts.ui}`,
+                display: "flex",
+                alignItems: "center",
+                gap: 7,
+                transition: "all .15s ease",
+              }}
+            >
+              {tab.label}
+              <span
+                style={{
+                  fontSize: 11,
+                  background: on ? "rgba(255,255,255,.22)" : "#F1ECE2",
+                  color: on ? "#fff" : colors.muted,
+                  padding: "1px 7px",
+                  borderRadius: 999,
+                }}
+              >
+                {tab.count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* table */}
       <div style={{ background: "#fff", border: "1px solid rgba(30,27,24,.08)", borderRadius: 14, overflow: "hidden" }}>
         <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 760 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 820 }}>
             <thead>
               <tr style={{ background: colors.ivory, color: colors.muted, textAlign: "left" }}>
                 <th style={th("16px")}>Produit</th>
@@ -113,67 +208,180 @@ export function InventoryScreen({ products }: { products: Product[] }) {
               </tr>
             </thead>
             <tbody>
-              {rows.map((p, i) => {
-                return (
-                  <tr
-                    key={p.id}
-                    onClick={() => setDrawerId(p.id)}
-                    className="ft-hover-row"
-                    style={{ borderTop: "1px solid #EFEAE0", background: i % 2 ? colors.rowAlt : "#fff", cursor: "pointer" }}
-                  >
-                    <td style={{ padding: "10px 16px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        {p.image ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={p.image} alt="" style={{ width: 34, height: 34, borderRadius: 8, flex: "none", objectFit: "cover" }} />
-                        ) : (
-                          <span style={{ width: 34, height: 34, borderRadius: 8, flex: "none", background: p.swatch }} />
-                        )}
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: 13 }}>{p.name}</div>
-                          <div style={{ fontSize: 11, color: "#9a8f7d" }}>REF-{p.id.toUpperCase()}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td style={{ padding: 10, color: colors.muted }}>
-                      <div style={{ fontWeight: 500, color: colors.ink }}>{p.variant}</div>
-                      {p.variants && p.variants.length > 0 && (
-                        <div style={{ display: "flex", gap: 4, alignItems: "center", marginTop: 4 }}>
-                          {p.variants.slice(0, 5).map((v) => (
-                            <span
-                              key={v.id || v.colorHex}
-                              title={`${v.colorName} (${v.stock} en stock)`}
-                              style={{
-                                width: 13,
-                                height: 13,
-                                borderRadius: 3,
-                                background: v.colorHex,
-                                border: "1px solid rgba(0,0,0,0.15)",
-                                display: "inline-block",
-                                opacity: v.stock === 0 ? 0.35 : 1,
-                              }}
-                            />
-                          ))}
-                          {p.variants.length > 5 && (
-                            <span style={{ fontSize: 10, color: colors.muted }}>+{p.variants.length - 5}</span>
+              {rows.length === 0 ? (
+                <tr>
+                  <td colSpan={5} style={{ padding: "48px 16px", textAlign: "center", color: colors.muted }}>
+                    <div style={{ fontSize: 14, fontWeight: 500 }}>Aucun produit trouvé</div>
+                    <div style={{ fontSize: 12, marginTop: 4 }}>
+                      {q ? "Aucun produit ne correspond à votre recherche." : "Aucun produit dans cet état."}
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                rows.map((p, i) => {
+                  const isArchived = p.active === false;
+                  return (
+                    <tr
+                      key={p.id}
+                      onClick={() => setDrawerId(p.id)}
+                      className="ft-hover-row"
+                      style={{
+                        borderTop: "1px solid #EFEAE0",
+                        background: i % 2 ? colors.rowAlt : "#fff",
+                        cursor: "pointer",
+                        opacity: isArchived ? 0.8 : 1,
+                      }}
+                    >
+                      <td style={{ padding: "10px 16px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          {p.image ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={p.image} alt="" style={{ width: 34, height: 34, borderRadius: 8, flex: "none", objectFit: "cover" }} />
+                          ) : (
+                            <span style={{ width: 34, height: 34, borderRadius: 8, flex: "none", background: p.swatch }} />
                           )}
-                          <span style={{ fontSize: 11, color: colors.muted, marginLeft: 2 }}>
-                            ({p.variants.length} teinte{p.variants.length > 1 ? "s" : ""})
-                          </span>
+                          <div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
+                              <span style={{ fontWeight: 600, fontSize: 13 }}>{p.name}</span>
+                              {isArchived ? (
+                                <span
+                                  style={{
+                                    fontSize: 10.5,
+                                    fontWeight: 600,
+                                    padding: "1px 6px",
+                                    borderRadius: 6,
+                                    background: "#F1ECE2",
+                                    color: colors.muted,
+                                    border: `1px solid ${colors.borderSoft}`,
+                                  }}
+                                >
+                                  Archivé
+                                </span>
+                              ) : (
+                                <span
+                                  style={{
+                                    fontSize: 10.5,
+                                    fontWeight: 600,
+                                    padding: "1px 6px",
+                                    borderRadius: 6,
+                                    background: colors.bgSuccess,
+                                    color: colors.fgSuccess,
+                                    border: "1px solid rgba(46,125,50,.18)",
+                                  }}
+                                >
+                                  Actif
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: 11, color: "#9a8f7d", marginTop: 2 }}>REF-{p.id.toUpperCase()}</div>
+                          </div>
                         </div>
-                      )}
-                    </td>
-                    <StockCell value={p.stock} dot={lvlDot(p.stock, LOW_STOCK_THRESHOLD)} />
-                    <td style={{ padding: 10, textAlign: "right", fontWeight: 600 }}>{money(p.price)}</td>
-                    <td style={{ padding: "10px 16px", textAlign: "right" }}>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, font: `600 12px ${fonts.ui}`, color: colors.primary }}>
-                        Mouvement
-                        <Icon path={ICONS.chevronRight} size={14} stroke="currentColor" strokeWidth={2} />
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
+                      </td>
+                      <td style={{ padding: 10, color: colors.muted }}>
+                        <div style={{ fontWeight: 500, color: colors.ink }}>{p.variant}</div>
+                        {p.variants && p.variants.length > 0 && (
+                          <div style={{ display: "flex", gap: 4, alignItems: "center", marginTop: 4 }}>
+                            {p.variants.slice(0, 5).map((v) => (
+                              <span
+                                key={v.id || v.colorHex}
+                                title={`${v.colorName} (${v.stock} en stock)`}
+                                style={{
+                                  width: 13,
+                                  height: 13,
+                                  borderRadius: 3,
+                                  background: v.colorHex,
+                                  border: "1px solid rgba(0,0,0,0.15)",
+                                  display: "inline-block",
+                                  opacity: v.stock === 0 ? 0.35 : 1,
+                                }}
+                              />
+                            ))}
+                            {p.variants.length > 5 && (
+                              <span style={{ fontSize: 10, color: colors.muted }}>+{p.variants.length - 5}</span>
+                            )}
+                            <span style={{ fontSize: 11, color: colors.muted, marginLeft: 2 }}>
+                              ({p.variants.length} teinte{p.variants.length > 1 ? "s" : ""})
+                            </span>
+                          </div>
+                        )}
+                      </td>
+                      <StockCell value={p.stock} dot={lvlDot(p.stock, LOW_STOCK_THRESHOLD)} />
+                      <td style={{ padding: 10, textAlign: "right", fontWeight: 600 }}>{money(p.price)}</td>
+                      <td style={{ padding: "10px 16px", textAlign: "right" }}>
+                        <div
+                          style={{ display: "inline-flex", alignItems: "center", gap: 6, justifyContent: "flex-end" }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setDrawerId(p.id)}
+                            title="Mouvement & gestion des stocks"
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 5,
+                              height: 32,
+                              padding: "0 9px",
+                              border: `1px solid ${colors.borderField}`,
+                              borderRadius: 8,
+                              background: "#fff",
+                              color: colors.primary,
+                              font: `600 12px ${fonts.ui}`,
+                              cursor: "pointer",
+                            }}
+                          >
+                            Mouvement
+                            <Icon path={ICONS.chevronRight} size={13} stroke="currentColor" strokeWidth={2} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => handleToggleActive(p, e)}
+                            disabled={togglingId === p.id}
+                            title={isArchived ? "Réactiver ce produit" : "Désactiver / Archiver ce produit"}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              width: 32,
+                              height: 32,
+                              border: `1px solid ${colors.borderField}`,
+                              borderRadius: 8,
+                              background: isArchived ? "#F1ECE2" : "#fff",
+                              color: isArchived ? colors.primary : colors.muted,
+                              cursor: togglingId === p.id ? "default" : "pointer",
+                              opacity: togglingId === p.id ? 0.6 : 1,
+                            }}
+                          >
+                            <Icon path={isArchived ? ICONS.eye : ICONS.archive} size={15} strokeWidth={1.8} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeletingProduct(p);
+                            }}
+                            title="Supprimer définitivement ce produit"
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              width: 32,
+                              height: 32,
+                              border: "1px solid rgba(198,40,40,.25)",
+                              borderRadius: 8,
+                              background: "#fff",
+                              color: colors.danger,
+                              cursor: "pointer",
+                            }}
+                          >
+                            <Icon path={ICONS.trash} size={15} stroke={colors.danger} strokeWidth={1.8} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
@@ -189,7 +397,7 @@ export function InventoryScreen({ products }: { products: Product[] }) {
           }}
         >
           <span style={{ fontSize: 12.5, color: colors.muted }}>
-            {filtered.length} produits · {products.length} au total
+            {filtered.length} produit{filtered.length > 1 ? "s" : ""} affiché{filtered.length > 1 ? "s" : ""} · {products.length} au total
           </span>
           <div style={{ display: "flex", gap: 6 }}>
             <PageBtn disabled={safePage <= 1} onClick={() => setPage(safePage - 1)}>
@@ -207,7 +415,26 @@ export function InventoryScreen({ products }: { products: Product[] }) {
         </div>
       </div>
 
-      {drawerProduct && <EditDrawer product={drawerProduct} onClose={() => setDrawerId(null)} />}
+      {drawerProduct && (
+        <EditDrawer
+          product={drawerProduct}
+          onClose={() => setDrawerId(null)}
+          onDelete={(prod) => {
+            setDrawerId(null);
+            setDeletingProduct(prod);
+          }}
+        />
+      )}
+      {deletingProduct && (
+        <DeleteProductModal
+          product={deletingProduct}
+          onClose={() => setDeletingProduct(null)}
+          onDeleted={() => {
+            setDeletingProduct(null);
+            router.refresh();
+          }}
+        />
+      )}
       {creating && (
         <NewProductDrawer
           onClose={() => setCreating(false)}
@@ -330,7 +557,7 @@ const EMPTY_PRODUCT_FORM: NewProductForm = {
 function NewProductDrawer({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const [form, setForm] = useState<NewProductForm>(EMPTY_PRODUCT_FORM);
   const [variants, setVariants] = useState<ProductVariantItem[]>([
-    { colorName: "Bordeaux", colorHex: "#6B1D2F", stock: 10, active: true, position: 0 },
+    { colorName: "Bordeaux", colorHex: "#6B1D2F", stock: 0, active: true, position: 0 },
   ]);
   const [saving, setSaving] = useState(false);
   const showToast = useBackoffice((s) => s.showToast);
@@ -402,6 +629,9 @@ function NewProductDrawer({ onClose, onCreated }: { onClose: () => void; onCreat
               image={form.image}
               gallery={form.gallery}
               onChange={({ image, gallery }) => setForm((s) => ({ ...s, image, gallery }))}
+              onRemoveImage={async (url) => {
+                await deleteProductImage(url);
+              }}
             />
           </FormField>
 
@@ -428,36 +658,97 @@ function NewProductDrawer({ onClose, onCreated }: { onClose: () => void; onCreat
             <FormField label="Prix (FCFA)">
               <NumericField mode="money" value={form.price} onChange={(v) => set("price", v)} placeholder="15000" min={0} />
             </FormField>
-            <FormField label="Stock consolidé">
-              <div
-                style={{
-                  height: 42,
-                  display: "flex",
-                  alignItems: "center",
-                  padding: "0 13px",
-                  background: colors.ivory,
-                  borderRadius: 10,
-                  border: `1.5px solid ${colors.borderField}`,
-                  fontWeight: 600,
-                  fontSize: 14,
-                  color: colors.primary,
-                }}
-              >
-                {totalVariantStock} unité{totalVariantStock > 1 ? "s" : ""}
-              </div>
-            </FormField>
+            {variants.length <= 1 ? (
+              <FormField label="Stock disponible">
+                <div>
+                  <NumericField
+                    mode="integer"
+                    value={String(variants[0]?.stock ?? 0)}
+                    onChange={(v) => {
+                      const n = Math.max(0, parseInt(v, 10) || 0);
+                      setVariants((prev) =>
+                        prev.length > 0
+                          ? [{ ...prev[0], stock: n }]
+                          : [{ colorName: "Bordeaux", colorHex: form.swatch || "#6B1D2F", stock: n, active: true, position: 0 }]
+                      );
+                    }}
+                    placeholder="0"
+                    min={0}
+                  />
+                  <div style={{ fontSize: 11, color: colors.muted, marginTop: 4 }}>
+                    Saisie directe (1 couleur)
+                  </div>
+                </div>
+              </FormField>
+            ) : (
+              <FormField label={`Stock total (${variants.length} couleurs)`}>
+                <div>
+                  <div
+                    style={{
+                      height: 44,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "0 13px",
+                      background: colors.ivory,
+                      borderRadius: 10,
+                      border: `1.5px solid ${colors.borderField}`,
+                      fontWeight: 700,
+                      fontSize: 14,
+                      color: colors.primary,
+                    }}
+                  >
+                    <span>{totalVariantStock} {totalVariantStock <= 1 ? "unité" : "unités"}</span>
+                    <span
+                      style={{
+                        fontSize: 10.5,
+                        fontWeight: 600,
+                        padding: "2px 7px",
+                        borderRadius: 6,
+                        background: colors.bgInfo,
+                        color: colors.primary,
+                      }}
+                    >
+                      Somme auto
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      document.getElementById("ft-product-variants-section")?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    style={{
+                      border: "none",
+                      background: "transparent",
+                      color: colors.primary,
+                      fontSize: 11.5,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      padding: "4px 0 0 0",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                    }}
+                  >
+                    Détailler par couleur <Icon path={ICONS.chevronDown} size={13} />
+                  </button>
+                </div>
+              </FormField>
+            )}
           </div>
 
           <FormField label="Longueurs / tailles (séparées par une virgule)">
             <input value={form.lengths} onChange={(e) => set("lengths", e.target.value)} style={textField} placeholder="Taille unique" />
           </FormField>
 
-          <FormField label="Couleurs & Variantes">
-            <ProductVariantsField
-              variants={variants}
-              onChange={setVariants}
-            />
-          </FormField>
+          <div id="ft-product-variants-section">
+            <FormField label="Couleurs & Variantes">
+              <ProductVariantsField
+                variants={variants}
+                onChange={setVariants}
+              />
+            </FormField>
+          </div>
 
           <FormField label="Description">
             <textarea
@@ -508,12 +799,46 @@ const textField: React.CSSProperties = {
   font: `400 14px ${fonts.ui}`,
 };
 
-function EditDrawer({ product: p, onClose }: { product: Product; onClose: () => void }) {
+function EditDrawer({
+  product: p,
+  onClose,
+  onDelete,
+}: {
+  product: Product;
+  onClose: () => void;
+  onDelete: (product: Product) => void;
+}) {
   const router = useRouter();
   const showToast = useBackoffice((s) => s.showToast);
+  const [isArchived, setIsArchived] = useState(p.active === false);
+  const [togglingActive, setTogglingActive] = useState(false);
   const [photos, setPhotos] = useState({ image: p.image ?? "", gallery: p.gallery });
   const [savingPhotos, setSavingPhotos] = useState(false);
   const photosDirty = photos.image !== (p.image ?? "") || photos.gallery.join("|") !== p.gallery.join("|");
+
+  async function handleToggleActive() {
+    setTogglingActive(true);
+    if (!isArchived) {
+      const res = await archiveProduct(p.id);
+      setTogglingActive(false);
+      if (!res.ok) {
+        showToast(res.error, "error");
+        return;
+      }
+      setIsArchived(true);
+      showToast(`« ${p.name} » a été désactivé et masqué de la vitrine.`, "success");
+    } else {
+      const res = await restoreProduct(p.id);
+      setTogglingActive(false);
+      if (!res.ok) {
+        showToast(res.error, "error");
+        return;
+      }
+      setIsArchived(false);
+      showToast(`« ${p.name} » a été réactivé sur la vitrine.`, "success");
+    }
+    router.refresh();
+  }
 
   const initialVariants: ProductVariantItem[] = useMemo(() => {
     if (p.variants && p.variants.length > 0) {
@@ -641,8 +966,39 @@ function EditDrawer({ product: p, onClose }: { product: Product; onClose: () => 
             <span style={{ width: 44, height: 44, borderRadius: 10, flex: "none", background: p.swatch }} />
           )}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: fonts.display, fontWeight: 600, fontSize: 18, lineHeight: 1.15 }}>{p.name}</div>
-            <div style={{ fontSize: 12, color: "#9a8f7d" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <div style={{ fontFamily: fonts.display, fontWeight: 600, fontSize: 18, lineHeight: 1.15 }}>{p.name}</div>
+              {isArchived ? (
+                <span
+                  style={{
+                    fontSize: 10.5,
+                    fontWeight: 600,
+                    padding: "2px 7px",
+                    borderRadius: 6,
+                    background: "#F1ECE2",
+                    color: colors.muted,
+                    border: `1px solid ${colors.borderSoft}`,
+                  }}
+                >
+                  Archivé
+                </span>
+              ) : (
+                <span
+                  style={{
+                    fontSize: 10.5,
+                    fontWeight: 600,
+                    padding: "2px 7px",
+                    borderRadius: 6,
+                    background: colors.bgSuccess,
+                    color: colors.fgSuccess,
+                    border: "1px solid rgba(46,125,50,.18)",
+                  }}
+                >
+                  Actif
+                </span>
+              )}
+            </div>
+            <div style={{ fontSize: 12, color: "#9a8f7d", marginTop: 2 }}>
               REF-{p.id.toUpperCase()} · {p.cat}
             </div>
           </div>
@@ -658,7 +1014,20 @@ function EditDrawer({ product: p, onClose }: { product: Product; onClose: () => 
         <div style={{ flex: 1, overflowY: "auto", padding: "18px 20px" }}>
           <div style={sectionLabel}>Photos</div>
           <div style={{ marginBottom: 22 }}>
-            <ProductPhotosField image={photos.image} gallery={photos.gallery} onChange={setPhotos} />
+            <ProductPhotosField
+              image={photos.image}
+              gallery={photos.gallery}
+              onChange={setPhotos}
+              onRemoveImage={async (url) => {
+                const res = await deleteProductImage(url, p.id);
+                if (!res.ok) {
+                  showToast(res.error, "error");
+                  return;
+                }
+                showToast("Image supprimée de la base de données et du stockage", "success");
+                router.refresh();
+              }}
+            />
             {photosDirty && (
               <button
                 onClick={savePhotos}
@@ -705,8 +1074,14 @@ function EditDrawer({ product: p, onClose }: { product: Product; onClose: () => 
             >
               <span style={{ width: 9, height: 9, borderRadius: 999, background: lvlDot(p.stock, LOW_STOCK_THRESHOLD), flex: "none" }} />
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 600, fontSize: 13.5 }}>Stock total</div>
-                <div style={{ fontSize: 11.5, color: colors.muted }}>Seuil d&apos;alerte {LOW_STOCK_THRESHOLD}</div>
+                <div style={{ fontWeight: 600, fontSize: 13.5 }}>
+                  {variants.length > 1 ? "Stock total consolidé" : "Stock total"}
+                </div>
+                <div style={{ fontSize: 11.5, color: colors.muted }}>
+                  {variants.length > 1
+                    ? `Somme automatique des ${variants.length} couleurs ci-dessus`
+                    : `Seuil d'alerte : ${LOW_STOCK_THRESHOLD} unités`}
+                </div>
               </div>
               <span style={{ fontFamily: fonts.display, fontWeight: 700, fontSize: 22, color: lvlDot(p.stock, LOW_STOCK_THRESHOLD) }}>{p.stock}</span>
             </div>
@@ -857,6 +1232,65 @@ function EditDrawer({ product: p, onClose }: { product: Product; onClose: () => 
             </div>
           )}
 
+          {/* Section Statut & Actions */}
+          <div style={sectionLabel}>Visibilité & Actions</div>
+          <div style={{ background: colors.ivory, border: `1px solid ${colors.borderSoft}`, borderRadius: 12, padding: 14, marginBottom: 22 }}>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontWeight: 600, fontSize: 13.5, color: colors.ink }}>
+                {isArchived ? "Produit actuellement archivé (inactif)" : "Produit actuellement actif en vente"}
+              </div>
+              <div style={{ fontSize: 12, color: colors.muted, marginTop: 3, lineHeight: 1.4 }}>
+                {isArchived
+                  ? "Ce produit est masqué de la vitrine publique et du point de vente (POS). Vous pouvez le réactiver à tout moment."
+                  : "Ce produit est disponible à la vente sur la boutique en ligne, le catalogue et la caisse (POS)."}
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>
+              <button
+                type="button"
+                onClick={handleToggleActive}
+                disabled={togglingActive}
+                style={{
+                  height: 38,
+                  padding: "0 13px",
+                  borderRadius: 9,
+                  border: `1.5px solid ${colors.borderField}`,
+                  background: "#fff",
+                  color: colors.primary,
+                  font: `600 12.5px ${fonts.ui}`,
+                  cursor: togglingActive ? "default" : "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  opacity: togglingActive ? 0.6 : 1,
+                }}
+              >
+                <Icon path={isArchived ? ICONS.eye : ICONS.archive} size={15} strokeWidth={1.8} />
+                {isArchived ? "Réactiver le produit" : "Désactiver / Archiver"}
+              </button>
+              <button
+                type="button"
+                onClick={() => onDelete(p)}
+                style={{
+                  height: 38,
+                  padding: "0 13px",
+                  borderRadius: 9,
+                  border: "1.5px solid rgba(198,40,40,.3)",
+                  background: "#fff",
+                  color: colors.danger,
+                  font: `600 12.5px ${fonts.ui}`,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <Icon path={ICONS.trash} size={15} stroke={colors.danger} strokeWidth={1.8} />
+                Supprimer le produit
+              </button>
+            </div>
+          </div>
+
           <div style={{ background: colors.ivory, border: `1px solid ${colors.borderSoft}`, borderRadius: 12, padding: 14 }}>
             <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 10 }}>Derniers mouvements</div>
             {movements.length === 0 ? (
@@ -881,17 +1315,126 @@ function EditDrawer({ product: p, onClose }: { product: Product; onClose: () => 
             onClick={onClose}
             style={{ flex: 1, height: 46, border: `1.5px solid ${colors.borderField}`, borderRadius: 10, background: "#fff", color: colors.primary, font: `600 14px ${fonts.ui}`, cursor: "pointer" }}
           >
-            Annuler
-          </button>
-          <button
-            onClick={onClose}
-            style={{ flex: 2, height: 46, border: "none", borderRadius: 10, background: colors.primary, color: "#fff", font: `600 14px ${fonts.ui}`, cursor: "pointer" }}
-          >
-            Enregistrer
+            Fermer
           </button>
         </div>
       </div>
     </>
+  );
+}
+
+function DeleteProductModal({
+  product,
+  onClose,
+  onDeleted,
+}: {
+  product: Product;
+  onClose: () => void;
+  onDeleted: () => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const showToast = useBackoffice((s) => s.showToast);
+
+  async function submit() {
+    setSaving(true);
+    const result = await deleteProduct(product.id);
+    setSaving(false);
+    if (!result.ok) {
+      showToast(result.error, "error");
+      return;
+    }
+    showToast(`Produit « ${product.name} » supprimé avec succès.`, "success");
+    onDeleted();
+  }
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(30,27,24,.4)",
+        zIndex: 70,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        animation: "ft-fade .16s ease",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "#fff",
+          borderRadius: 16,
+          width: 440,
+          maxWidth: "92vw",
+          padding: "24px",
+          boxShadow: "0 20px 50px rgba(30,27,24,.24)",
+        }}
+      >
+        <div style={{ fontFamily: fonts.display, fontWeight: 600, fontSize: 19, marginBottom: 4, color: colors.ink }}>
+          Supprimer le produit
+        </div>
+        <div style={{ fontSize: 13, color: colors.muted, marginBottom: 14 }}>
+          {product.name} · REF-{product.id.toUpperCase()}
+        </div>
+
+        <div
+          style={{
+            background: colors.bgDanger,
+            color: colors.fgDanger,
+            borderRadius: 10,
+            padding: "12px 14px",
+            fontSize: 13,
+            lineHeight: 1.45,
+            marginBottom: 16,
+            border: "1px solid rgba(198,40,40,.2)",
+          }}
+        >
+          <strong>Attention :</strong> Cette action supprimera définitivement le produit, ses variantes et ses images.
+          <br />
+          Si ce produit a déjà fait l&apos;objet de commandes enregistrées, la suppression sera refusée pour protéger votre historique et vous pourrez le désactiver / archiver à la place.
+        </div>
+
+        <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={saving}
+            style={{
+              flex: 1,
+              height: 44,
+              border: `1.5px solid ${colors.borderField}`,
+              borderRadius: 10,
+              background: "#fff",
+              color: colors.primary,
+              font: `600 13.5px ${fonts.ui}`,
+              cursor: saving ? "default" : "pointer",
+            }}
+          >
+            Annuler
+          </button>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={saving}
+            style={{
+              flex: 1.5,
+              height: 44,
+              border: "none",
+              borderRadius: 10,
+              background: colors.danger,
+              color: "#fff",
+              font: `600 13.5px ${fonts.ui}`,
+              cursor: saving ? "default" : "pointer",
+              opacity: saving ? 0.7 : 1,
+            }}
+          >
+            {saving ? "Suppression…" : "Supprimer définitivement"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

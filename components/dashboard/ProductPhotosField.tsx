@@ -26,13 +26,17 @@ export function ProductPhotosField({
   image,
   gallery,
   onChange,
+  onRemoveImage,
 }: {
   /** URL de la photo principale ; "" = aucune. */
   image: string;
   gallery: string[];
   onChange: (next: { image: string; gallery: string[] }) => void;
+  /** Callback optionnel pour supprimer l'image du serveur et du stockage au clic sur Retirer. */
+  onRemoveImage?: (url: string) => Promise<void> | void;
 }) {
   const [uploading, setUploading] = useState<"image" | "gallery" | null>(null);
+  const [deletingUrl, setDeletingUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function upload(file: File, target: "image" | "gallery") {
@@ -47,14 +51,40 @@ export function ProductPhotosField({
     else onChange({ image, gallery: [...gallery, res.url] });
   }
 
+  async function handleRemoveMain() {
+    const oldUrl = image;
+    onChange({ image: "", gallery });
+    if (onRemoveImage && oldUrl) {
+      setDeletingUrl(oldUrl);
+      try {
+        await onRemoveImage(oldUrl);
+      } finally {
+        setDeletingUrl(null);
+      }
+    }
+  }
+
+  async function handleRemoveGallery(index: number, url: string) {
+    onChange({ image, gallery: gallery.filter((_, j) => j !== index) });
+    if (onRemoveImage && url) {
+      setDeletingUrl(url);
+      try {
+        await onRemoveImage(url);
+      } finally {
+        setDeletingUrl(null);
+      }
+    }
+  }
+
   function filePicker(target: "image" | "gallery", label: string) {
+    const isBusy = uploading !== null || deletingUrl !== null;
     return (
-      <label style={{ ...miniBtnStyle, cursor: uploading ? "default" : "pointer" }}>
+      <label style={{ ...miniBtnStyle, cursor: isBusy ? "default" : "pointer", opacity: isBusy ? 0.6 : 1 }}>
         {uploading === target ? "Envoi…" : label}
         <input
           type="file"
           accept="image/jpeg,image/png,image/webp"
-          disabled={uploading !== null}
+          disabled={isBusy}
           onChange={(e) => {
             const f = e.target.files?.[0];
             e.target.value = "";
@@ -82,8 +112,13 @@ export function ProductPhotosField({
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
         {filePicker("image", image ? "Remplacer" : "Choisir une photo")}
         {image && (
-          <button type="button" onClick={() => onChange({ image: "", gallery })} disabled={uploading !== null} style={miniBtnStyle}>
-            Retirer
+          <button
+            type="button"
+            onClick={handleRemoveMain}
+            disabled={uploading !== null || deletingUrl !== null}
+            style={{ ...miniBtnStyle, cursor: deletingUrl ? "default" : "pointer" }}
+          >
+            {deletingUrl === image ? "Suppression…" : "Retirer"}
           </button>
         )}
       </div>
@@ -98,9 +133,16 @@ export function ProductPhotosField({
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={src} alt={`Photo ${i + 1} de la galerie`} style={{ width: "100%", aspectRatio: "4 / 5", objectFit: "cover", borderRadius: 9 }} />
               <div style={{ display: "flex", gap: 4, marginTop: 4 }}>
-                <button type="button" onClick={() => onChange({ image, gallery: moveItem(gallery, i, i - 1) })} disabled={i === 0} style={tinyBtnStyle}>↑</button>
-                <button type="button" onClick={() => onChange({ image, gallery: moveItem(gallery, i, i + 1) })} disabled={i === gallery.length - 1} style={tinyBtnStyle}>↓</button>
-                <button type="button" onClick={() => onChange({ image, gallery: gallery.filter((_, j) => j !== i) })} style={tinyBtnStyle}>Retirer</button>
+                <button type="button" onClick={() => onChange({ image, gallery: moveItem(gallery, i, i - 1) })} disabled={i === 0 || deletingUrl !== null} style={tinyBtnStyle}>↑</button>
+                <button type="button" onClick={() => onChange({ image, gallery: moveItem(gallery, i, i + 1) })} disabled={i === gallery.length - 1 || deletingUrl !== null} style={tinyBtnStyle}>↓</button>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveGallery(i, src)}
+                  disabled={deletingUrl !== null}
+                  style={tinyBtnStyle}
+                >
+                  {deletingUrl === src ? "…" : "Retirer"}
+                </button>
               </div>
             </div>
           ))}

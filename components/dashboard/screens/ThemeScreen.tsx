@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { colors, fonts, hexA } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { money } from "@/lib/format";
@@ -16,6 +16,21 @@ const ACCENT_PALETTE = ["#D07A34", "#C9A227", "#B23A48", "#2E7D8A"];
 const FONT_OPTIONS: Array<{ label: string; val: ThemeState["font"]; family: string }> = [
   { label: "Élégant", val: "Playfair Display", family: fonts.display },
   { label: "Moderne", val: "Inter", family: fonts.ui },
+];
+
+interface PreviewProductItem {
+  id: string;
+  name: string;
+  price: number;
+  swatch?: string;
+  image?: string;
+  colors?: string[];
+}
+
+const DEFAULT_PREVIEW_PRODUCTS: PreviewProductItem[] = [
+  { id: "prev-1", name: "Foulard Wax", price: 12500, swatch: "#26326B" },
+  { id: "prev-2", name: "Turban Soie", price: 18000, swatch: "#D07A34" },
+  { id: "prev-3", name: "Pagne Bazin", price: 25000, swatch: "#C9A227" },
 ];
 
 export function ThemeScreen({ products, tenant }: { products: Product[]; tenant: TenantSettings }) {
@@ -38,7 +53,15 @@ export function ThemeScreen({ products, tenant }: { products: Product[]; tenant:
   const previewFont = th.font === "Inter" ? fonts.ui : fonts.display;
   const heroBg = `linear-gradient(180deg, ${hexA(th.accent, 0.1)}, #fff)`;
   const initial = (th.shopName || "T").trim().charAt(0).toUpperCase();
-  const previewProducts = [products[0], products[1], products[2]];
+
+  const previewProducts = useMemo<PreviewProductItem[]>(() => {
+    const valid = (products || []).filter(Boolean);
+    if (valid.length >= 3) return valid.slice(0, 3);
+    if (valid.length > 0) {
+      return [...valid, ...DEFAULT_PREVIEW_PRODUCTS.slice(valid.length, 3)];
+    }
+    return DEFAULT_PREVIEW_PRODUCTS;
+  }, [products]);
 
   return (
     <div className="ft-pad">
@@ -204,13 +227,42 @@ export function ThemeScreen({ products, tenant }: { products: Product[]; tenant:
             </div>
             {/* products */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, padding: "16px 18px 20px" }}>
-              {previewProducts.map((p) => (
-                <div key={p.id}>
-                  <div style={{ aspectRatio: "4 / 5", borderRadius: 10, background: p.swatch, marginBottom: 7 }} />
-                  <div style={{ fontFamily: previewFont, fontWeight: 600, fontSize: 12.5, lineHeight: 1.2 }}>{p.name}</div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: th.primary }}>{money(p.price)}</div>
-                </div>
-              ))}
+              {previewProducts.map((p, idx) => {
+                if (!p) return null;
+                const swatchBg = p.swatch || (p.colors && p.colors[0]) || "#EEF0F7";
+                return (
+                  <div key={p.id || idx}>
+                    <div
+                      style={{
+                        aspectRatio: "4 / 5",
+                        borderRadius: 10,
+                        background: swatchBg,
+                        marginBottom: 7,
+                        overflow: "hidden",
+                        position: "relative",
+                      }}
+                    >
+                      {p.image ? (
+                        <img
+                          src={p.image}
+                          alt=""
+                          style={{
+                            position: "absolute",
+                            inset: 0,
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                          }}
+                        />
+                      ) : null}
+                    </div>
+                    <div style={{ fontFamily: previewFont, fontWeight: 600, fontSize: 12.5, lineHeight: 1.2 }}>
+                      {p.name || "Produit"}
+                    </div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: th.primary }}>{money(p.price || 0)}</div>
+                  </div>
+                );
+              })}
             </div>
             {/* footer */}
             <div style={{ padding: "12px 18px", background: colors.ivory, borderTop: "1px solid #F1ECE2", fontSize: 11.5, color: colors.muted, display: "flex", justifyContent: "space-between" }}>

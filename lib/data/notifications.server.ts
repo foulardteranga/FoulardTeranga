@@ -16,19 +16,24 @@ const LIMIT = 20;
 
 /** Lit les dernières notifications du tenant courant, les plus récentes d'abord. */
 export async function getNotifications(): Promise<NotificationItem[]> {
-  const tenant = await getCurrentTenant();
-  const rows = await prisma.notification.findMany({
-    where: { tenantId: tenant.id },
-    orderBy: { createdAt: "desc" },
-    take: LIMIT,
-  });
-  return rows.map((n) => ({
-    id: n.id,
-    type: n.type,
-    title: n.title,
-    body: n.body,
-    href: n.href,
-    read: n.read,
-    createdAt: n.createdAt.toISOString(),
-  }));
+  try {
+    const tenant = await getCurrentTenant();
+    const rows = await prisma.notification.findMany({
+      where: { tenantId: tenant.id },
+      orderBy: { createdAt: "desc" },
+      take: LIMIT,
+    });
+    return rows.map((n) => ({
+      id: n.id,
+      type: n.type,
+      title: n.title,
+      body: n.body,
+      href: n.href,
+      read: n.read,
+      createdAt: n.createdAt.toISOString(),
+    }));
+  } catch (err) {
+    console.error("[getNotifications] Échec de la récupération des notifications:", err);
+    return [];
+  }
 }

@@ -30,3 +30,46 @@ describe("posSaleSchema — remises", () => {
     expect(r.success && r.data.pointsRequested === 0).toBe(true);
   });
 });
+
+describe("posSaleSchema — montant reçu et paiements multiples", () => {
+  it("accepte amountReceived et changeGiven valides", () => {
+    const r = posSaleSchema.safeParse({
+      ...base,
+      paymentMethod: "espece",
+      amountReceived: 20000,
+      changeGiven: 7500,
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.amountReceived).toBe(20000);
+      expect(r.data.changeGiven).toBe(7500);
+    }
+  });
+
+  it("accepte splitPayments valides pour un paiement mixte", () => {
+    const r = posSaleSchema.safeParse({
+      ...base,
+      paymentMethod: "mixte",
+      splitPayments: [
+        { method: "espece", amount: 10000, amountReceived: 10000, changeGiven: 0 },
+        { method: "wave", amount: 10000 },
+      ],
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.splitPayments).toHaveLength(2);
+      expect(r.data.splitPayments?.[0].method).toBe("espece");
+      expect(r.data.splitPayments?.[0].amount).toBe(10000);
+      expect(r.data.splitPayments?.[1].method).toBe("wave");
+    }
+  });
+
+  it("refuse un montant négatif ou zéro dans splitPayments", () => {
+    const r = posSaleSchema.safeParse({
+      ...base,
+      paymentMethod: "mixte",
+      splitPayments: [{ method: "espece", amount: 0 }],
+    });
+    expect(r.success).toBe(false);
+  });
+});

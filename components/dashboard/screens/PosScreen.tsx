@@ -16,6 +16,7 @@ import { PAYMENT_LABELS, type PosPaymentMethod } from "@/lib/payments/labels";
 import type { Customer, Product, ProductVariantData } from "@/lib/data/types";
 import { PosVariantPickerModal } from "@/components/pos/PosVariantPickerModal";
 import { shouldOpenVariantPicker } from "@/components/pos/posVariantSelection";
+import { PosCheckoutModal } from "@/components/pos/PosCheckoutModal";
 
 const PAY_DEF: ReadonlyArray<{ id: PosPaymentMethod; label: string; icon: string }> = [
   { id: "espece", label: "Espèces", icon: ICONS.cash },
@@ -598,12 +599,24 @@ function PayButton({
   const offline = useBackoffice((s) => s.offline);
   const showToast = useBackoffice((s) => s.showToast);
   const showTicket = useBackoffice((s) => s.showTicket);
+  const closeCart = useBackoffice((s) => s.closeCart);
   const [saving, setSaving] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
   const has = cart.length > 0;
   const canPay = has && !offline && !saving;
   const displayTotal = preview ? preview.total : total;
 
-  async function handlePay() {
+  async function handleConfirmCheckout(checkoutData: {
+    paymentMethod: PosPaymentMethod;
+    amountReceived?: number;
+    changeGiven?: number;
+    splitPayments?: Array<{
+      method: PosPaymentMethod;
+      amount: number;
+      amountReceived?: number;
+      changeGiven?: number;
+    }>;
+  }) {
     setSaving(true);
     const result = await encaisserVente({
       lines: cart.map((l) => ({
@@ -614,7 +627,10 @@ function PayButton({
         qty: l.qty,
         discounted: l.discount > 0,
       })),
-      paymentMethod: pay,
+      paymentMethod: checkoutData.paymentMethod,
+      amountReceived: checkoutData.amountReceived,
+      changeGiven: checkoutData.changeGiven,
+      splitPayments: checkoutData.splitPayments,
       customerId: client?.id ?? null,
       promoCode: promoCode.trim() || undefined,
       pointsRequested: Number(pointsReq) || 0,
@@ -624,6 +640,18 @@ function PayButton({
       showToast(result.error, "error");
       return;
     }
+    setCheckoutOpen(false);
+    closeCart();
+
+    const splitParts = result.ticket.splitPayments
+      ? result.ticket.splitPayments.map((sp) => ({
+          label: PAYMENT_LABELS[sp.method],
+          amount: sp.amount,
+          amountReceived: sp.amountReceived,
+          changeGiven: sp.changeGiven,
+        }))
+      : null;
+
     const message = buildTicketMessage({
       shopName: result.ticket.shopName,
       ref: result.ref,
@@ -632,53 +660,74 @@ function PayButton({
       subtotal: result.ticket.subtotal,
       discount: result.ticket.discount,
       total: result.ticket.total,
-      payLabel: PAYMENT_LABELS[pay],
+      payLabel: PAYMENT_LABELS[result.ticket.paymentMethod],
+      amountReceived: result.ticket.amountReceived,
+      changeGiven: result.ticket.changeGiven,
+      splitPayments: splitParts,
       loyalty: result.ticket.loyalty,
       promo: result.ticket.promo,
       pointsUsed: result.ticket.pointsUsed,
     });
+
     showTicket({
       ref: result.ref,
       items: cart.reduce((a, l) => a + l.qty, 0),
-      pay: PAYMENT_LABELS[pay],
+      pay: PAYMENT_LABELS[result.ticket.paymentMethod],
       total: money(result.ticket.total),
       lines: result.ticket.lines,
       discount: result.ticket.discount,
       subtotal: result.ticket.subtotal,
+      amountReceived: result.ticket.amountReceived,
+      changeGiven: result.ticket.changeGiven,
+      splitPayments: splitParts,
       loyalty: result.ticket.loyalty,
       waMessage: message,
       customerPhone: result.ticket.customerPhone,
       promo: result.ticket.promo,
       pointsUsed: result.ticket.pointsUsed,
     });
+
     setPromoCode("");
     setPointsReq("0");
     setPreview(null);
   }
 
   return (
-    <button
-      onClick={handlePay}
-      disabled={!canPay}
-      className="ft-primary-btn"
-      style={{
-        width: "100%",
-        height: big ? 54 : 52,
-        border: "none",
-        borderRadius: 10,
-        background: canPay ? colors.primary : colors.disabled,
-        color: "#fff",
-        font: `700 16px ${fonts.ui}`,
-        cursor: canPay ? "pointer" : "not-allowed",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 10,
-      }}
-    >
-      {!big && !saving && <Icon path={ICONS.check} size={20} stroke="#fff" strokeWidth={2} />}
-      {offline ? "Connexion requise" : saving ? "Encaissement…" : `Encaisser${has ? ` · ${money(displayTotal)}` : ""}`}
-    </button>
+    <>
+      <button
+        onClick={() => setCheckoutOpen(true)}
+        disabled={!canPay}
+        className="ft-primary-btn"
+        style={{
+          width: "100%",
+          height: big ? 54 : 52,
+          border: "none",
+          borderRadius: 10,
+          background: canPay ? colors.primary : colors.disabled,
+          color: "#fff",
+          font: `700 16px ${fonts.ui}`,
+          cursor: canPay ? "pointer" : "not-allowed",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 10,
+        }}
+      >
+        {!big && !saving && <Icon path={ICONS.check} size={20} stroke="#fff" strokeWidth={2} />}
+        {offline ? "Connexion requise" : saving ? "Encaissement…" : `Encaisser${has ? ` · ${money(displayTotal)}` : ""}`}
+      </button>
+
+      {checkoutOpen && (
+        <PosCheckoutModal
+          isOpen={checkoutOpen}
+          total={displayTotal}
+          initialMethod={pay}
+          onClose={() => setCheckoutOpen(false)}
+          onConfirm={handleConfirmCheckout}
+          saving={saving}
+        />
+      )}
+    </>
   );
 }
 

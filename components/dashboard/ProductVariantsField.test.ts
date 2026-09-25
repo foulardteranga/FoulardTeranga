@@ -24,6 +24,28 @@ function addVariantHelper(
   ];
 }
 
+function toggleVariantHelper(
+  existing: ProductVariantItem[],
+  color: { name: string; hex: string; stock?: number }
+): ProductVariantItem[] {
+  const index = existing.findIndex(
+    (v) => v.colorHex.toLowerCase() === color.hex.toLowerCase()
+  );
+  if (index >= 0) {
+    return existing.filter((_, i) => i !== index);
+  }
+  return [
+    ...existing,
+    {
+      colorName: color.name,
+      colorHex: color.hex,
+      stock: color.stock ?? 0,
+      active: true,
+      position: existing.length,
+    },
+  ];
+}
+
 describe("ProductVariantsField - Logique métier", () => {
   it("calcule correctement la somme du stock pour les variantes actives", () => {
     const variants: ProductVariantItem[] = [
@@ -46,5 +68,21 @@ describe("ProductVariantsField - Logique métier", () => {
     // Tentative d'ajout du même code HEX (insensible à la casse)
     variants = addVariantHelper(variants, { name: "Autre Bordeaux", hex: "#6b1d2f" });
     expect(variants).toHaveLength(2);
+  });
+
+  it("sélectionne et désélectionne une variante au clic sur la couleur (toggle)", () => {
+    let variants: ProductVariantItem[] = [
+      { colorName: "Bordeaux", colorHex: "#6B1D2F", stock: 10, active: true, position: 0 },
+    ];
+
+    // 1er clic sur Camel : ajoute Camel
+    variants = toggleVariantHelper(variants, { name: "Camel", hex: "#C19A6B" });
+    expect(variants).toHaveLength(2);
+    expect(variants.some((v) => v.colorHex === "#C19A6B")).toBe(true);
+
+    // 2e clic sur Camel : retire Camel (désélection directe sans aller sur la corbeille)
+    variants = toggleVariantHelper(variants, { name: "Camel", hex: "#C19A6B" });
+    expect(variants).toHaveLength(1);
+    expect(variants.some((v) => v.colorHex === "#C19A6B")).toBe(false);
   });
 });

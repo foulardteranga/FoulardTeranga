@@ -6,6 +6,13 @@ export interface TicketLine {
   lineTotal: number;
 }
 
+export interface TicketSplitPayment {
+  label: string;
+  amount: number;
+  amountReceived?: number | null;
+  changeGiven?: number | null;
+}
+
 export interface TicketMessageInput {
   shopName: string;
   ref: string;
@@ -19,6 +26,9 @@ export interface TicketMessageInput {
   total: number;
   /** Libellé FR du mode de paiement (PAYMENT_LABELS). */
   payLabel: string;
+  amountReceived?: number | null;
+  changeGiven?: number | null;
+  splitPayments?: TicketSplitPayment[] | null;
   loyalty: { pointsEarned: number; newBalance: number } | null;
   promo: { code: string; discount: number } | null;
   pointsUsed: { points: number; discount: number } | null;
@@ -41,6 +51,19 @@ export function buildTicketMessage(input: TicketMessageInput): string {
   if (input.promo) parts.push(`Code promo ${input.promo.code} : −${money(input.promo.discount)}`);
   if (input.pointsUsed) parts.push(`Points utilisés (${input.pointsUsed.points}) : −${money(input.pointsUsed.discount)}`);
   parts.push(`*Total payé : ${money(input.total)}* (${input.payLabel})`);
+  if (input.splitPayments && input.splitPayments.length > 0) {
+    parts.push("Règlements :");
+    for (const sp of input.splitPayments) {
+      let spText = `• ${sp.label} : ${money(sp.amount)}`;
+      if (sp.changeGiven && sp.changeGiven > 0 && sp.amountReceived) {
+        spText += ` (Reçu : ${money(sp.amountReceived)}, Rendu : ${money(sp.changeGiven)})`;
+      }
+      parts.push(spText);
+    }
+  } else if (input.amountReceived && input.changeGiven && input.changeGiven > 0) {
+    parts.push(`• Montant reçu : ${money(input.amountReceived)}`);
+    parts.push(`• Monnaie rendue : ${money(input.changeGiven)}`);
+  }
   if (input.loyalty) {
     parts.push(
       "",

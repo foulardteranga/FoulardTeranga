@@ -9,6 +9,7 @@ import { requireZone, getSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { requireWritableSession } from "@/lib/impersonation/guards";
 import { compressImage, validateImageUpload, STOREFRONT_IMAGES_BUCKET } from "@/lib/images/imageUpload";
+import { removeTenantStorageFiles } from "@/lib/images/storage";
 import { z } from "zod";
 import { productSchema, productImagesSchema, productVariantInputSchema, type ProductInput, type ProductVariantInput } from "@/lib/validators/product";
 import { stockAdjustmentSchema, type StockAdjustmentInput } from "@/lib/validators/stockMovement";
@@ -223,7 +224,7 @@ export async function uploadProductImage(
   }
 }
 
-/** Remplace les photos (principale + galerie) d'un produit du tenant courant. */
+/** Remplace les photos (principale + galerie) d'un produit du tenant courant et purge les anciennes photos du stockage. */
 export async function updateProductImages(
   productId: string,
   images: unknown
@@ -238,11 +239,36 @@ export async function updateProductImages(
 
   try {
     const tenant = await getCurrentTenant();
-    const { count } = await prisma.product.updateMany({
+    const existing = await prisma.product.findFirst({
       where: { id: productId, tenantId: tenant.id },
+      select: { id: true, image: true, gallery: true },
+    });
+    if (!existing) return { ok: false, error: "Produit introuvable." };
+
+    // Déterminer les images supprimées du produit
+    const newImageSet = new Set<string>();
+    if (parsed.data.image) newImageSet.add(parsed.data.image);
+    for (const g of parsed.data.gallery) newImageSet.add(g);
+
+    const removedUrls: string[] = [];
+    if (existing.image && !newImageSet.has(existing.image)) {
+      removedUrls.push(existing.image);
+    }
+    for (const oldGalleryUrl of existing.gallery) {
+      if (!newImageSet.has(oldGalleryUrl)) {
+        removedUrls.push(oldGalleryUrl);
+      }
+    }
+
+    await prisma.product.update({
+      where: { id: existing.id },
       data: { image: parsed.data.image, gallery: parsed.data.gallery },
     });
-    if (count === 0) return { ok: false, error: "Produit introuvable." };
+
+    // Nettoyage asynchrone des fichiers orphelins dans le stockage Supabase
+    if (removedUrls.length > 0) {
+      await removeTenantStorageFiles(tenant.id, removedUrls);
+    }
 
     revalidatePath("/admin/inventaire");
     revalidatePath("/admin/pos");
@@ -252,6 +278,88 @@ export async function updateProductImages(
     return { ok: true };
   } catch {
     return { ok: false, error: "Une erreur est survenue, réessayez." };
+  }
+}
+
+/**
+ * Supprime une photo produit du stockage Supabase ET retire sa référence
+ * de la base de données (produits, galeries et variantes).
+ */
+export async function deleteProductImage(
+  imageUrl: string,
+  productId?: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { allowed } = await requireZone("dashboard");
+  if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+  const writable = await requireWritableSession();
+  if (!writable.ok) return { ok: false, error: writable.error };
+
+  if (typeof imageUrl !== "string" || !imageUrl.trim()) {
+    return { ok: true };
+  }
+
+  try {
+    const tenant = await getCurrentTenant();
+
+    // 1. Suppression du fichier physique dans le stockage Supabase
+    await removeTenantStorageFiles(tenant.id, [imageUrl]);
+
+    // 2. Suppression de la référence dans la base de données
+    if (productId) {
+      const product = await prisma.product.findFirst({
+        where: { id: productId, tenantId: tenant.id },
+        select: { id: true, image: true, gallery: true },
+      });
+      if (product) {
+        const nextImage = product.image === imageUrl ? null : product.image;
+        const nextGallery = product.gallery.filter((u) => u !== imageUrl);
+        await prisma.product.update({
+          where: { id: product.id },
+          data: {
+            image: nextImage,
+            gallery: nextGallery,
+          },
+        });
+      }
+
+      await prisma.productVariant.updateMany({
+        where: { productId, image: imageUrl },
+        data: { image: null },
+      });
+    } else {
+      await prisma.product.updateMany({
+        where: { tenantId: tenant.id, image: imageUrl },
+        data: { image: null },
+      });
+
+      const productsWithGallery = await prisma.product.findMany({
+        where: { tenantId: tenant.id, gallery: { has: imageUrl } },
+        select: { id: true, gallery: true },
+      });
+
+      for (const p of productsWithGallery) {
+        await prisma.product.update({
+          where: { id: p.id },
+          data: { gallery: p.gallery.filter((u) => u !== imageUrl) },
+        });
+      }
+
+      await prisma.productVariant.updateMany({
+        where: { product: { tenantId: tenant.id }, image: imageUrl },
+        data: { image: null },
+      });
+    }
+
+    revalidatePath("/admin/inventaire");
+    revalidatePath("/admin/pos");
+    revalidatePath("/");
+    revalidatePath("/catalogue");
+    if (productId) {
+      revalidatePath(`/produit/${productId}`);
+    }
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "Une erreur est survenue lors de la suppression de l'image." };
   }
 }
 
@@ -351,3 +459,159 @@ export async function getProductStockMovements(
     return { ok: false, error: "Une erreur est survenue, réessayez." };
   }
 }
+
+/** Désactive / archive un produit : le masque de la vitrine et du POS, tout en conservant l'historique. */
+export async function archiveProduct(
+  productId: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { allowed } = await requireZone("dashboard");
+  if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+  const writable = await requireWritableSession();
+  if (!writable.ok) return { ok: false, error: writable.error };
+
+  try {
+    const tenant = await getCurrentTenant();
+    const product = await prisma.product.findFirst({
+      where: { id: productId, tenantId: tenant.id },
+    });
+    if (!product) return { ok: false, error: "Produit introuvable." };
+
+    await prisma.product.update({
+      where: { id: product.id },
+      data: { active: false, archivedAt: new Date() },
+    });
+
+    revalidatePath("/admin/inventaire");
+    revalidatePath("/admin/pos");
+    revalidatePath("/admin/tableau-de-bord");
+    revalidatePath("/");
+    revalidatePath("/catalogue");
+    revalidatePath(`/produit/${productId}`);
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "Une erreur est survenue lors de l'archivage du produit." };
+  }
+}
+
+/** Restaure / réactive un produit précédemment archivé. */
+export async function restoreProduct(
+  productId: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { allowed } = await requireZone("dashboard");
+  if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+  const writable = await requireWritableSession();
+  if (!writable.ok) return { ok: false, error: writable.error };
+
+  try {
+    const tenant = await getCurrentTenant();
+    const product = await prisma.product.findFirst({
+      where: { id: productId, tenantId: tenant.id },
+    });
+    if (!product) return { ok: false, error: "Produit introuvable." };
+
+    await prisma.product.update({
+      where: { id: product.id },
+      data: { active: true, archivedAt: null },
+    });
+
+    revalidatePath("/admin/inventaire");
+    revalidatePath("/admin/pos");
+    revalidatePath("/admin/tableau-de-bord");
+    revalidatePath("/");
+    revalidatePath("/catalogue");
+    revalidatePath(`/produit/${productId}`);
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "Une erreur est survenue lors de la réactivation du produit." };
+  }
+}
+
+/** Bascule le statut actif / archivé d'un produit. */
+export async function toggleProductActive(
+  productId: string,
+  active: boolean
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { allowed } = await requireZone("dashboard");
+  if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+  const writable = await requireWritableSession();
+  if (!writable.ok) return { ok: false, error: writable.error };
+
+  if (active) {
+    return restoreProduct(productId);
+  } else {
+    return archiveProduct(productId);
+  }
+}
+
+/**
+ * Supprime définitivement un produit.
+ * Refuse la suppression si des commandes y sont associées (propose l'archivage à la place).
+ * Supprime en transaction les mouvements de stock orphelins, les variantes et le produit.
+ */
+export async function deleteProduct(
+  productId: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { allowed } = await requireZone("dashboard");
+  if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+  const writable = await requireWritableSession();
+  if (!writable.ok) return { ok: false, error: writable.error };
+
+  try {
+    const tenant = await getCurrentTenant();
+    const product = await prisma.product.findFirst({
+      where: { id: productId, tenantId: tenant.id },
+      include: { variants: true },
+    });
+    if (!product) return { ok: false, error: "Produit introuvable." };
+
+    // Vérifier si des commandes existantes référencent ce produit
+    const orderLineCount = await prisma.orderLine.count({
+      where: { productId: product.id },
+    });
+    if (orderLineCount > 0) {
+      return {
+        ok: false,
+        error: `Ce produit est référencé dans ${orderLineCount} commande${orderLineCount > 1 ? "s" : ""}. Pour préserver l'historique comptable et client, vous devez le désactiver / archiver plutôt que de le supprimer.`,
+      };
+    }
+
+    // Collecter toutes les photos à purger du stockage
+    const imagesToClean: string[] = [];
+    if (product.image) imagesToClean.push(product.image);
+    for (const g of product.gallery) imagesToClean.push(g);
+    for (const v of product.variants) {
+      if (v.image) imagesToClean.push(v.image);
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Nettoyer les mouvements de stock éventuels (ajustements d'inventaire / tests)
+      await tx.stockMovement.deleteMany({
+        where: { productId: product.id },
+      });
+      // Supprimer les variantes rattachées
+      await tx.productVariant.deleteMany({
+        where: { productId: product.id },
+      });
+      // Supprimer le produit
+      await tx.product.delete({
+        where: { id: product.id },
+      });
+    });
+
+    // Nettoyer les images associées dans le stockage Supabase
+    if (imagesToClean.length > 0) {
+      await removeTenantStorageFiles(tenant.id, imagesToClean);
+    }
+
+    revalidatePath("/admin/inventaire");
+    revalidatePath("/admin/pos");
+    revalidatePath("/admin/tableau-de-bord");
+    revalidatePath("/");
+    revalidatePath("/catalogue");
+    revalidatePath(`/produit/${productId}`);
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "Une erreur est survenue lors de la suppression du produit." };
+  }
+}
+

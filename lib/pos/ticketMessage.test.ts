@@ -85,4 +85,33 @@ describe("buildTicketMessage", () => {
     expect(msg).toContain("Points utilisés (20) : −1 000 FCFA");
     expect(msg).toContain("*Total payé : 28 250 FCFA*");
   });
+
+  it("affiche le montant reçu et la monnaie rendue pour un paiement en espèces", () => {
+    const msg = buildTicketMessage({
+      ...base,
+      payLabel: "Espèces",
+      amountReceived: 35000,
+      changeGiven: 2500,
+    });
+    expect(msg).toContain("*Total payé : 32 500 FCFA* (Espèces)");
+    expect(msg).toContain("• Montant reçu : 35 000 FCFA");
+    expect(msg).toContain("• Monnaie rendue : 2 500 FCFA");
+  });
+
+  it("affiche la ventilation des règlements pour un paiement mixte", () => {
+    const msg = buildTicketMessage({
+      ...base,
+      total: 20000,
+      subtotal: 20000,
+      payLabel: "Mixte",
+      splitPayments: [
+        { label: "Espèces", amount: 10000, amountReceived: 15000, changeGiven: 5000 },
+        { label: "Wave", amount: 10000 },
+      ],
+    });
+    expect(msg).toContain("*Total payé : 20 000 FCFA* (Mixte)");
+    expect(msg).toContain("Règlements :");
+    expect(msg).toContain("• Espèces : 10 000 FCFA (Reçu : 15 000 FCFA, Rendu : 5 000 FCFA)");
+    expect(msg).toContain("• Wave : 10 000 FCFA");
+  });
 });

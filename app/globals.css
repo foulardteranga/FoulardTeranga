@@ -309,16 +309,16 @@ textarea {
 }
 .ft-store-hero {
   border-radius: 22px;
-  min-height: 520px;
+  min-height: 465px;
 }
 .ft-store-hero-text {
-  padding: 44px 48px 48px;
+  padding: 36px 44px 40px;
 }
 .ft-store-hero-title {
-  font-size: 52px;
+  font-size: 46px;
 }
 .ft-store-hero-sub {
-  font-size: 16px;
+  font-size: 15.5px;
 }
 .ft-store-cats {
   grid-template-columns: repeat(3, 1fr);
@@ -408,13 +408,13 @@ textarea {
   }
   .ft-store-hero {
     border-radius: 18px;
-    min-height: 440px;
+    min-height: 380px;
   }
   .ft-store-hero-text {
-    padding: 22px 20px 26px;
+    padding: 20px 18px 24px;
   }
   .ft-store-hero-title {
-    font-size: 36px;
+    font-size: 32px;
   }
   .ft-store-hero-sub {
     font-size: 14px;
@@ -490,3 +490,59 @@ textarea {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ---- Bandeau Hero : Galerie défilante continue (Marquee infini) ---- */
+@keyframes ft-hero-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.ft-hero-marquee-viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+
+.ft-hero-marquee-track {
+  display: flex;
+  gap: 16px;
+  width: max-content;
+  animation: ft-hero-marquee 32s linear infinite;
+  will-change: transform;
+}
+
+.ft-store-hero:hover .ft-hero-marquee-track {
+  animation-play-state: paused;
+}
+
+.ft-hero-marquee-card {
+  position: relative;
+  width: 195px;
+  height: 275px;
+  flex-shrink: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: #1e1b18;
+}
+
+@media (max-width: 640px) {
+  .ft-hero-marquee-track {
+    gap: 12px;
+    animation-duration: 26s;
+  }
+  .ft-hero-marquee-card {
+    width: 140px;
+    height: 195px;
+    border-radius: 12px;
+  }
+}
+

@@ -29,6 +29,10 @@ export interface Product {
   gallery: string[];
   /** Variantes de couleurs et stocks unitaires associés. */
   variants?: ProductVariantData[];
+  /** Statut actif / archivé du produit. */
+  active?: boolean;
+  /** Date d'archivage (formatée ou ISO). Null si actif. */
+  archivedAt?: string | null;
 }
 
 export interface ProductVariantData {
@@ -110,4 +114,13 @@ export interface Order {
   promoStillValid: boolean;
   /** Date/heure d'archivage formatée, `null` si la commande n'est pas (ou plus) archivée. */
   archivedAt: string | null;
+  paymentMethod?: string | null;
+  amountReceived?: number | null;
+  changeGiven?: number | null;
+  paymentDetails?: Array<{
+    method: string;
+    amount: number;
+    amountReceived?: number | null;
+    changeGiven?: number | null;
+  }> | null;
 }

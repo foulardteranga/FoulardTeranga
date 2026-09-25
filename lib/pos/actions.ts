@@ -13,12 +13,23 @@ import { applyLoyaltyOrder } from "@/lib/customers/applyLoyaltyOrder";
 import { validatePromo, applyDiscounts } from "@/lib/discounts/engine";
 import { findPromoByCode } from "@/lib/data/promos.server";
 
+import { type PosPaymentMethod } from "@/lib/payments/labels";
+
 export interface PosTicketData {
   shopName: string;
   lines: Array<{ name: string; qty: number; lineTotal: number }>;
   subtotal: number;
   discount: number;
   total: number;
+  paymentMethod: PosPaymentMethod;
+  amountReceived: number | null;
+  changeGiven: number | null;
+  splitPayments: Array<{
+    method: PosPaymentMethod;
+    amount: number;
+    amountReceived?: number | null;
+    changeGiven?: number | null;
+  }> | null;
   customerPhone: string | null;
   loyalty: { pointsEarned: number; newBalance: number } | null;
   promo: { code: string; discount: number } | null;
@@ -124,6 +135,44 @@ export async function encaisserVente(
         });
       }
 
+      // Validation des paiements fractionnés / montant reçu
+      if (parsed.data.paymentMethod === "mixte") {
+        if (!parsed.data.splitPayments || parsed.data.splitPayments.length < 2) {
+          throw new Error("Le paiement mixte requiert au moins 2 modes de paiement.");
+        }
+        const splitSum = parsed.data.splitPayments.reduce((acc, p) => acc + p.amount, 0);
+        if (splitSum !== discounts.total) {
+          throw new Error(
+            `Le total des paiements fractionnés (${splitSum} FCFA) ne correspond pas au total dû (${discounts.total} FCFA).`
+          );
+        }
+      }
+
+      let effectiveReceived: number | null = parsed.data.amountReceived ?? null;
+      let effectiveChange: number | null = parsed.data.changeGiven ?? null;
+      if (parsed.data.paymentMethod === "espece") {
+        if (effectiveReceived == null) {
+          effectiveReceived = discounts.total;
+        }
+        if (effectiveChange == null) {
+          effectiveChange = Math.max(0, effectiveReceived - discounts.total);
+        }
+      }
+
+      const splitPaymentsData = parsed.data.splitPayments
+        ? parsed.data.splitPayments.map((sp) => {
+            const received = sp.amountReceived ?? (sp.method === "espece" ? sp.amount : null);
+            const change =
+              sp.changeGiven ??
+              (sp.method === "espece" && received != null ? Math.max(0, received - sp.amount) : null);
+            return {
+              ...sp,
+              amountReceived: received,
+              changeGiven: change,
+            };
+          })
+        : null;
+
       let clientName = "Client comptoir";
       let phone = "";
       let place = "Vente en boutique";
@@ -156,6 +205,11 @@ export async function encaisserVente(
           channel: "Boutique",
           status: "livree",
           paymentMethod: parsed.data.paymentMethod,
+          amountReceived: effectiveReceived,
+          changeGiven: effectiveChange,
+          paymentDetails: splitPaymentsData
+            ? (splitPaymentsData as unknown as Prisma.InputJsonValue)
+            : Prisma.JsonNull,
           vipAtOrder,
           customerId,
           total: discounts.total,
@@ -167,7 +221,17 @@ export async function encaisserVente(
         },
       });
 
-      return { order, built, phone, loyaltyInfo, discounts, promoRow };
+      return {
+        order,
+        built,
+        phone,
+        loyaltyInfo,
+        discounts,
+        promoRow,
+        effectiveReceived,
+        effectiveChange,
+        splitPaymentsData,
+      };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10000, timeout: 10000 });
 
     revalidatePath("/admin/commandes");
@@ -187,6 +251,10 @@ export async function encaisserVente(
         subtotal: result.built.lines.reduce((a, l) => a + l.unitPrice * l.qty, 0),
         discount: result.built.lines.reduce((a, l) => a + l.discount * l.qty, 0),
         total: result.discounts.total,
+        paymentMethod: parsed.data.paymentMethod,
+        amountReceived: result.effectiveReceived,
+        changeGiven: result.effectiveChange,
+        splitPayments: result.splitPaymentsData,
         customerPhone: result.phone || null,
         loyalty: result.loyaltyInfo,
         promo:
@@ -207,7 +275,9 @@ export async function encaisserVente(
       message === "Le panier est vide." ||
       message.startsWith("Stock insuffisant pour ") ||
       message === "Cliente introuvable." ||
-      message.startsWith("Code promo : ");
+      message.startsWith("Code promo : ") ||
+      message.startsWith("Le total des paiements fractionnés") ||
+      message.startsWith("Le paiement mixte");
     return { ok: false, error: known ? message : "Une erreur est survenue, réessayez." };
   }
 }

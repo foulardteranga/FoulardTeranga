@@ -5,21 +5,13 @@ import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { BottomSheet } from "./BottomSheet";
 import { NumericPad } from "./NumericPad";
-import { useCoarsePointer } from "./useCoarsePointer";
-import { clampNumericValue, type NumericMode } from "./numericPadLogic";
-
-const NATIVE_TYPE: Record<NumericMode, "number" | "tel"> = {
-  integer: "number", money: "number", decimal: "number", phone: "tel",
-};
-const INPUT_MODE: Record<NumericMode, "numeric" | "decimal" | "tel"> = {
-  integer: "numeric", money: "numeric", decimal: "decimal", phone: "tel",
-};
+import { clampNumericValue, formatPadValue, type NumericMode } from "./numericPadLogic";
 
 /**
- * Champ numérique adaptatif : sur pointeur tactile, le champ passe en lecture
- * seule et un tap ouvre un pavé numérique en bottom-sheet ; au clavier/souris,
- * saisie native inchangée (type number/tel — même contrôle natif qu'avant,
- * zéro régression), avec une icône pour ouvrir le pavé si on préfère.
+ * Champ numérique tactile et unifié :
+ * Un clic / tap n'importe où sur l'entrée ouvre le pavé numérique (BottomSheet / DigitalPad).
+ * L'entrée affiche la valeur formatée (ex. « 15 000 FCFA » ou « 10 ») avec une icône de pavé intégrée.
+ * Fonctionne parfaitement sur mobile, tablette et desktop.
  */
 export function NumericField({
   mode,
@@ -40,7 +32,6 @@ export function NumericField({
   max?: number;
   invalid?: boolean;
 }) {
-  const coarse = useCoarsePointer();
   const [padOpen, setPadOpen] = useState(false);
   const [draft, setDraft] = useState(value);
 
@@ -54,11 +45,11 @@ export function NumericField({
     setPadOpen(false);
   }
 
-  const baseStyle: React.CSSProperties = {
-    width: "100%", height: 44, padding: "0 13px",
-    border: `1.5px solid ${invalid ? colors.danger : colors.borderField}`,
-    borderRadius: 10, font: `400 14px ${fonts.ui}`, color: colors.ink, outline: "none",
-  };
+  const formattedDisplay = value
+    ? mode === "money"
+      ? formatPadValue(value, "money")
+      : value
+    : "";
 
   return (
     <div>
@@ -67,40 +58,82 @@ export function NumericField({
           {label}
         </label>
       )}
-      {coarse ? (
-        <input
-          value={value}
-          readOnly
-          onClick={openPad}
-          inputMode="none"
-          placeholder={placeholder}
-          style={{ ...baseStyle, cursor: "pointer" }}
-        />
-      ) : (
-        <div style={{ display: "flex", gap: 6 }}>
-          <input
-            type={NATIVE_TYPE[mode]}
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            inputMode={INPUT_MODE[mode]}
-            placeholder={placeholder}
-            min={mode !== "phone" ? min : undefined}
-            max={mode !== "phone" ? max : undefined}
-            style={{ ...baseStyle, flex: 1 }}
-          />
-          <button type="button" onClick={openPad} aria-label="Ouvrir le pavé numérique" style={padIconBtn}>
-            <Icon path={ICONS.keypad} size={16} stroke={colors.primary} />
-          </button>
-        </div>
-      )}
-      <BottomSheet open={padOpen} onClose={() => setPadOpen(false)} title={label ?? "Saisie"}>
+
+      {/* Saisie unifiée : tap/clic ouvre directement le pavé numérique */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={openPad}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openPad();
+          }
+        }}
+        title={`Cliquer pour saisir ${label ? label.toLowerCase() : "une valeur"}`}
+        aria-label={label ?? "Saisie numérique"}
+        style={{
+          width: "100%",
+          height: 44,
+          padding: "0 10px 0 13px",
+          border: `1.5px solid ${invalid ? colors.danger : colors.borderField}`,
+          borderRadius: 10,
+          background: "#fff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          cursor: "pointer",
+          userSelect: "none",
+          transition: "border-color .15s ease, box-shadow .15s ease",
+          outline: "none",
+        }}
+        onFocus={(e) => {
+          e.currentTarget.style.borderColor = colors.primary;
+          e.currentTarget.style.boxShadow = `0 0 0 3px ${colors.bgInfo}`;
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.borderColor = invalid ? colors.danger : colors.borderField;
+          e.currentTarget.style.boxShadow = "none";
+        }}
+      >
+        <span
+          style={{
+            flex: 1,
+            font: `600 14px ${fonts.ui}`,
+            color: value ? colors.ink : colors.muted,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {formattedDisplay || placeholder || "0"}
+        </span>
+
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 28,
+            height: 28,
+            borderRadius: 7,
+            background: colors.ivory,
+            color: colors.primary,
+            flex: "none",
+            marginLeft: 8,
+          }}
+        >
+          <Icon path={ICONS.keypad} size={15} stroke="currentColor" />
+        </span>
+      </div>
+
+      <BottomSheet
+        open={padOpen}
+        onClose={() => setPadOpen(false)}
+        title={label ?? (mode === "money" ? "Saisir le montant" : mode === "phone" ? "Saisir le numéro" : "Saisir la quantité")}
+      >
         <NumericPad value={draft} mode={mode} onChange={setDraft} onConfirm={confirmPad} />
       </BottomSheet>
     </div>
   );
 }
-
-const padIconBtn: React.CSSProperties = {
-  width: 36, height: 44, flex: "none", border: `1.5px solid ${colors.borderField}`, borderRadius: 10,
-  background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-};

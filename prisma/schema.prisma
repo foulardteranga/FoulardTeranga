@@ -190,6 +190,8 @@ model Product {
   featured    Boolean         @default(false)
   image       String?
   gallery     String[]        @default([])
+  active      Boolean         @default(true)
+  archivedAt  DateTime?
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
@@ -199,6 +201,7 @@ model Product {
   variants       ProductVariant[]
 
   @@index([tenantId])
+  @@index([tenantId, active])
 }
 
 model Customer {
@@ -243,6 +246,9 @@ model Order {
   createdAt      DateTime       @default(now())
   previousStatus OrderStatus?
   archivedAt     DateTime?
+  amountReceived Int? // Montant remis par le client (espèces)
+  changeGiven    Int? // Monnaie rendue (espèces)
+  paymentDetails Json? // Ventilation des paiements (mixte / split payments)
 
   tenant       Tenant             @relation(fields: [tenantId], references: [id])
   customer     Customer?          @relation(fields: [customerId], references: [id])

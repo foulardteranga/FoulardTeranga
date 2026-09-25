@@ -25,12 +25,19 @@ describe("BLOCK_SETTINGS", () => {
 });
 
 describe("champs image", () => {
-  it("hero.backgroundImage, story.image et cats.*Image sont des champs de type image", () => {
-    expect(heroFields.find((f) => f.key === "backgroundImage")?.kind).toBe("image");
+  it("story.image et cats.*Image sont des champs de type image", () => {
     expect(storyFields.find((f) => f.key === "image")?.kind).toBe("image");
     expect(catsFields.find((f) => f.key === "foulardsImage")?.kind).toBe("image");
     expect(catsFields.find((f) => f.key === "turbansImage")?.kind).toBe("image");
     expect(catsFields.find((f) => f.key === "accessoiresImage")?.kind).toBe("image");
+  });
+
+  it("hero.images est un champ de type imageList avec minItems: 5 et maxItems: 10", () => {
+    const heroImagesField = heroFields.find((f) => f.key === "images");
+    expect(heroImagesField?.kind).toBe("imageList");
+    expect(heroImagesField?.minItems).toBe(5);
+    expect(heroImagesField?.maxItems).toBe(10);
+    expect(BLOCK_SETTINGS.hero.defaults).toMatchObject({ images: [] });
   });
 
   it("look.images est un champ de type imageList, vide par défaut", () => {

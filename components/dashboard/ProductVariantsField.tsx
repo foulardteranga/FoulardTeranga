@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { colors, fonts, adminBorder } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
-import { NumericField } from "@/components/ui/NumericField";
+import { BottomSheet } from "@/components/ui/BottomSheet";
+import { NumericPad } from "@/components/ui/NumericPad";
 import { searchColors, COLOR_CATALOG } from "@/lib/colors/catalog";
 import { generateShades } from "@/lib/colors/shades";
 import { getTenantColors, type TenantColorItem } from "@/lib/colors/actions";
@@ -32,12 +33,39 @@ const POPULAR_SWATCHES = [
   { name: "Ocre", hex: "#C99700" },
 ];
 
+function getContrastingColor(hex: string): string {
+  const cleanHex = hex.replace("#", "");
+  const fullHex = cleanHex.length === 3
+    ? cleanHex.split("").map((c) => c + c).join("")
+    : cleanHex;
+  const r = parseInt(fullHex.substring(0, 2), 16) || 0;
+  const g = parseInt(fullHex.substring(2, 4), 16) || 0;
+  const b = parseInt(fullHex.substring(4, 6), 16) || 0;
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 155 ? "#1C1B1F" : "#FFFFFF";
+}
+
 export function ProductVariantsField({ variants, onChange, baseSwatch }: ProductVariantsFieldProps) {
   const [search, setSearch] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [customModalOpen, setCustomModalOpen] = useState(false);
   const [tenantFavorites, setTenantFavorites] = useState<TenantColorItem[]>([]);
+  const [activeVariantPadIndex, setActiveVariantPadIndex] = useState<number | null>(null);
+  const [variantPadDraft, setVariantPadDraft] = useState("0");
   const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  function openVariantPad(index: number) {
+    setActiveVariantPadIndex(index);
+    setVariantPadDraft(String(variants[index]?.stock ?? 0));
+  }
+
+  function confirmVariantPad() {
+    if (activeVariantPadIndex !== null) {
+      const num = Math.max(0, parseInt(variantPadDraft, 10) || 0);
+      updateVariant(activeVariantPadIndex, { stock: num });
+      setActiveVariantPadIndex(null);
+    }
+  }
 
   // Charger les favoris enregistrés de la boutique
   useEffect(() => {
@@ -74,13 +102,24 @@ export function ProductVariantsField({ variants, onChange, baseSwatch }: Product
     const newVariant: ProductVariantItem = {
       colorName,
       colorHex,
-      stock: 5,
+      stock: 0,
       active: true,
       position: variants.length,
     };
     onChange([...variants, newVariant]);
     setSearch("");
     setIsSearchOpen(false);
+  }
+
+  function toggleVariant(colorName: string, colorHex: string) {
+    const existingIndex = variants.findIndex(
+      (v) => v.colorHex.toLowerCase() === colorHex.toLowerCase()
+    );
+    if (existingIndex >= 0) {
+      removeVariant(existingIndex);
+    } else {
+      addVariant(colorName, colorHex);
+    }
   }
 
   function updateVariant(index: number, patch: Partial<ProductVariantItem>) {
@@ -204,34 +243,36 @@ export function ProductVariantsField({ variants, onChange, baseSwatch }: Product
                     </div>
                   </div>
 
-                  {/* 5 nuances cliquables */}
-                  <div style={{ display: "flex", gap: 5 }}>
+                  {/* 5 nuances cliquables avec sélection / désélection au tap */}
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     {shades.map((shade) => {
-                      const alreadyAdded = variants.some(
+                      const isAdded = variants.some(
                         (v) => v.colorHex.toLowerCase() === shade.hex.toLowerCase()
                       );
+                      const contrast = getContrastingColor(shade.hex);
                       return (
                         <button
                           key={shade.hex}
                           type="button"
-                          onClick={() => addVariant(shade.name, shade.hex)}
-                          title={`${shade.name} (${shade.label}) - Cliquer pour ajouter`}
-                          disabled={alreadyAdded}
+                          onClick={() => toggleVariant(shade.name, shade.hex)}
+                          title={`${shade.name} (${shade.label}) — ${isAdded ? "Cliquer pour retirer" : "Cliquer pour ajouter"}`}
+                          aria-pressed={isAdded}
                           style={{
-                            width: 28,
-                            height: 28,
-                            borderRadius: 7,
+                            width: 32,
+                            height: 32,
+                            borderRadius: 8,
                             background: shade.hex,
-                            border: `1.5px solid ${shade.role === "ref" ? colors.ink : "rgba(0,0,0,0.14)"}`,
-                            cursor: alreadyAdded ? "not-allowed" : "pointer",
-                            opacity: alreadyAdded ? 0.35 : 1,
+                            border: `2px solid ${isAdded ? colors.primary : (shade.role === "ref" ? colors.ink : "rgba(0,0,0,0.14)")}`,
+                            boxShadow: isAdded ? `0 0 0 2px #fff, 0 0 0 4px ${colors.primary}` : "none",
+                            cursor: "pointer",
                             position: "relative",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
+                            transition: "all .15s ease",
                           }}
                         >
-                          {alreadyAdded && <Icon path={ICONS.check} size={12} stroke="#fff" />}
+                          {isAdded && <Icon path={ICONS.check} size={13} stroke={contrast} strokeWidth={2.4} />}
                         </button>
                       );
                     })}
@@ -268,7 +309,8 @@ export function ProductVariantsField({ variants, onChange, baseSwatch }: Product
               display: "flex",
               alignItems: "center",
               gap: 4,
-              padding: "2px 6px",
+              padding: "4px 8px",
+              borderRadius: 6,
             }}
           >
             <Icon path={ICONS.plus} size={14} stroke="currentColor" />
@@ -277,75 +319,87 @@ export function ProductVariantsField({ variants, onChange, baseSwatch }: Product
         </div>
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          {/* Favoris enregistrés */}
+          {/* Favoris enregistrés avec sélection/désélection directe */}
           {tenantFavorites.map((fav) => {
             const isAdded = variants.some(
               (v) => v.colorHex.toLowerCase() === fav.hex.toLowerCase()
             );
+            const contrast = getContrastingColor(fav.hex);
             return (
               <button
                 key={fav.id}
                 type="button"
-                onClick={() => addVariant(fav.name, fav.hex)}
-                disabled={isAdded}
-                title={`${fav.name} (Favori boutique)`}
+                onClick={() => toggleVariant(fav.name, fav.hex)}
+                title={`${fav.name} — ${isAdded ? "Cliquer pour retirer" : "Cliquer pour ajouter"}`}
+                aria-pressed={isAdded}
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 6,
-                  padding: "4px 9px",
-                  borderRadius: 8,
+                  gap: 7,
+                  padding: "6px 11px",
+                  minHeight: 38,
+                  borderRadius: 10,
                   border: `1.5px solid ${isAdded ? colors.primary : colors.borderField}`,
                   background: isAdded ? colors.bgInfo : "#fff",
-                  cursor: isAdded ? "default" : "pointer",
-                  fontSize: 12,
+                  boxShadow: isAdded ? `0 0 0 1px ${colors.primary}` : "none",
+                  cursor: "pointer",
+                  fontSize: 12.5,
+                  fontWeight: isAdded ? 600 : 500,
                   fontFamily: fonts.ui,
                   color: isAdded ? colors.primary : colors.ink,
-                  opacity: isAdded ? 0.8 : 1,
+                  transition: "all .15s ease",
                 }}
               >
                 <span
                   style={{
-                    width: 14,
-                    height: 14,
-                    borderRadius: 4,
+                    width: 16,
+                    height: 16,
+                    borderRadius: 5,
                     background: fav.hex,
-                    border: "1px solid rgba(0,0,0,0.12)",
+                    border: "1px solid rgba(0,0,0,0.15)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
-                />
+                >
+                  {isAdded && <Icon path={ICONS.check} size={10} stroke={contrast} strokeWidth={2.5} />}
+                </span>
                 <span>{fav.name}</span>
                 <span style={{ fontSize: 10, color: colors.gold }}>⭐</span>
               </button>
             );
           })}
 
-          {/* Palette populaire */}
+          {/* Palette populaire — boutons 38px confortables pour tactile & toggle direct */}
           {POPULAR_SWATCHES.map((swatch) => {
             const isAdded = variants.some(
               (v) => v.colorHex.toLowerCase() === swatch.hex.toLowerCase()
             );
+            const contrast = getContrastingColor(swatch.hex);
             return (
               <button
                 key={swatch.hex}
                 type="button"
-                onClick={() => addVariant(swatch.name, swatch.hex)}
-                disabled={isAdded}
-                title={swatch.name}
+                onClick={() => toggleVariant(swatch.name, swatch.hex)}
+                title={`${swatch.name} — ${isAdded ? "Cliquer pour retirer" : "Cliquer pour ajouter"}`}
+                aria-pressed={isAdded}
                 style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 8,
+                  width: 38,
+                  height: 38,
+                  borderRadius: 10,
                   background: swatch.hex,
-                  border: `1.5px solid ${isAdded ? colors.primary : "rgba(0,0,0,0.12)"}`,
-                  boxShadow: isAdded ? `0 0 0 2px ${colors.primary}` : "none",
-                  cursor: isAdded ? "default" : "pointer",
-                  opacity: isAdded ? 0.4 : 1,
+                  border: `2px solid ${isAdded ? colors.primary : "rgba(0,0,0,0.14)"}`,
+                  boxShadow: isAdded ? `0 0 0 2px #fff, 0 0 0 4.5px ${colors.primary}` : "0 1px 3px rgba(0,0,0,0.06)",
+                  cursor: "pointer",
+                  transform: isAdded ? "scale(1.06)" : "scale(1)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
+                  transition: "all .15s cubic-bezier(0.4, 0, 0.2, 1)",
+                  outline: "none",
                 }}
               >
-                {isAdded && <Icon path={ICONS.check} size={13} stroke="#fff" />}
+                {isAdded && <Icon path={ICONS.check} size={15} stroke={contrast} strokeWidth={2.5} />}
               </button>
             );
           })}
@@ -375,7 +429,7 @@ export function ProductVariantsField({ variants, onChange, baseSwatch }: Product
               color: colors.primary,
             }}
           >
-            Total stock : {totalStock} unités
+            Total stock : {totalStock} {totalStock <= 1 ? "unité" : "unités"}
           </span>
         </div>
 
@@ -394,100 +448,198 @@ export function ProductVariantsField({ variants, onChange, baseSwatch }: Product
             Aucune variante de couleur définie. Sélectionnez une teinte ci-dessus ou cliquez sur &quot;Couleur sur mesure&quot;.
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {variants.map((variant, index) => (
               <div
                 key={variant.id || `${variant.colorHex}-${index}`}
                 style={{
                   display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "8px 12px",
-                  borderRadius: 10,
-                  border: `1px solid ${colors.borderSoft}`,
+                  flexDirection: "column",
+                  gap: 9,
+                  padding: "11px 13px",
+                  borderRadius: 12,
+                  border: `1.5px solid ${variant.active ? colors.borderField : colors.borderSoft}`,
                   background: variant.active ? "#fff" : colors.rowAlt,
-                  opacity: variant.active ? 1 : 0.65,
+                  opacity: variant.active ? 1 : 0.72,
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+                  transition: "all .15s ease",
                 }}
               >
-                {/* Pastille de couleur */}
-                <span
-                  style={{
-                    width: 26,
-                    height: 26,
-                    borderRadius: 7,
-                    background: variant.colorHex,
-                    border: "1px solid rgba(0,0,0,0.15)",
-                    flex: "none",
-                  }}
-                  title={variant.colorHex}
-                />
-
-                {/* Nom de la variante */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <input
-                    type="text"
-                    value={variant.colorName}
-                    onChange={(e) => updateVariant(index, { colorName: e.target.value })}
+                {/* Ligne 1 : Pastille de couleur, Nom éditable & Actions */}
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span
                     style={{
-                      width: "100%",
-                      border: "none",
-                      outline: "none",
-                      font: `600 13px ${fonts.ui}`,
-                      color: colors.ink,
-                      background: "transparent",
+                      width: 28,
+                      height: 28,
+                      borderRadius: 8,
+                      background: variant.colorHex,
+                      border: "1px solid rgba(0,0,0,0.18)",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                      flex: "none",
                     }}
+                    title={variant.colorHex}
                   />
-                  <div style={{ fontSize: 11, color: colors.muted, fontFamily: "monospace" }}>
-                    {variant.colorHex}
+
+                  {/* Nom de la variante */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <input
+                      type="text"
+                      value={variant.colorName}
+                      onChange={(e) => updateVariant(index, { colorName: e.target.value })}
+                      style={{
+                        width: "100%",
+                        border: "none",
+                        outline: "none",
+                        font: `600 13.5px ${fonts.ui}`,
+                        color: colors.ink,
+                        background: "transparent",
+                      }}
+                      placeholder="Nom de la couleur"
+                    />
+                    <div style={{ fontSize: 11, color: colors.muted, fontFamily: "monospace" }}>
+                      {variant.colorHex}
+                    </div>
+                  </div>
+
+                  {/* Interrupteur Actif */}
+                  <button
+                    type="button"
+                    onClick={() => updateVariant(index, { active: !variant.active })}
+                    title={variant.active ? "Variante active (cliquer pour masquer)" : "Variante inactive (cliquer pour activer)"}
+                    style={{
+                      border: "none",
+                      background: variant.active ? colors.bgSuccess : colors.bgDanger,
+                      color: variant.active ? colors.fgSuccess : colors.fgDanger,
+                      borderRadius: 7,
+                      padding: "6px 10px",
+                      minHeight: 34,
+                      fontSize: 11.5,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      flex: "none",
+                    }}
+                  >
+                    {variant.active ? "Actif" : "Masqué"}
+                  </button>
+
+                  {/* Supprimer avec zone tactile confortable */}
+                  <button
+                    type="button"
+                    onClick={() => removeVariant(index)}
+                    title="Supprimer cette variante"
+                    aria-label={`Supprimer ${variant.colorName}`}
+                    style={{
+                      border: "none",
+                      background: "transparent",
+                      cursor: "pointer",
+                      width: 34,
+                      height: 34,
+                      color: colors.muted,
+                      borderRadius: 8,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flex: "none",
+                    }}
+                  >
+                    <Icon path={ICONS.trash} size={16} />
+                  </button>
+                </div>
+
+                {/* Ligne 2 : Stepper tactile ergonomique pour tablette/mobile */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "6px 10px",
+                    background: colors.ivory,
+                    borderRadius: 8,
+                    border: `1px solid ${colors.borderSoft}`,
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, color: colors.primary }}>
+                    <Icon path={ICONS.inv} size={14} stroke={colors.primary} />
+                    <span style={{ fontSize: 12.5, fontWeight: 600 }}>Stock disponible</span>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <button
+                      type="button"
+                      aria-label="Diminuer le stock"
+                      onClick={() => updateVariant(index, { stock: Math.max(0, (variant.stock || 0) - 1) })}
+                      disabled={(variant.stock || 0) <= 0}
+                      style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 8,
+                        border: `1.5px solid ${colors.borderField}`,
+                        background: "#fff",
+                        color: colors.primary,
+                        font: `700 18px ${fonts.ui}`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: (variant.stock || 0) <= 0 ? "not-allowed" : "pointer",
+                        opacity: (variant.stock || 0) <= 0 ? 0.35 : 1,
+                        userSelect: "none",
+                      }}
+                    >
+                      −
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openVariantPad(index)}
+                      title={`Cliquer pour saisir le stock de ${variant.colorName} au pavé numérique`}
+                      style={{
+                        minWidth: 50,
+                        height: 36,
+                        padding: "0 8px",
+                        textAlign: "center",
+                        font: `700 15px ${fonts.ui}`,
+                        color: colors.primary,
+                        background: "#fff",
+                        border: `1.5px solid ${colors.borderField}`,
+                        borderRadius: 8,
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 4,
+                        userSelect: "none",
+                        outline: "none",
+                        transition: "all .12s ease",
+                      }}
+                    >
+                      <span>{variant.stock}</span>
+                      <Icon path={ICONS.keypad} size={13} stroke={colors.primary} />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Augmenter le stock"
+                      onClick={() => updateVariant(index, { stock: (variant.stock || 0) + 1 })}
+                      style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 8,
+                        border: `1.5px solid ${colors.borderField}`,
+                        background: "#fff",
+                        color: colors.primary,
+                        font: `700 18px ${fonts.ui}`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        userSelect: "none",
+                      }}
+                    >
+                      +
+                    </button>
+                    <span style={{ fontSize: 12, color: colors.muted, fontWeight: 500, minWidth: 42 }}>
+                      {variant.stock <= 1 ? "unité" : "unités"}
+                    </span>
                   </div>
                 </div>
-
-                {/* Saisie Stock unitaire */}
-                <div style={{ width: 85 }}>
-                  <NumericField
-                    mode="integer"
-                    value={String(variant.stock)}
-                    onChange={(v) => updateVariant(index, { stock: Math.max(0, parseInt(v, 10) || 0) })}
-                    placeholder="0"
-                    min={0}
-                  />
-                </div>
-
-                {/* Interrupteur Actif */}
-                <button
-                  type="button"
-                  onClick={() => updateVariant(index, { active: !variant.active })}
-                  title={variant.active ? "Variante active (cliquer pour désactiver)" : "Variante inactive (cliquer pour activer)"}
-                  style={{
-                    border: "none",
-                    background: variant.active ? colors.bgSuccess : colors.bgDanger,
-                    color: variant.active ? colors.fgSuccess : colors.fgDanger,
-                    borderRadius: 6,
-                    padding: "4px 7px",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  {variant.active ? "Actif" : "Masqué"}
-                </button>
-
-                {/* Supprimer */}
-                <button
-                  type="button"
-                  onClick={() => removeVariant(index)}
-                  title="Supprimer cette variante"
-                  style={{
-                    border: "none",
-                    background: "transparent",
-                    cursor: "pointer",
-                    padding: 6,
-                    color: colors.muted,
-                    borderRadius: 6,
-                  }}
-                >
-                  <Icon path={ICONS.trash} size={15} />
-                </button>
               </div>
             ))}
           </div>
@@ -500,6 +652,20 @@ export function ProductVariantsField({ variants, onChange, baseSwatch }: Product
         onClose={() => setCustomModalOpen(false)}
         onSelect={({ name, hex }) => addVariant(name, hex)}
       />
+
+      {/* Modal digital pad pour saisir le stock de la variante */}
+      <BottomSheet
+        open={activeVariantPadIndex !== null}
+        onClose={() => setActiveVariantPadIndex(null)}
+        title={activeVariantPadIndex !== null ? `Stock — ${variants[activeVariantPadIndex]?.colorName || "Variante"}` : "Stock"}
+      >
+        <NumericPad
+          value={variantPadDraft}
+          mode="integer"
+          onChange={setVariantPadDraft}
+          onConfirm={confirmVariantPad}
+        />
+      </BottomSheet>
     </div>
   );
 }

@@ -45,6 +45,15 @@ function toOrder(row: PrismaOrderWithLines, promoValidity: Map<string, boolean>)
     pointsDiscount: row.pointsDiscount,
     promoStillValid: promoValidity.get(row.id) ?? true,
     archivedAt: row.archivedAt ? formatOrderDate(row.archivedAt) : null,
+    paymentMethod: row.paymentMethod,
+    amountReceived: row.amountReceived,
+    changeGiven: row.changeGiven,
+    paymentDetails: (row.paymentDetails as Array<{
+      method: string;
+      amount: number;
+      amountReceived?: number | null;
+      changeGiven?: number | null;
+    }> | null) ?? null,
   };
 }
 
@@ -117,8 +126,12 @@ export async function getOrderStatusHistory(ref: string): Promise<OrderStatusEve
   }));
 }
 
-/** Nombre de commandes encore « à valider » (statut `nouvelle`). */
 export async function getPendingOrdersCount(): Promise<number> {
-  const tenant = await getCurrentTenant();
-  return prisma.order.count({ where: { tenantId: tenant.id, status: "nouvelle" } });
+  try {
+    const tenant = await getCurrentTenant();
+    return await prisma.order.count({ where: { tenantId: tenant.id, status: "nouvelle" } });
+  } catch (err) {
+    console.error("[getPendingOrdersCount] Échec comptage commandes en attente:", err);
+    return 0;
+  }
 }

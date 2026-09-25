@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
 import { buildDefaultVariantsForProduct, type LegacyProductForMigration } from "./variantsMigration";
-    position: i,
-  }));
-}
 
 describe("buildDefaultVariantsForProduct", () => {
   it("génère une variante par défaut pour un produit mono-couleur", () => {

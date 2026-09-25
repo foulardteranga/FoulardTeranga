@@ -99,6 +99,47 @@ export function TicketModal() {
               {ticket.total}
             </span>
           </div>
+
+          {ticket.splitPayments && ticket.splitPayments.length > 0 && (
+            <div
+              style={{
+                background: "#F7F5F0",
+                borderRadius: 10,
+                padding: "10px 12px",
+                margin: "12px 0 8px",
+              }}
+            >
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".04em", color: colors.muted, marginBottom: 6 }}>
+                RÈGLEMENTS MIXTES
+              </div>
+              {ticket.splitPayments.map((sp, idx) => (
+                <div key={idx} style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, padding: "2px 0", color: colors.ink }}>
+                  <span>{sp.label}</span>
+                  <span style={{ fontWeight: 600 }}>{money(sp.amount)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {ticket.amountReceived != null && ticket.changeGiven != null && ticket.changeGiven > 0 && (
+            <div style={{ borderTop: `1px solid ${colors.borderSoft}`, marginTop: 8, paddingTop: 8 }}>
+              <Row label="Espèces reçues" value={money(ticket.amountReceived)} />
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  fontSize: 13.5,
+                  color: colors.fgSuccess,
+                  fontWeight: 700,
+                  marginBottom: 8,
+                }}
+              >
+                <span>Monnaie rendue</span>
+                <span>{money(ticket.changeGiven)}</span>
+              </div>
+            </div>
+          )}
+
           {ticket.loyalty && (
             <Row
               label="Points gagnés"

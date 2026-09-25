@@ -58,6 +58,20 @@ export async function publish(): Promise<{ ok: true } | { ok: false; error: stri
       where: { tenantId_slug: { tenantId: tenant.id, slug: SLUG } },
     });
     const draft = (row ? row.draft : defaultPage()) as unknown as Prisma.InputJsonValue;
+    const pageDraft = parsePageContent(draft);
+    const invalidHero = pageDraft.blocks.find((b) => {
+      if (b.type !== "hero" || !b.visible) return false;
+      const imgs = (b.settings as { images?: string[] }).images;
+      return Array.isArray(imgs) && imgs.length > 0 && imgs.length < 5;
+    });
+    if (invalidHero) {
+      const count = ((invalidHero.settings as { images?: string[] }).images || []).length;
+      return {
+        ok: false,
+        error: `Impossible de publier : le bloc « ${invalidHero.name} » nécessite au moins 5 images pour la bande déroulante (actuellement ${count}/10).`,
+      };
+    }
+
     await prisma.storefrontPage.upsert({
       where: { tenantId_slug: { tenantId: tenant.id, slug: SLUG } },
       update: { published: draft, publishedAt: new Date() },
@@ -128,7 +142,52 @@ export async function uploadBlockImage(
 
     const { data } = supabase.storage.from(STOREFRONT_IMAGES_BUCKET).getPublicUrl(path);
     return { ok: true, url: data.publicUrl };
+  } catch (err) {
+    console.error("[uploadBlockImage] Échec du traitement de l'image:", err);
+    return { ok: false, error: "Une erreur est survenue, réessayez." };
+  }
+}
+
+/** Supprime une image de bloc du stockage Supabase Storage. */
+export async function deleteBlockImage(
+  imageUrl: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { allowed } = await requireZone("dashboard");
+  if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+  const writable = await requireWritableSession();
+  if (!writable.ok) return { ok: false, error: writable.error };
+
+  if (typeof imageUrl !== "string" || !imageUrl.trim()) {
+    return { ok: true };
+  }
+
+  try {
+    const tenant = await getCurrentTenant();
+    const bucketMarker = `/${STOREFRONT_IMAGES_BUCKET}/`;
+    const markerIndex = imageUrl.indexOf(bucketMarker);
+    if (markerIndex === -1) {
+      // Image externe ou chemin non issu du bucket storefront-images
+      return { ok: true };
+    }
+
+    const relativePath = decodeURIComponent(
+      imageUrl.substring(markerIndex + bucketMarker.length).split("?")[0]
+    );
+
+    // Contrôle d'isolation tenant : le chemin doit commencer par l'id du tenant courant
+    if (!relativePath.startsWith(`${tenant.id}/`)) {
+      return { ok: false, error: "Action non autorisée." };
+    }
+
+    const supabase = await createClient();
+    const { error } = await supabase.storage.from(STOREFRONT_IMAGES_BUCKET).remove([relativePath]);
+    if (error) {
+      return { ok: false, error: "Échec de la suppression dans le stockage." };
+    }
+
+    return { ok: true };
   } catch {
     return { ok: false, error: "Une erreur est survenue, réessayez." };
   }
 }
+

@@ -10,6 +10,9 @@ export interface FieldDescriptor {
   label: string;
   kind: FieldKind;
   options?: string[];
+  minItems?: number;
+  maxItems?: number;
+  help?: string;
 }
 
 /* ---- hero ---- */
@@ -21,7 +24,8 @@ export const heroSchema = z.object({
   ctaLink: z.string(),
   secondaryCtaLabel: z.string(),
   secondaryCtaLink: z.string(),
-  backgroundImage: z.string(),
+  backgroundImage: z.string().optional().default(""),
+  images: z.array(z.string()).default([]),
 });
 export type HeroSettings = z.infer<typeof heroSchema>;
 export const heroDefaults: HeroSettings = {
@@ -34,6 +38,7 @@ export const heroDefaults: HeroSettings = {
   secondaryCtaLabel: "Notre histoire",
   secondaryCtaLink: "/#ft-story",
   backgroundImage: "",
+  images: [],
 };
 export const heroFields: FieldDescriptor[] = [
   { key: "eyebrow", label: "Pré-titre", kind: "text" },
@@ -43,7 +48,14 @@ export const heroFields: FieldDescriptor[] = [
   { key: "ctaLink", label: "Bouton principal — lien", kind: "url" },
   { key: "secondaryCtaLabel", label: "Bouton secondaire — libellé", kind: "text" },
   { key: "secondaryCtaLink", label: "Bouton secondaire — lien", kind: "url" },
-  { key: "backgroundImage", label: "Image de fond", kind: "image" },
+  {
+    key: "images",
+    label: "Images de la bande déroulante (5 à 10 requises)",
+    kind: "imageList",
+    minItems: 5,
+    maxItems: 10,
+    help: "Bande d'images défilant en continu côte à côte en arrière-plan.",
+  },
 ];
 
 /* ---- story ---- */

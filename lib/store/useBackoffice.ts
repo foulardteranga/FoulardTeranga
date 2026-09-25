@@ -31,6 +31,14 @@ export interface Ticket {
   loyalty: { pointsEarned: number; newBalance: number } | null;
   promo: { code: string; discount: number } | null;
   pointsUsed: { points: number; discount: number } | null;
+  amountReceived?: number | null;
+  changeGiven?: number | null;
+  splitPayments?: Array<{
+    label: string;
+    amount: number;
+    amountReceived?: number | null;
+    changeGiven?: number | null;
+  }> | null;
   /** Message WhatsApp pré-construit (buildTicketMessage). */
   waMessage: string;
   customerPhone: string | null;

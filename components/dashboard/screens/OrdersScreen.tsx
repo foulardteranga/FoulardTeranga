@@ -13,6 +13,7 @@ import {
   archiveOrder, restoreOrder, deleteOrderPermanently,
 } from "@/lib/orders/actions";
 import { OrderStatusTimeline } from "@/components/orders/OrderStatusTimeline";
+import { PAYMENT_LABELS } from "@/lib/payments/labels";
 import type { OrderStatusEventView } from "@/lib/data/orders.server";
 import type { Order, OrderStatus } from "@/lib/data/types";
 
@@ -452,6 +453,34 @@ function OrderDetail({
               <span style={{ fontWeight: 600, fontSize: 14 }}>Total</span>
               <span style={{ fontFamily: fonts.display, fontWeight: 700, fontSize: 19, color: colors.primary }}>{o.total}</span>
             </div>
+
+            {o.paymentMethod && (
+              <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${colors.faintLine}`, fontSize: 12.5 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", color: colors.muted }}>
+                  <span>Mode de règlement</span>
+                  <span style={{ fontWeight: 600, color: colors.ink }}>
+                    {PAYMENT_LABELS[o.paymentMethod as keyof typeof PAYMENT_LABELS] || o.paymentMethod}
+                  </span>
+                </div>
+                {o.amountReceived != null && o.changeGiven != null && o.changeGiven > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, color: colors.fgSuccess, fontWeight: 600 }}>
+                    <span>Monnaie rendue (Reçu : {money(o.amountReceived)})</span>
+                    <span>{money(o.changeGiven)}</span>
+                  </div>
+                )}
+                {o.paymentDetails && o.paymentDetails.length > 0 && (
+                  <div style={{ marginTop: 6, padding: "6px 10px", background: "#fff", borderRadius: 8, border: `1px solid ${colors.borderSoft}` }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: colors.muted, marginBottom: 4 }}>DÉTAIL DES RÈGLEMENTS</div>
+                    {o.paymentDetails.map((pd, i) => (
+                      <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "2px 0" }}>
+                        <span>{PAYMENT_LABELS[pd.method as keyof typeof PAYMENT_LABELS] || pd.method}</span>
+                        <span style={{ fontWeight: 600 }}>{money(pd.amount)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

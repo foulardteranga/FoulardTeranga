@@ -15,6 +15,7 @@ import { BlockListPanel } from "./BlockListPanel";
 import { BlockPicker } from "./BlockPicker";
 import { BlockCanvasToolbar } from "./BlockCanvasToolbar";
 import { BottomSheet } from "@/components/ui/BottomSheet";
+import { useBackoffice } from "@/lib/store/useBackoffice";
 import type { Product } from "@/lib/data/types";
 
 type SaveState = "idle" | "saving" | "error";
@@ -39,6 +40,7 @@ export function VitrineEditor({
   const [activeSheet, setActiveSheet] = useState<MobileSheet>(null);
   const [pendingScrollId, setPendingScrollId] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showToast = useBackoffice((s) => s.showToast);
 
   // Autosave débouncé du brouillon à chaque changement de `page`.
   const scheduleSave = useCallback((next: StorefrontPageContent) => {
@@ -105,14 +107,43 @@ export function VitrineEditor({
   }
 
   async function onPublish() {
+    // Vérifier les contraintes du bandeau Hero avant publication :
+    // S'il y a un bloc hero visible qui a des images renseignées mais moins de 5, bloquer
+    const invalidHero = page.blocks.find((b) => {
+      if (b.type !== "hero" || !b.visible) return false;
+      const imgs = (b.settings as { images?: string[] }).images;
+      return Array.isArray(imgs) && imgs.length > 0 && imgs.length < 5;
+    });
+
+    if (invalidHero) {
+      const count = ((invalidHero.settings as { images?: string[] }).images || []).length;
+      showToast(
+        `Impossible de publier : le bloc « ${invalidHero.name} » nécessite au moins 5 images pour la bande déroulante (actuellement ${count}/10).`,
+        "error"
+      );
+      setSelected(invalidHero.id);
+      return;
+    }
+
     setPublishing(true);
     // s'assurer que le dernier brouillon est bien enregistré avant publication
     if (timer.current) clearTimeout(timer.current);
     const saved = await saveDraft(page);
-    if (!saved.ok) { setSaveState("error"); setPublishing(false); return; }
+    if (!saved.ok) {
+      setSaveState("error");
+      setPublishing(false);
+      showToast(saved.error, "error");
+      return;
+    }
     const res = await publish();
-    if (!res.ok) { setSaveState("error"); setPublishing(false); return; }
+    if (!res.ok) {
+      setSaveState("error");
+      setPublishing(false);
+      showToast(res.error, "error");
+      return;
+    }
     setPublishing(false);
+    showToast("Vitrine publiée avec succès !", "success");
   }
 
   async function onRevert() {

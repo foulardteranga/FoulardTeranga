@@ -62,7 +62,7 @@ describe("toProduct", () => {
       id: "p1", tenantId: "foulard-teranga", category: "Foulards" as const, name: "Foulard Wax Abidjan",
       variant: "Wax · 90×90", price: 12500, stock: 24, swatch: "swatch", colors: ["#26326B"], motif: "Wax",
       lengths: ["90 × 90 cm"], description: "desc", oldPrice: null, badge: "Nouveau", featured: false,
-      image: null, gallery: [],
+      image: null, gallery: [], active: true, archivedAt: null,
       createdAt: new Date(), updatedAt: new Date(),
     };
     const product = toProduct(row);
@@ -71,6 +71,8 @@ describe("toProduct", () => {
     expect(product.badge).toBe("Nouveau");
     expect(product.image).toBeUndefined();
     expect(product.gallery).toEqual([]);
+    expect(product.active).toBe(true);
+    expect(product.archivedAt).toBeNull();
   });
 
   it("maps image and gallery when present", () => {
@@ -80,11 +82,14 @@ describe("toProduct", () => {
       lengths: ["70 × 70 cm"], description: "desc", oldPrice: null, badge: null, featured: false,
       image: "https://x.supabase.co/storage/v1/object/public/storefront-images/t/products/a.webp",
       gallery: ["https://x.supabase.co/storage/v1/object/public/storefront-images/t/products/b.webp"],
+      active: false, archivedAt: new Date("2026-09-24T00:00:00Z"),
       createdAt: new Date(), updatedAt: new Date(),
     };
     const product = toProduct(row);
     expect(product.image).toBe(row.image);
     expect(product.gallery).toEqual(row.gallery);
+    expect(product.active).toBe(false);
+    expect(product.archivedAt).toBe("2026-09-24T00:00:00.000Z");
   });
 });
 

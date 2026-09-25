@@ -57,6 +57,7 @@ export function BottomSheet({
       <div
         style={{
           position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 61,
+          maxWidth: 440, margin: "0 auto",
           height: `${heightVh}vh`, maxHeight: "92vh",
           background: "#fff", borderRadius: "18px 18px 0 0",
           boxShadow: "0 -8px 32px rgba(60,40,20,.18)",
