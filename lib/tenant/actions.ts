@@ -38,6 +38,7 @@ export async function updateTenantTheme(
   });
 
   revalidatePath("/admin/personnalisation");
+  revalidatePath("/admin/boutique");
   revalidatePath("/");
   // updateTag (et non revalidateTag) : cette Server Action doit invalider
   // immédiatement l'entrée de cache du parc (lecture de sa propre écriture),
@@ -45,3 +46,37 @@ export async function updateTenantTheme(
   updateTag(TENANTS_CACHE_TAG);
   return { ok: true };
 }
+
+export async function updateTenantWhatsappPhone(
+  phone: string
+): Promise<{ ok: true; phone: string } | { ok: false; error: string }> {
+  const session = await getSession();
+  if (session?.role !== "owner") {
+    return { ok: false, error: "Action réservée à la gérante de la boutique." };
+  }
+  const writable = await requireWritableSession();
+  if (!writable.ok) {
+    return { ok: false, error: writable.error };
+  }
+
+  const clean = phone.trim();
+  if (clean && !/^[0-9+()\-\s]{6,25}$/.test(clean)) {
+    return { ok: false, error: "Format de numéro de téléphone invalide." };
+  }
+
+  const tenant = await getCurrentTenant();
+  await prisma.tenant.update({
+    where: { id: tenant.id },
+    data: {
+      whatsappPhone: clean || null,
+    },
+  });
+
+  revalidatePath("/admin/boutique");
+  revalidatePath("/admin/personnalisation");
+  revalidatePath("/admin/vitrine");
+  revalidatePath("/");
+  updateTag(TENANTS_CACHE_TAG);
+  return { ok: true, phone: clean };
+}
+

@@ -39,7 +39,9 @@ export function VitrineEditor({
   const [publishing, setPublishing] = useState(false);
   const [activeSheet, setActiveSheet] = useState<MobileSheet>(null);
   const [pendingScrollId, setPendingScrollId] = useState<string | null>(null);
+  const [pulseBlockId, setPulseBlockId] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pulseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const showToast = useBackoffice((s) => s.showToast);
 
   // Autosave débouncé du brouillon à chaque changement de `page`.
@@ -60,7 +62,10 @@ export function VitrineEditor({
     [scheduleSave]
   );
 
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  useEffect(() => () => {
+    if (timer.current) clearTimeout(timer.current);
+    if (pulseTimer.current) clearTimeout(pulseTimer.current);
+  }, []);
 
   // Fait défiler jusqu'au bloc ajouté/dupliqué une fois son DOM monté.
   useEffect(() => {
@@ -69,6 +74,24 @@ export function VitrineEditor({
     el?.scrollIntoView({ behavior: "smooth", block: "center" });
     setPendingScrollId(null);
   }, [pendingScrollId, page]);
+
+  const handleSelectBlock = useCallback((id: string) => {
+    setSelected(id);
+    setPulseBlockId(id);
+    if (pulseTimer.current) clearTimeout(pulseTimer.current);
+    pulseTimer.current = setTimeout(() => {
+      setPulseBlockId(null);
+    }, 1800);
+
+    const el = document.getElementById(`ft-block-${id}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    if (typeof window !== "undefined" && window.matchMedia(EDITOR_MOBILE_QUERY).matches) {
+      setActiveSheet("settings");
+    }
+  }, []);
 
   const selectedBlock = page.blocks.find((b) => b.id === selected) ?? page.blocks[0];
 
@@ -181,10 +204,16 @@ export function VitrineEditor({
               key={b.id}
               id={`ft-block-${b.id}`}
               onClick={() => handleCanvasClick(b.id)}
+              className={pulseBlockId === b.id ? "ft-pulse-on-select" : undefined}
               style={{
-                position: "relative", cursor: "pointer", opacity: b.visible ? 1 : 0.4,
+                position: "relative",
+                cursor: "pointer",
+                opacity: b.visible ? 1 : 0.4,
                 outline: selected === b.id ? `2px solid ${colors.primary}` : "2px solid transparent",
                 outlineOffset: -2,
+                scrollMarginTop: 140,
+                animation: pulseBlockId === b.id ? "ft-block-pulse 1.8s ease-out" : undefined,
+                transition: "outline .15s ease",
               }}
             >
               {renderBlock(b, {
@@ -209,11 +238,24 @@ export function VitrineEditor({
         </div>
 
         {/* panneau desktop (aside) : liste de blocs + réglages du bloc sélectionné */}
-        <aside className="ft-desktop-only" style={{ position: "sticky", top: 118, background: "#fff", borderLeft: `1px solid ${colors.borderSoft}`, maxHeight: "calc(100vh - 118px)", overflowY: "auto", display: "flex", flexDirection: "column" }}>
+        <aside
+          className="ft-desktop-only"
+          style={{
+            position: "sticky",
+            top: 130,
+            background: "#fff",
+            borderLeft: `1px solid ${colors.borderSoft}`,
+            maxHeight: "calc(100vh - 130px)",
+            overflowY: "auto",
+            display: "flex",
+            flexDirection: "column",
+            zIndex: 10,
+          }}
+        >
           <BlockListPanel
             blocks={page.blocks}
             selectedId={selected}
-            onSelect={setSelected}
+            onSelect={handleSelectBlock}
             onReorder={(fromId, toId) => apply(reorderBlocks(page, fromId, toId))}
             onAddClick={() => setActiveSheet("picker")}
           />
@@ -253,7 +295,7 @@ export function VitrineEditor({
           <BlockListPanel
             blocks={page.blocks}
             selectedId={selected}
-            onSelect={setSelected}
+            onSelect={handleSelectBlock}
             onReorder={(fromId, toId) => apply(reorderBlocks(page, fromId, toId))}
             onAddClick={() => setActiveSheet("picker")}
           />

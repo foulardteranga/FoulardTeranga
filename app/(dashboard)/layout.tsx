@@ -81,7 +81,7 @@ export default async function DashboardLayout({
         )}
         <OfflineBanner />
         <TopBar initialNotifications={notifications} tenantId={tenant.id} topOffset={topOffset} />
-        <main className="ft-main" style={{ flex: 1, minWidth: 0, overflowX: "hidden" }}>
+        <main className="ft-main" style={{ flex: 1, minWidth: 0, overflowX: "clip" }}>
           {children}
         </main>
         <MobileNav pendingCount={pendingCount} session={session} />
