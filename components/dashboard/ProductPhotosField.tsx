@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { colors, fonts } from "@/lib/theme/tokens";
-import { uploadProductImage } from "@/lib/inventory/actions";
-import { prepareImageForUpload } from "@/lib/images/client";
+import { prepareImageForUpload, uploadProductImageClient } from "@/lib/images/client";
 
 const miniBtnStyle: React.CSSProperties = {
   display: "inline-flex", alignItems: "center", height: 34, padding: "0 12px",
@@ -47,7 +46,7 @@ export function ProductPhotosField({
       const preparedFile = await prepareImageForUpload(file);
       const formData = new FormData();
       formData.append("file", preparedFile);
-      const res = await uploadProductImage(formData);
+      const res = await uploadProductImageClient(formData);
       if (!res.ok) { setError(res.error); return; }
       if (target === "image") onChange({ image: res.url, gallery });
       else onChange({ image, gallery: [...gallery, res.url] });

@@ -4,10 +4,10 @@ import { useState } from "react";
 import { colors, fonts } from "@/lib/theme/tokens";
 import type { FieldDescriptor } from "@/lib/storefront/blockSettings";
 import type { BlockId } from "@/lib/storefront/blockIds";
-import { uploadBlockImage, deleteBlockImage } from "@/lib/storefront/actions";
+import { deleteBlockImage } from "@/lib/storefront/actions";
 import { NumericField } from "@/components/ui/NumericField";
 import { useBackoffice } from "@/lib/store/useBackoffice";
-import { prepareImageForUpload } from "@/lib/images/client";
+import { prepareImageForUpload, uploadBlockImageClient } from "@/lib/images/client";
 
 const miniBtnStyle: React.CSSProperties = {
   display: "inline-flex",
@@ -86,7 +86,7 @@ export function SettingsField({
       formData.append("blockType", blockType);
       formData.append("fieldKey", field.key);
 
-      const res = await uploadBlockImage(formData);
+      const res = await uploadBlockImageClient(formData);
       if (!res.ok) {
         setError(res.error);
         showToast(res.error || "Échec du téléversement", "error");
@@ -285,7 +285,7 @@ export function SettingsField({
           formData.append("blockType", blockType);
           formData.append("fieldKey", field.key);
 
-          const res = await uploadBlockImage(formData);
+          const res = await uploadBlockImageClient(formData);
 
           if (!res.ok) {
             setError(res.error);
@@ -371,7 +371,7 @@ export function SettingsField({
         formData.append("file", preparedFile);
         formData.append("blockType", blockType);
         formData.append("fieldKey", field.key);
-        const res = await uploadBlockImage(formData);
+        const res = await uploadBlockImageClient(formData);
 
         if (!res.ok) {
           setError(res.error);

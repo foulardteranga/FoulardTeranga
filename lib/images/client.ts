@@ -83,3 +83,52 @@ export async function prepareImageForUpload(
     img.src = objectUrl;
   });
 }
+
+/**
+ * Téléverse une image de bloc vitrine via la Route Handler dédiée.
+ * Évite les soucis de sérialisation multipart / Server Components sur Vercel.
+ */
+export async function uploadBlockImageClient(
+  formData: FormData
+): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+  try {
+    const res = await fetch("/api/storefront/upload-image", {
+      method: "POST",
+      body: formData,
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data || !data.ok) {
+      return { ok: false, error: data?.error || `Erreur lors du téléversement (${res.status})` };
+    }
+    return { ok: true, url: data.url };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Erreur de connexion lors du téléversement",
+    };
+  }
+}
+
+/**
+ * Téléverse une photo produit via la Route Handler dédiée.
+ */
+export async function uploadProductImageClient(
+  formData: FormData
+): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+  try {
+    const res = await fetch("/api/inventory/upload-image", {
+      method: "POST",
+      body: formData,
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data || !data.ok) {
+      return { ok: false, error: data?.error || `Erreur lors du téléversement (${res.status})` };
+    }
+    return { ok: true, url: data.url };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Erreur de connexion lors du téléversement",
+    };
+  }
+}

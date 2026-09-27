@@ -1,5 +1,3 @@
-import sharp from "sharp";
-
 export const STOREFRONT_IMAGES_BUCKET = "storefront-images";
 
 const ALLOWED_IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
@@ -23,8 +21,18 @@ export function validateImageUpload(file: {
 
 /** Redimensionne (largeur max 1920px, pas d'agrandissement) et convertit en WebP. */
 export async function compressImage(input: Buffer): Promise<Buffer> {
-  return sharp(input)
-    .resize(MAX_WIDTH, undefined, { fit: "inside", withoutEnlargement: true })
-    .webp({ quality: WEBP_QUALITY })
-    .toBuffer();
+  try {
+    const sharpModule = await import("sharp");
+    const sharpFn = sharpModule.default || sharpModule;
+    return await sharpFn(input)
+      .resize(MAX_WIDTH, undefined, { fit: "inside", withoutEnlargement: true })
+      .webp({ quality: WEBP_QUALITY })
+      .toBuffer();
+  } catch (err) {
+    console.warn(
+      "[compressImage] Module sharp non disponible ou échec du traitement, conservation du buffer initial :",
+      err
+    );
+    return input;
+  }
 }

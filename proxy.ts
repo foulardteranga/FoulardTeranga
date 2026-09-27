@@ -14,6 +14,10 @@ import { resolveRequestIdentity } from "@/lib/impersonation/context";
 import { IMPERSONATION_COOKIE_NAME } from "@/lib/impersonation/cookie";
 
 export async function proxy(request: NextRequest) {
+  if (request.nextUrl.pathname.startsWith("/api/")) {
+    return NextResponse.next();
+  }
+
   const hostname = request.headers.get("host") ?? "localhost";
   const { zone, rewrittenPathname } = resolveZone(hostname, request.nextUrl.pathname);
 
