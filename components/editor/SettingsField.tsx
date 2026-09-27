@@ -7,6 +7,7 @@ import type { BlockId } from "@/lib/storefront/blockIds";
 import { uploadBlockImage, deleteBlockImage } from "@/lib/storefront/actions";
 import { NumericField } from "@/components/ui/NumericField";
 import { useBackoffice } from "@/lib/store/useBackoffice";
+import { prepareImageForUpload } from "@/lib/images/client";
 
 const miniBtnStyle: React.CSSProperties = {
   display: "inline-flex",
@@ -36,84 +37,6 @@ function moveItem(arr: string[], from: number, to: number): string[] {
   const [item] = copy.splice(from, 1);
   copy.splice(to, 0, item);
   return copy;
-}
-
-/**
- * Optimise et compresse l'image côté client avant téléversement.
- * Évite les transferts massifs (ex. 8 photos smartphone à 5-8 Mo = 50 Mo),
- * prévient les erreurs 413 Payload Too Large et accélère le traitement.
- */
-async function prepareImageForUpload(file: File): Promise<File> {
-  if (typeof window === "undefined" || !window.document) {
-    return file;
-  }
-
-  // Si l'image est déjà petite (< 600 Ko) dans un format Web direct, pas besoin de retraiter
-  if (file.size < 600 * 1024 && (file.type === "image/webp" || file.type === "image/jpeg" || file.type === "image/png")) {
-    return file;
-  }
-
-  return new Promise((resolve) => {
-    const img = new Image();
-    const objectUrl = URL.createObjectURL(file);
-
-    img.onload = () => {
-      URL.revokeObjectURL(objectUrl);
-      const MAX_DIMENSION = 1920;
-      let width = img.naturalWidth || img.width;
-      let height = img.naturalHeight || img.height;
-
-      if (!width || !height) {
-        resolve(file);
-        return;
-      }
-
-      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
-        if (width > height) {
-          height = Math.round((height * MAX_DIMENSION) / width);
-          width = MAX_DIMENSION;
-        } else {
-          width = Math.round((width * MAX_DIMENSION) / height);
-          height = MAX_DIMENSION;
-        }
-      }
-
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        resolve(file);
-        return;
-      }
-
-      ctx.drawImage(img, 0, 0, width, height);
-
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) {
-            resolve(file);
-            return;
-          }
-          const cleanName = file.name.replace(/\.[^.]+$/, "") + ".webp";
-          const optimized = new File([blob], cleanName, {
-            type: "image/webp",
-            lastModified: Date.now(),
-          });
-          resolve(optimized);
-        },
-        "image/webp",
-        0.85
-      );
-    };
-
-    img.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      resolve(file);
-    };
-
-    img.src = objectUrl;
-  });
 }
 
 export function SettingsField({

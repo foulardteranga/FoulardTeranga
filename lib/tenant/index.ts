@@ -9,7 +9,10 @@ export { resolveTenantFromHost, TENANTS_CACHE_TAG } from "./registry";
 /** Boutique correspondant à l'hôte de la requête, ou `null` si aucune. */
 export async function getCurrentTenantOrNull(): Promise<Tenant | null> {
   const h = await headers();
-  const host = h.get("x-tenant-host");
+  const host =
+    h.get("x-tenant-host") ||
+    h.get("x-forwarded-host") ||
+    h.get("host");
   if (!host) return null;
   return resolveTenantFromHost(host);
 }

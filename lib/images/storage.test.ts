@@ -2,8 +2,8 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { extractTenantStoragePath, removeTenantStorageFiles } from "./storage";
 
 const mockRemove = vi.fn();
-vi.mock("@/lib/supabase/server", () => ({
-  createClient: vi.fn(async () => ({
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: vi.fn(() => ({
     storage: {
       from: vi.fn(() => ({
         remove: mockRemove,

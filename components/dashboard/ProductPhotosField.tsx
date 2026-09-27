@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { colors, fonts } from "@/lib/theme/tokens";
 import { uploadProductImage } from "@/lib/inventory/actions";
+import { prepareImageForUpload } from "@/lib/images/client";
 
 const miniBtnStyle: React.CSSProperties = {
   display: "inline-flex", alignItems: "center", height: 34, padding: "0 12px",
@@ -42,13 +43,19 @@ export function ProductPhotosField({
   async function upload(file: File, target: "image" | "gallery") {
     setUploading(target);
     setError(null);
-    const formData = new FormData();
-    formData.append("file", file);
-    const res = await uploadProductImage(formData);
-    setUploading(null);
-    if (!res.ok) { setError(res.error); return; }
-    if (target === "image") onChange({ image: res.url, gallery });
-    else onChange({ image, gallery: [...gallery, res.url] });
+    try {
+      const preparedFile = await prepareImageForUpload(file);
+      const formData = new FormData();
+      formData.append("file", preparedFile);
+      const res = await uploadProductImage(formData);
+      if (!res.ok) { setError(res.error); return; }
+      if (target === "image") onChange({ image: res.url, gallery });
+      else onChange({ image, gallery: [...gallery, res.url] });
+    } catch {
+      setError("Une erreur est survenue lors de l'envoi de la photo.");
+    } finally {
+      setUploading(null);
+    }
   }
 
   async function handleRemoveMain() {

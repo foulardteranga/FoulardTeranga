@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { STOREFRONT_IMAGES_BUCKET } from "./imageUpload";
 
 /**
@@ -52,8 +52,8 @@ export async function removeTenantStorageFiles(
   }
 
   try {
-    const supabase = await createClient();
-    const { error } = await supabase.storage.from(STOREFRONT_IMAGES_BUCKET).remove(pathsToDelete);
+    const admin = createAdminClient();
+    const { error } = await admin.storage.from(STOREFRONT_IMAGES_BUCKET).remove(pathsToDelete);
     if (error) {
       console.error("[removeTenantStorageFiles] Erreur de suppression storage:", error);
       return { ok: false, deletedCount: 0, error: "Échec de la suppression dans le stockage." };

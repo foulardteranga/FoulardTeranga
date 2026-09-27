@@ -9,6 +9,7 @@ import { requireWritableSession } from "@/lib/impersonation/guards";
 import { pageContentSchema, parsePageContent, defaultPage } from "./pageContent";
 import { randomUUID } from "crypto";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { compressImage, validateImageUpload, STOREFRONT_IMAGES_BUCKET } from "@/lib/images/imageUpload";
 
 const SLUG = "home";
@@ -113,34 +114,37 @@ export async function revertDraft(): Promise<{ ok: true } | { ok: false; error: 
 export async function uploadBlockImage(
   formData: FormData
 ): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
-  const { allowed } = await requireZone("dashboard");
-  if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
-  const writable = await requireWritableSession();
-  if (!writable.ok) return { ok: false, error: writable.error };
-
-  const file = formData.get("file");
-  const blockType = formData.get("blockType");
-  const fieldKey = formData.get("fieldKey");
-  if (!(file instanceof File) || typeof blockType !== "string" || typeof fieldKey !== "string") {
-    return { ok: false, error: "Requête invalide." };
-  }
-
-  const validation = validateImageUpload(file);
-  if (!validation.ok) return validation;
-
   try {
+    const { allowed } = await requireZone("dashboard");
+    if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+    const writable = await requireWritableSession();
+    if (!writable.ok) return { ok: false, error: writable.error };
+
+    const file = formData.get("file");
+    const blockType = formData.get("blockType");
+    const fieldKey = formData.get("fieldKey");
+    if (!(file instanceof File) || typeof blockType !== "string" || typeof fieldKey !== "string") {
+      return { ok: false, error: "Requête invalide." };
+    }
+
+    const validation = validateImageUpload(file);
+    if (!validation.ok) return validation;
+
     const raw = Buffer.from(await file.arrayBuffer());
     const compressed = await compressImage(raw);
     const tenant = await getCurrentTenant();
     const path = `${tenant.id}/${blockType}/${fieldKey}-${randomUUID()}.webp`;
 
-    const supabase = await createClient();
-    const { error: uploadError } = await supabase.storage
+    const admin = createAdminClient();
+    const { error: uploadError } = await admin.storage
       .from(STOREFRONT_IMAGES_BUCKET)
       .upload(path, compressed, { contentType: "image/webp", upsert: false });
-    if (uploadError) return { ok: false, error: "Une erreur est survenue, réessayez." };
+    if (uploadError) {
+      console.error("[uploadBlockImage] Échec du stockage Supabase:", uploadError);
+      return { ok: false, error: "Une erreur est survenue, réessayez." };
+    }
 
-    const { data } = supabase.storage.from(STOREFRONT_IMAGES_BUCKET).getPublicUrl(path);
+    const { data } = admin.storage.from(STOREFRONT_IMAGES_BUCKET).getPublicUrl(path);
     return { ok: true, url: data.publicUrl };
   } catch (err) {
     console.error("[uploadBlockImage] Échec du traitement de l'image:", err);
@@ -152,16 +156,16 @@ export async function uploadBlockImage(
 export async function deleteBlockImage(
   imageUrl: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { allowed } = await requireZone("dashboard");
-  if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
-  const writable = await requireWritableSession();
-  if (!writable.ok) return { ok: false, error: writable.error };
-
-  if (typeof imageUrl !== "string" || !imageUrl.trim()) {
-    return { ok: true };
-  }
-
   try {
+    const { allowed } = await requireZone("dashboard");
+    if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+    const writable = await requireWritableSession();
+    if (!writable.ok) return { ok: false, error: writable.error };
+
+    if (typeof imageUrl !== "string" || !imageUrl.trim()) {
+      return { ok: true };
+    }
+
     const tenant = await getCurrentTenant();
     const bucketMarker = `/${STOREFRONT_IMAGES_BUCKET}/`;
     const markerIndex = imageUrl.indexOf(bucketMarker);
@@ -179,14 +183,16 @@ export async function deleteBlockImage(
       return { ok: false, error: "Action non autorisée." };
     }
 
-    const supabase = await createClient();
-    const { error } = await supabase.storage.from(STOREFRONT_IMAGES_BUCKET).remove([relativePath]);
+    const admin = createAdminClient();
+    const { error } = await admin.storage.from(STOREFRONT_IMAGES_BUCKET).remove([relativePath]);
     if (error) {
+      console.error("[deleteBlockImage] Échec de suppression Supabase:", error);
       return { ok: false, error: "Échec de la suppression dans le stockage." };
     }
 
     return { ok: true };
-  } catch {
+  } catch (err) {
+    console.error("[deleteBlockImage] Exception:", err);
     return { ok: false, error: "Une erreur est survenue, réessayez." };
   }
 }

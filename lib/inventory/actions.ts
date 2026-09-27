@@ -7,6 +7,7 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import { getCurrentTenant } from "@/lib/tenant";
 import { requireZone, getSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { requireWritableSession } from "@/lib/impersonation/guards";
 import { compressImage, validateImageUpload, STOREFRONT_IMAGES_BUCKET } from "@/lib/images/imageUpload";
 import { removeTenantStorageFiles } from "@/lib/images/storage";
@@ -194,32 +195,36 @@ export async function updateProductVariants(
 export async function uploadProductImage(
   formData: FormData
 ): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
-  const { allowed } = await requireZone("dashboard");
-  if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
-  const writable = await requireWritableSession();
-  if (!writable.ok) return { ok: false, error: writable.error };
-
-  const file = formData.get("file");
-  if (!(file instanceof File)) return { ok: false, error: "Requête invalide." };
-
-  const validation = validateImageUpload(file);
-  if (!validation.ok) return validation;
-
   try {
+    const { allowed } = await requireZone("dashboard");
+    if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+    const writable = await requireWritableSession();
+    if (!writable.ok) return { ok: false, error: writable.error };
+
+    const file = formData.get("file");
+    if (!(file instanceof File)) return { ok: false, error: "Requête invalide." };
+
+    const validation = validateImageUpload(file);
+    if (!validation.ok) return validation;
+
     const raw = Buffer.from(await file.arrayBuffer());
     const compressed = await compressImage(raw);
     const tenant = await getCurrentTenant();
     const path = `${tenant.id}/products/${randomUUID()}.webp`;
 
-    const supabase = await createClient();
-    const { error: uploadError } = await supabase.storage
+    const admin = createAdminClient();
+    const { error: uploadError } = await admin.storage
       .from(STOREFRONT_IMAGES_BUCKET)
       .upload(path, compressed, { contentType: "image/webp", upsert: false });
-    if (uploadError) return { ok: false, error: "Une erreur est survenue, réessayez." };
+    if (uploadError) {
+      console.error("[uploadProductImage] Storage error:", uploadError);
+      return { ok: false, error: "Une erreur est survenue, réessayez." };
+    }
 
-    const { data } = supabase.storage.from(STOREFRONT_IMAGES_BUCKET).getPublicUrl(path);
+    const { data } = admin.storage.from(STOREFRONT_IMAGES_BUCKET).getPublicUrl(path);
     return { ok: true, url: data.publicUrl };
-  } catch {
+  } catch (err) {
+    console.error("[uploadProductImage] Exception:", err);
     return { ok: false, error: "Une erreur est survenue, réessayez." };
   }
 }

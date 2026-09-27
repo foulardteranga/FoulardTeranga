@@ -22,8 +22,8 @@ vi.mock("@/lib/tenant", () => ({
   }),
 }));
 
-vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: () => ({
     storage: {
       from: (_bucket: string) => ({
         remove: removeMock,
