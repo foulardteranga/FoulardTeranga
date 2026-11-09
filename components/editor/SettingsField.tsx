@@ -8,6 +8,7 @@ import { deleteBlockImage } from "@/lib/storefront/actions";
 import { NumericField } from "@/components/ui/NumericField";
 import { useBackoffice } from "@/lib/store/useBackoffice";
 import { prepareImageForUpload, uploadBlockImageClient } from "@/lib/images/client";
+import { MediaLibraryModal } from "@/components/editor/MediaLibraryModal";
 
 const miniBtnStyle: React.CSSProperties = {
   display: "inline-flex",
@@ -60,6 +61,7 @@ export function SettingsField({
     label: string;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [libraryOpen, setLibraryOpen] = useState(false);
 
   async function uploadAndApply(file: File, apply: (url: string) => void) {
     setUploading(true);
@@ -220,7 +222,7 @@ export function SettingsField({
 
         {progressBar}
 
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <label style={{ ...miniBtnStyle, cursor: uploading ? "default" : "pointer" }}>
             {uploading ? "Envoi en cours…" : url ? "Remplacer" : "Choisir une image"}
             <input
@@ -235,6 +237,14 @@ export function SettingsField({
               style={{ display: "none" }}
             />
           </label>
+          <button
+            type="button"
+            onClick={() => setLibraryOpen(true)}
+            disabled={uploading}
+            style={{ ...miniBtnStyle, cursor: uploading ? "default" : "pointer" }}
+          >
+            Depuis la bibliothèque
+          </button>
           {url && (
             <button type="button" onClick={handleRemoveSingle} disabled={uploading} style={miniBtnStyle}>
               Retirer
@@ -242,6 +252,14 @@ export function SettingsField({
           )}
         </div>
         {error && <div style={{ marginTop: 6, fontSize: 12, color: "#B3261E" }}>{error}</div>}
+        <MediaLibraryModal
+          isOpen={libraryOpen}
+          onClose={() => setLibraryOpen(false)}
+          multiple={false}
+          onSelect={([picked]) => {
+            if (picked) onChange(picked);
+          }}
+        />
       </div>
     );
   }
