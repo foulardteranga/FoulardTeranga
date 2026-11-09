@@ -702,6 +702,23 @@ export function SettingsField({
             style={{ display: "none" }}
           />
         </label>
+        <button
+          type="button"
+          onClick={() => setLibraryOpen(true)}
+          disabled={uploading || isAtMax}
+          style={{
+            ...miniBtnStyle,
+            cursor: uploading || isAtMax ? "default" : "pointer",
+            opacity: isAtMax ? 0.5 : 1,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "100%",
+            marginTop: 8,
+          }}
+        >
+          {isAtMax ? `Limite atteinte (${max} images)` : "Depuis la bibliothèque"}
+        </button>
         {error && (
           <div
             style={{
@@ -717,6 +734,13 @@ export function SettingsField({
             {error}
           </div>
         )}
+        <MediaLibraryModal
+          isOpen={libraryOpen}
+          onClose={() => setLibraryOpen(false)}
+          multiple
+          remainingSlots={remainingSlots}
+          onSelect={(picked) => onChange([...urls, ...picked].slice(0, max))}
+        />
       </div>
     );
   }
