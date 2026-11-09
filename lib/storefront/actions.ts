@@ -197,3 +197,74 @@ export async function deleteBlockImage(
   }
 }
 
+
+export type TenantImage = {
+  url: string;
+  path: string;
+  folder: string;
+  fileName: string;
+  createdAt: string | null;
+};
+
+/**
+ * Liste les images déjà en storage pour le tenant courant (blocs vitrine + photos
+ * produits), groupées par sous-dossier. Lecture seule — ne modifie jamais le storage.
+ */
+export async function listTenantImages(): Promise<
+  { ok: true; images: TenantImage[] } | { ok: false; error: string }
+> {
+  const { allowed } = await requireZone("dashboard");
+  if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+  const writable = await requireWritableSession();
+  if (!writable.ok) return { ok: false, error: writable.error };
+
+  try {
+    const tenant = await getCurrentTenant();
+    const admin = createAdminClient();
+
+    const { data: topLevel, error: topErr } = await admin.storage
+      .from(STOREFRONT_IMAGES_BUCKET)
+      .list(tenant.id, { limit: 100 });
+    if (topErr) {
+      console.error("[listTenantImages] Échec du listing racine:", topErr);
+      return { ok: false, error: "Une erreur est survenue, réessayez." };
+    }
+
+    // Supabase Storage : une entrée "dossier" a id === null, une entrée "fichier" a id !== null.
+    const folders = (topLevel ?? []).filter((entry) => entry.id === null);
+
+    const perFolder = await Promise.all(
+      folders.map(async (folder) => {
+        const { data: files, error: filesErr } = await admin.storage
+          .from(STOREFRONT_IMAGES_BUCKET)
+          .list(`${tenant.id}/${folder.name}`, {
+            limit: 200,
+            sortBy: { column: "created_at", order: "desc" },
+          });
+        if (filesErr) {
+          console.error(`[listTenantImages] Échec du listing de ${folder.name}:`, filesErr);
+          return [] as TenantImage[];
+        }
+        return (files ?? [])
+          .filter((f) => f.id !== null)
+          .map((f) => {
+            const path = `${tenant.id}/${folder.name}/${f.name}`;
+            const { data } = admin.storage.from(STOREFRONT_IMAGES_BUCKET).getPublicUrl(path);
+            return {
+              url: data.publicUrl,
+              path,
+              folder: folder.name,
+              fileName: f.name,
+              createdAt: f.created_at ?? null,
+            } satisfies TenantImage;
+          });
+      })
+    );
+
+    const images = perFolder.flat().sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+    return { ok: true, images };
+  } catch (err) {
+    console.error("[listTenantImages] Exception:", err);
+    return { ok: false, error: "Une erreur est survenue, réessayez." };
+  }
+}
