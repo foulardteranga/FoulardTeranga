@@ -278,7 +278,7 @@ export function DashboardScreen({
                   {o.id} · {o.client}
                 </div>
                 <div style={{ fontSize: 12, color: colors.muted }}>
-                  {o.items} articles · {o.channel} · {o.ago}
+                  {o.isCustom ? "Commande personnalisée" : `${o.items} articles`} · {o.channel} · {o.ago}
                 </div>
               </div>
               <span style={{ font: `700 13.5px ${fonts.ui}`, color: colors.primary }}>{o.total}</span>

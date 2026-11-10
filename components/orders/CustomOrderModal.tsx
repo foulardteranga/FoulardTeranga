@@ -80,7 +80,8 @@ export function CustomOrderModal({ onClose, onCreated }: { onClose: () => void; 
     clientName.trim().length >= 2 &&
     place.trim().length >= 2 &&
     phone.trim().length >= 6 &&
-    Number(total) >= 100;
+    Number(total) >= 100 &&
+    (deposit.trim() === "" || Number(deposit) <= Number(total));
 
   async function submit() {
     setSaving(true);

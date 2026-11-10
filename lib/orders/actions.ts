@@ -145,7 +145,7 @@ export async function createCustomOrder(
   if (!writable.ok) return { ok: false, error: writable.error };
 
   const parsed = customOrderSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "Informations invalides." };
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Informations invalides." };
 
   try {
     const tenant = await getCurrentTenant();
@@ -258,8 +258,10 @@ export async function confirmOrder(ref: string): Promise<{ ok: true } | { ok: fa
 
       // Une commande personnalisée n'a aucune OrderLine : son prix est saisi
       // à la main (createCustomOrder) et ne doit jamais être recalculé depuis
-      // un sous-total de lignes qui vaudrait 0 — ni code promo ni points sur
-      // une commande personnalisée.
+      // un sous-total de lignes qui vaudrait 0 — aucun code promo ni point
+      // dépensé/remisé n'est accepté sur une commande personnalisée (le gain
+      // de points de fidélité, lui, s'applique normalement via applyLoyaltyOrder
+      // plus bas, identique à une commande catalogue).
       const subtotal = order.lines.reduce((sum, l) => sum + l.lineTotal, 0);
       const normalized = normalizePhone(order.phone);
       const candidates = await tx.customer.findMany({ where: { tenantId: tenant.id } });
@@ -503,7 +505,7 @@ export async function archiveOrder(
         if (!order) throw new Error("Commande introuvable.");
         if (order.status === "archivee") return; // idempotent : déjà archivée
 
-        const stockReconciled = STOCK_DEDUCTED_STATUSES.includes(order.status);
+        const stockReconciled = STOCK_DEDUCTED_STATUSES.includes(order.status) && order.lines.length > 0;
         if (stockReconciled) {
           const variantDemand = aggregateQtyByVariant(order.lines);
           for (const [variantId, { qty }] of variantDemand) {
@@ -588,7 +590,7 @@ export async function restoreOrder(ref: string): Promise<{ ok: true } | { ok: fa
         if (order.status !== "archivee" || !order.previousStatus) return; // idempotent : pas (ou plus) archivée
 
         const restoredStatus = order.previousStatus;
-        const stockReconciled = STOCK_DEDUCTED_STATUSES.includes(restoredStatus);
+        const stockReconciled = STOCK_DEDUCTED_STATUSES.includes(restoredStatus) && order.lines.length > 0;
         if (stockReconciled) {
           const variantDemand = aggregateQtyByVariant(order.lines);
           for (const [variantId, { qty, nameAtOrder, variantName }] of variantDemand) {

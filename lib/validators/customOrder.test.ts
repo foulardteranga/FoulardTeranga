@@ -63,4 +63,12 @@ describe("customOrderSchema", () => {
   it("accepte l'absence totale de champs optionnels", () => {
     expect(customOrderSchema.safeParse(base).success).toBe(true);
   });
+
+  it("rejette un acompte supérieur au prix", () => {
+    expect(customOrderSchema.safeParse({ ...base, total: 10000, deposit: 15000 }).success).toBe(false);
+  });
+
+  it("accepte un acompte égal au prix (cas limite)", () => {
+    expect(customOrderSchema.safeParse({ ...base, total: 10000, deposit: 10000 }).success).toBe(true);
+  });
 });
