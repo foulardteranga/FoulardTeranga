@@ -126,4 +126,16 @@ export interface Order {
     amountReceived?: number | null;
     changeGiven?: number | null;
   }> | null;
+  isCustom: boolean;
+  customColorName: string | null;
+  customColorHex: string | null;
+  customFabricNote: string | null;
+  customModel: string | null;
+  customModelImageUrl: string | null;
+  /** Formatée JJ/MM/AAAA, `null` si non renseignée ou si la commande n'est pas personnalisée. */
+  customDueDate: string | null;
+  /** Formatée money (ex. « 5 000 FCFA »), `null` si aucun acompte saisi. */
+  customDeposit: string | null;
+  /** = total − acompte, formatée money, `null` si aucun acompte saisi. */
+  customBalanceDue: string | null;
 }

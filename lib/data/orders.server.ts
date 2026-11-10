@@ -54,6 +54,18 @@ function toOrder(row: PrismaOrderWithLines, promoValidity: Map<string, boolean>)
       amountReceived?: number | null;
       changeGiven?: number | null;
     }> | null) ?? null,
+    isCustom: row.isCustom,
+    customColorName: row.customColorName,
+    customColorHex: row.customColorHex,
+    customFabricNote: row.customFabricNote,
+    customModel: row.customModel,
+    customModelImageUrl: row.customModelImageUrl,
+    customDueDate: row.customDueDate
+      ? row.customDueDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" })
+      : null,
+    customDeposit: row.customDeposit != null ? money(row.customDeposit) : null,
+    customBalanceDue:
+      row.customDeposit != null ? money(Math.max(0, row.total - row.customDeposit)) : null,
   };
 }
 
