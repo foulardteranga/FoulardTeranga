@@ -24,16 +24,17 @@ export const posSaleSchema = z.object({
   changeGiven: z.coerce.number().int().min(0).optional().nullable(),
   splitPayments: z.array(posSplitPaymentSchema).optional().nullable(),
   customerId: z.string().min(1).nullable().optional(),
-  /**
-   * Capture légère au comptoir (téléphone + nom) quand aucune cliente existante
-   * n'a été rattachée via `customerId` — ignorée côté serveur si `customerId` est fourni.
-   */
-  walkInPhone: z.string().trim().regex(/^[0-9+()\-\s]{6,20}$/, "Numéro invalide.").optional(),
-  walkInName: z.string().trim().min(1).optional(),
   promoCode: z.string().trim().optional(),
   pointsRequested: z.coerce.number().int().min(0).default(0),
+});
+
+/** Création d'une fiche cliente au comptoir (voir ClientBlock dans PosScreen). */
+export const createWalkInCustomerSchema = z.object({
+  phone: z.string().trim().regex(/^[0-9+()\-\s]{6,20}$/, "Numéro invalide."),
+  name: z.string().trim().min(1, "Nom requis."),
 });
 
 export type PosSaleLineInput = z.infer<typeof posSaleLineSchema>;
 export type PosSplitPaymentInput = z.infer<typeof posSplitPaymentSchema>;
 export type PosSaleInput = z.infer<typeof posSaleSchema>;
+export type CreateWalkInCustomerInput = z.infer<typeof createWalkInCustomerSchema>;

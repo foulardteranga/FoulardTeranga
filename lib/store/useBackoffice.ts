@@ -48,9 +48,6 @@ interface BackofficeState {
   // POS
   cart: CartLine[];
   client: Customer | null;
-  /** Capture légère au comptoir (téléphone + nom) quand aucune fiche existante n'est rattachée via `client` — voir ClientBlock/WalkInCaptureField. */
-  walkInPhone: string;
-  walkInName: string;
   pay: PosPaymentMethod;
   cartOpen: boolean;
   // Global UI
@@ -73,8 +70,6 @@ interface BackofficeState {
   setPay: (pay: BackofficeState["pay"]) => void;
   attachClient: (customer: Customer) => void;
   detachClient: () => void;
-  setWalkInPhone: (phone: string) => void;
-  setWalkInName: (name: string) => void;
   showTicket: (ticket: Ticket) => void;
   openCart: () => void;
   closeCart: () => void;
@@ -93,8 +88,6 @@ let toastTimer: ReturnType<typeof setTimeout> | null = null;
 export const useBackoffice = create<BackofficeState>((set, get) => ({
   cart: [],
   client: null,
-  walkInPhone: "",
-  walkInName: "",
   pay: "espece",
   cartOpen: false,
   offline: false,
@@ -148,17 +141,14 @@ export const useBackoffice = create<BackofficeState>((set, get) => ({
       ),
     })),
 
-  clearCart: () => set({ cart: [], client: null, walkInPhone: "", walkInName: "" }),
+  clearCart: () => set({ cart: [], client: null }),
 
   setPay: (pay) => set({ pay }),
 
-  attachClient: (customer) => set({ client: customer, walkInPhone: "", walkInName: "" }),
+  attachClient: (customer) => set({ client: customer }),
   detachClient: () => set({ client: null }),
-  setWalkInPhone: (walkInPhone) => set({ walkInPhone }),
-  setWalkInName: (walkInName) => set({ walkInName }),
 
-  showTicket: (ticket) =>
-    set({ ticket, cart: [], client: null, walkInPhone: "", walkInName: "", cartOpen: false }),
+  showTicket: (ticket) => set({ ticket, cart: [], client: null, cartOpen: false }),
 
   openCart: () => set({ cartOpen: true }),
   closeCart: () => set({ cartOpen: false }),

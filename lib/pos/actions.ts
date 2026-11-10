@@ -6,14 +6,18 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import { getCurrentTenant } from "@/lib/tenant";
 import { requireZone, getSession } from "@/lib/auth";
 import { requireWritableSession } from "@/lib/impersonation/guards";
-import { posSaleSchema, type PosSaleInput } from "@/lib/validators/pos";
+import { posSaleSchema, createWalkInCustomerSchema, type PosSaleInput } from "@/lib/validators/pos";
 import { buildOrderLines } from "@/lib/orders/buildOrderLines";
 import { aggregateQtyByProduct, aggregateQtyByVariant } from "@/lib/orders/stockCheck";
 import { applyLoyaltyOrder } from "@/lib/customers/applyLoyaltyOrder";
+import { normalizePhone } from "@/lib/customers/normalizePhone";
+import { toCustomer } from "@/lib/data/customers.server";
+import { initials } from "@/lib/format";
 import { validatePromo, applyDiscounts } from "@/lib/discounts/engine";
 import { findPromoByCode } from "@/lib/data/promos.server";
 
 import { type PosPaymentMethod } from "@/lib/payments/labels";
+import type { Customer } from "@/lib/data/types";
 
 export interface PosTicketData {
   shopName: string;
@@ -194,24 +198,6 @@ export async function encaisserVente(
         clientName = customer.name;
         phone = customer.phone;
         place = customer.place;
-      } else if (parsed.data.walkInPhone && parsed.data.walkInName) {
-        // Capture légère au comptoir (voir WalkInCaptureField) : retrouve la
-        // fiche par téléphone normalisé ou en crée une — même logique que les
-        // commandes web validées (confirmOrder / applyLoyaltyOrder).
-        const loyalty = await applyLoyaltyOrder({
-          tx,
-          tenantId: tenant.id,
-          orderTotal: discounts.total,
-          clientName: parsed.data.walkInName,
-          phone: parsed.data.walkInPhone,
-          place,
-          pointsToDebit: 0, // pas de points en cours pour une fiche tout juste rattachée
-        });
-        customerId = loyalty.customerId;
-        vipAtOrder = loyalty.vipBefore;
-        loyaltyInfo = { pointsEarned: loyalty.pointsEarned, newBalance: loyalty.newBalance };
-        clientName = parsed.data.walkInName;
-        phone = parsed.data.walkInPhone;
       }
 
       const order = await tx.order.create({
@@ -297,5 +283,52 @@ export async function encaisserVente(
       message.startsWith("Le total des paiements fractionnés") ||
       message.startsWith("Le paiement mixte");
     return { ok: false, error: known ? message : "Une erreur est survenue, réessayez." };
+  }
+}
+
+/**
+ * Crée une fiche cliente au comptoir, depuis la recherche du POS (ClientBlock) :
+ * quand un numéro tapé ne correspond à aucune cliente existante, un seul champ
+ * (le nom) suffit à l'enregistrer dans le CRM. Retrouve-ou-crée par téléphone
+ * normalisé — même convention que les commandes web (`applyLoyaltyOrder`) — pour
+ * ne jamais dupliquer une fiche si le numéro existait déjà sous une autre forme.
+ */
+export async function createWalkInCustomer(
+  input: { phone: string; name: string }
+): Promise<{ ok: true; customer: Customer } | { ok: false; error: string }> {
+  const { allowed } = await requireZone("dashboard");
+  if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+  const writable = await requireWritableSession();
+  if (!writable.ok) return { ok: false, error: writable.error };
+
+  const parsed = createWalkInCustomerSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Informations invalides." };
+
+  try {
+    const tenant = await getCurrentTenant();
+    const normalizedPhone = normalizePhone(parsed.data.phone);
+    const candidates = await prisma.customer.findMany({ where: { tenantId: tenant.id } });
+    const existing = candidates.find((c) => normalizePhone(c.phone) === normalizedPhone);
+
+    const row = existing
+      ? await prisma.customer.update({
+          where: { id: existing.id },
+          data: { name: parsed.data.name, initials: initials(parsed.data.name) },
+        })
+      : await prisma.customer.create({
+          data: {
+            tenantId: tenant.id,
+            name: parsed.data.name,
+            initials: initials(parsed.data.name),
+            phone: parsed.data.phone,
+            place: "Vente en boutique",
+            segment: "Nouvelle",
+          },
+        });
+
+    revalidatePath("/admin/clientes");
+    return { ok: true, customer: toCustomer(row) };
+  } catch {
+    return { ok: false, error: "Une erreur est survenue, réessayez." };
   }
 }

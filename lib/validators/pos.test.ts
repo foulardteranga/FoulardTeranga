@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { posSaleSchema } from "./pos";
+import { posSaleSchema, createWalkInCustomerSchema } from "./pos";
 
 const base = { lines: [{ productId: "p1", qty: 1 }] };
 
@@ -31,33 +31,27 @@ describe("posSaleSchema — remises", () => {
   });
 });
 
-describe("posSaleSchema — capture cliente comptoir (walkIn)", () => {
-  it("accepte walkInPhone et walkInName optionnels", () => {
-    const r = posSaleSchema.safeParse({
-      ...base,
-      paymentMethod: "espece",
-      walkInPhone: "+225 07 12 45 67 89",
-      walkInName: "Aïcha Koffi",
-    });
+describe("createWalkInCustomerSchema — création cliente au comptoir", () => {
+  it("accepte un téléphone et un nom valides", () => {
+    const r = createWalkInCustomerSchema.safeParse({ phone: "+225 07 12 45 67 89", name: "Aïcha Koffi" });
     expect(r.success).toBe(true);
     if (r.success) {
-      expect(r.data.walkInPhone).toBe("+225 07 12 45 67 89");
-      expect(r.data.walkInName).toBe("Aïcha Koffi");
+      expect(r.data.phone).toBe("+225 07 12 45 67 89");
+      expect(r.data.name).toBe("Aïcha Koffi");
     }
   });
 
-  it("accepte une vente sans walkInPhone ni walkInName (comportement actuel inchangé)", () => {
-    expect(posSaleSchema.safeParse({ ...base, paymentMethod: "espece" }).success).toBe(true);
+  it("refuse un téléphone au format invalide", () => {
+    expect(createWalkInCustomerSchema.safeParse({ phone: "abc", name: "Aïcha" }).success).toBe(false);
   });
 
-  it("refuse un walkInPhone au format invalide", () => {
-    const r = posSaleSchema.safeParse({ ...base, paymentMethod: "espece", walkInPhone: "abc" });
-    expect(r.success).toBe(false);
+  it("refuse un nom vide", () => {
+    expect(createWalkInCustomerSchema.safeParse({ phone: "0709784750", name: "" }).success).toBe(false);
   });
 
-  it("refuse un walkInName vide", () => {
-    const r = posSaleSchema.safeParse({ ...base, paymentMethod: "espece", walkInName: "" });
-    expect(r.success).toBe(false);
+  it("refuse l'absence de téléphone ou de nom", () => {
+    expect(createWalkInCustomerSchema.safeParse({ name: "Aïcha" }).success).toBe(false);
+    expect(createWalkInCustomerSchema.safeParse({ phone: "0709784750" }).success).toBe(false);
   });
 });
 
