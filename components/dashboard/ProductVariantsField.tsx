@@ -22,7 +22,7 @@ interface ProductVariantsFieldProps {
 }
 
 // 8 teintes incontournables toujours accessibles d'un clic
-const POPULAR_SWATCHES = [
+export const POPULAR_SWATCHES = [
   { name: "Noir ébène", hex: "#1C1B1F" },
   { name: "Blanc cassé", hex: "#F8F5F0" },
   { name: "Bordeaux", hex: "#6B1D2F" },

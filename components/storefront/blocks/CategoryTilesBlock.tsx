@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { fonts } from "@/lib/theme/tokens";
 import { stripe } from "@/lib/theme/storefront";
-import { storefrontCategories } from "@/lib/data/catalog";
+import { storefrontCategories, CATEGORY_LABELS } from "@/lib/data/catalog";
 import type { Product } from "@/lib/data/types";
 import type { CatsSettings } from "@/lib/storefront/blockSettings";
 import { BlockFrame } from "./BlockFrame";
@@ -10,13 +10,17 @@ import { BlockFrame } from "./BlockFrame";
 const TILE_COLOR: Record<string, string> = {
   Foulards: "#26326B",
   Turbans: "#D07A34",
-  Accessoires: "#C9A227",
+  Coiffes: "#C9A227",
+  Eventails: "#7A2E5D",
+  Voiles: "#1E5F4E",
 };
 
 const CATEGORY_IMAGE_KEY: Record<string, keyof CatsSettings> = {
   Foulards: "foulardsImage",
   Turbans: "turbansImage",
-  Accessoires: "accessoiresImage",
+  Coiffes: "coiffesImage",
+  Eventails: "eventailsImage",
+  Voiles: "voilesImage",
 };
 
 export function CategoryTilesBlock({ settings, products = [] }: { settings: CatsSettings; products?: Product[] }) {
@@ -43,11 +47,11 @@ export function CategoryTilesBlock({ settings, products = [] }: { settings: Cats
                   }}
                 >
                   {imageUrl && (
-                    <Image src={imageUrl} alt={cat} fill sizes="(max-width: 900px) 50vw, 33vw" style={{ objectFit: "cover" }} />
+                    <Image src={imageUrl} alt={CATEGORY_LABELS[cat]} fill sizes="(max-width: 900px) 50vw, 33vw" style={{ objectFit: "cover" }} />
                   )}
                   <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(30,27,24,.5), transparent 65%)" }} />
                   <div style={{ position: "absolute", left: 16, bottom: 14, color: "#fff" }}>
-                    <div style={{ fontFamily: fonts.display, fontWeight: 600, fontSize: 22 }}>{cat}</div>
+                    <div style={{ fontFamily: fonts.display, fontWeight: 600, fontSize: 22 }}>{CATEGORY_LABELS[cat]}</div>
                     <div style={{ fontSize: 12.5, opacity: 0.9 }}>{count} modèles →</div>
                   </div>
                 </Link>

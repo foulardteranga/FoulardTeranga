@@ -13,6 +13,7 @@ import {
   archiveOrder, restoreOrder, deleteOrderPermanently,
 } from "@/lib/orders/actions";
 import { OrderStatusTimeline } from "@/components/orders/OrderStatusTimeline";
+import { CustomOrderModal } from "@/components/orders/CustomOrderModal";
 import { PAYMENT_LABELS } from "@/lib/payments/labels";
 import type { OrderStatusEventView } from "@/lib/data/orders.server";
 import type { Order, OrderStatus } from "@/lib/data/types";
@@ -33,6 +34,7 @@ export function OrdersScreen({ orders, initialSel }: { orders: Order[]; initialS
   const [editing, setEditing] = useState(false);
   const [archiving, setArchiving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [creatingCustom, setCreatingCustom] = useState(false);
   const [historyVersion, setHistoryVersion] = useState(0);
   const router = useRouter();
 
@@ -70,48 +72,73 @@ export function OrdersScreen({ orders, initialSel }: { orders: Order[]; initialS
         </span>
       </div>
 
-      {/* filter tabs */}
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16, overflowX: "auto" }}>
-        {FILTERS.map((f) => {
-          const on = filter === f[0];
-          const c = count(f[2]);
-          return (
-            <button
-              key={f[0]}
-              onClick={() => {
-                setFilter(f[0]);
-                setSelId(null);
-              }}
-              style={{
-                height: 38,
-                padding: "0 14px",
-                borderRadius: 999,
-                font: `600 13px ${fonts.ui}`,
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-                border: `1.5px solid ${on ? colors.primary : colors.borderField}`,
-                background: on ? colors.primary : "#fff",
-                color: on ? "#fff" : colors.muted,
-                display: "flex",
-                alignItems: "center",
-                gap: 7,
-              }}
-            >
-              {f[1]}
-              <span
+      {/* filter tabs + bouton commande personnalisée */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", overflowX: "auto", flex: 1 }}>
+          {FILTERS.map((f) => {
+            const on = filter === f[0];
+            const c = count(f[2]);
+            return (
+              <button
+                key={f[0]}
+                onClick={() => {
+                  setFilter(f[0]);
+                  setSelId(null);
+                }}
                 style={{
-                  fontSize: 11,
-                  background: on ? "rgba(255,255,255,.22)" : "#F1ECE2",
-                  color: on ? "#fff" : colors.muted,
-                  padding: "1px 7px",
+                  height: 38,
+                  padding: "0 14px",
                   borderRadius: 999,
+                  font: `600 13px ${fonts.ui}`,
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  border: `1.5px solid ${on ? colors.primary : colors.borderField}`,
+                  background: on ? colors.primary : "#fff",
+                  color: on ? "#fff" : colors.muted,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 7,
                 }}
               >
-                {c}
-              </span>
-            </button>
-          );
-        })}
+                {f[1]}
+                <span
+                  style={{
+                    fontSize: 11,
+                    background: on ? "rgba(255,255,255,.22)" : "#F1ECE2",
+                    color: on ? "#fff" : colors.muted,
+                    padding: "1px 7px",
+                    borderRadius: 999,
+                  }}
+                >
+                  {c}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <button
+          type="button"
+          onClick={() => setCreatingCustom(true)}
+          className="ft-primary-btn"
+          style={{
+            flex: "none",
+            height: 38,
+            padding: "0 14px",
+            borderRadius: 999,
+            border: "none",
+            background: colors.primary,
+            color: "#fff",
+            font: `600 13px ${fonts.ui}`,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            whiteSpace: "nowrap",
+          }}
+        >
+          <Icon path={ICONS.plus} size={15} stroke="#fff" strokeWidth={2.2} />
+          Commande personnalisée
+        </button>
       </div>
 
       <div className="ft-orders-cols">
@@ -170,11 +197,14 @@ export function OrdersScreen({ orders, initialSel }: { orders: Order[]; initialS
                         </div>
                       </div>
                     </div>
-                    <Badge meta={st} />
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, flex: "none" }}>
+                      {o.isCustom && <CustomBadge />}
+                      <Badge meta={st} />
+                    </div>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <span style={{ fontSize: 12.5, color: colors.muted }}>
-                      {o.items} articles · {o.channel} · {o.ago}
+                      {o.isCustom ? "Commande personnalisée" : `${o.items} articles`} · {o.channel} · {o.ago}
                     </span>
                     <span style={{ fontWeight: 700, fontSize: 15, color: colors.primary }}>{o.total}</span>
                   </div>
@@ -269,6 +299,15 @@ export function OrdersScreen({ orders, initialSel }: { orders: Order[]; initialS
           }}
         />
       )}
+      {creatingCustom && (
+        <CustomOrderModal
+          onClose={() => setCreatingCustom(false)}
+          onCreated={() => {
+            setCreatingCustom(false);
+            router.refresh();
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -290,6 +329,25 @@ function Badge({ meta }: { meta: (typeof statusMeta)[OrderStatus] }) {
     >
       <span style={{ width: 6, height: 6, borderRadius: 999, background: meta.dot }} />
       {meta.label}
+    </span>
+  );
+}
+
+function CustomBadge() {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        font: `600 11.5px ${fonts.ui}`,
+        padding: "4px 9px",
+        borderRadius: 999,
+        flex: "none",
+        background: colors.bgInfo,
+        color: colors.fgInfo,
+      }}
+    >
+      Personnalisée
     </span>
   );
 }
@@ -350,6 +408,7 @@ function OrderDetail({
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {o.isCustom && <CustomBadge />}
           <span
             style={{
               display: "inline-flex",
@@ -409,8 +468,57 @@ function OrderDetail({
           </div>
         </div>
 
+        {/* détails de la confection (commande personnalisée uniquement) */}
+        {o.isCustom && (
+          <div style={{ background: colors.ivory, border: `1px solid ${colors.borderSoft}`, borderRadius: 12, padding: "13px 15px", marginBottom: 14 }}>
+            <div style={kycLabel}>Détails de la confection</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 7, fontSize: 13 }}>
+              {o.customColorName && (
+                <div style={{ display: "flex", gap: 9, alignItems: "center" }}>
+                  <span style={{ width: 16, height: 16, borderRadius: 5, background: o.customColorHex ?? "#ccc", border: "1px solid rgba(0,0,0,.15)", flex: "none" }} />
+                  <span>{o.customColorName}</span>
+                </div>
+              )}
+              {o.customFabricNote && (
+                <div style={{ color: colors.muted }}>
+                  <strong style={{ color: colors.ink }}>Motif / matière : </strong>
+                  {o.customFabricNote}
+                </div>
+              )}
+              {o.customModel && (
+                <div style={{ color: colors.muted }}>
+                  <strong style={{ color: colors.ink }}>Modèle : </strong>
+                  {o.customModel}
+                </div>
+              )}
+              {o.customModelImageUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={o.customModelImageUrl} alt="Photo du modèle" style={{ width: "100%", maxHeight: 160, objectFit: "cover", borderRadius: 9 }} />
+              )}
+              {o.customDueDate && (
+                <div style={{ color: colors.muted }}>
+                  <strong style={{ color: colors.ink }}>Livraison souhaitée : </strong>
+                  {o.customDueDate}
+                </div>
+              )}
+              {o.customDeposit && (
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: colors.muted }}>Acompte versé</span>
+                  <span style={{ fontWeight: 600, color: colors.fgSuccess }}>{o.customDeposit}</span>
+                </div>
+              )}
+              {o.customBalanceDue && (
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: colors.muted }}>Reste à payer</span>
+                  <span style={{ fontWeight: 600 }}>{o.customBalanceDue}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* items */}
-        <div style={kycLabel}>Panier</div>
+        <div style={kycLabel}>{o.isCustom ? "Récapitulatif" : "Panier"}</div>
         <div style={{ border: `1px solid ${colors.borderSoft}`, borderRadius: 12, overflow: "hidden", marginBottom: 14 }}>
           {o.lines.map((li, i) => (
             <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 13px", borderBottom: `1px solid ${colors.faintLine}` }}>

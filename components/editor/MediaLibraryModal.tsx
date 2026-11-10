@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { colors, fonts, adminBorder } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { DEFAULT_BLOCK_NAMES } from "@/lib/storefront/blockIds";
@@ -36,6 +37,11 @@ export function MediaLibraryModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   function load() {
     setError(null);
@@ -74,7 +80,7 @@ export function MediaLibraryModal({
     return Array.from(map.entries());
   }, [images]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const max = multiple ? (remainingSlots ?? Infinity) : 1;
 
@@ -97,7 +103,7 @@ export function MediaLibraryModal({
     onClose();
   }
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -330,6 +336,7 @@ export function MediaLibraryModal({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

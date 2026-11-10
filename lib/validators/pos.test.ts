@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { posSaleSchema } from "./pos";
+import { posSaleSchema, createWalkInCustomerSchema } from "./pos";
 
 const base = { lines: [{ productId: "p1", qty: 1 }] };
 
@@ -28,6 +28,30 @@ describe("posSaleSchema — remises", () => {
     expect(posSaleSchema.safeParse({ ...base, paymentMethod: "espece", pointsRequested: -1 }).success).toBe(false);
     const r = posSaleSchema.safeParse({ ...base, paymentMethod: "espece" });
     expect(r.success && r.data.pointsRequested === 0).toBe(true);
+  });
+});
+
+describe("createWalkInCustomerSchema — création cliente au comptoir", () => {
+  it("accepte un téléphone et un nom valides", () => {
+    const r = createWalkInCustomerSchema.safeParse({ phone: "+225 07 12 45 67 89", name: "Aïcha Koffi" });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.phone).toBe("+225 07 12 45 67 89");
+      expect(r.data.name).toBe("Aïcha Koffi");
+    }
+  });
+
+  it("refuse un téléphone au format invalide", () => {
+    expect(createWalkInCustomerSchema.safeParse({ phone: "abc", name: "Aïcha" }).success).toBe(false);
+  });
+
+  it("refuse un nom vide", () => {
+    expect(createWalkInCustomerSchema.safeParse({ phone: "0709784750", name: "" }).success).toBe(false);
+  });
+
+  it("refuse l'absence de téléphone ou de nom", () => {
+    expect(createWalkInCustomerSchema.safeParse({ name: "Aïcha" }).success).toBe(false);
+    expect(createWalkInCustomerSchema.safeParse({ phone: "0709784750" }).success).toBe(false);
   });
 });
 

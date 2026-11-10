@@ -4,6 +4,7 @@ import { renderBlock } from "@/components/storefront/blocks/renderBlock";
 import { whatsappLink } from "@/lib/format";
 import type { StorefrontPageContent } from "@/lib/storefront/pageContent";
 import type { Product } from "@/lib/data/types";
+import { storefrontCategories, CATEGORY_LABELS } from "@/lib/data/catalog";
 
 export function HomeShell({
   page,
@@ -38,9 +39,11 @@ export function HomeShell({
           </div>
           <div style={{ fontSize: 13.5, lineHeight: 2 }}>
             <div style={{ color: "#fff", fontWeight: 600, marginBottom: 6 }}>Boutique</div>
-            <Link href="/catalogue?cat=Foulards" style={{ color: "#C9BEB0", display: "block" }}>Foulards</Link>
-            <Link href="/catalogue?cat=Turbans" style={{ color: "#C9BEB0", display: "block" }}>Turbans</Link>
-            <Link href="/catalogue?cat=Accessoires" style={{ color: "#C9BEB0", display: "block" }}>Accessoires</Link>
+            {storefrontCategories.map((cat) => (
+              <Link key={cat} href={`/catalogue?cat=${encodeURIComponent(cat)}`} style={{ color: "#C9BEB0", display: "block" }}>
+                {CATEGORY_LABELS[cat]}
+              </Link>
+            ))}
           </div>
           <div style={{ fontSize: 13.5, lineHeight: 2 }}>
             <div style={{ color: "#fff", fontWeight: 600, marginBottom: 6 }}>Aide</div>

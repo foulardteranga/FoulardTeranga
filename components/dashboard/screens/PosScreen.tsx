@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { QtyStepper } from "@/components/ui/QtyStepper";
 import { NumericField } from "@/components/ui/NumericField";
-import { categories } from "@/lib/data/catalog";
+import { categories, categoryLabel } from "@/lib/data/catalog";
 import { money } from "@/lib/format";
 import { useBackoffice, type CartLine } from "@/lib/store/useBackoffice";
-import { encaisserVente } from "@/lib/pos/actions";
+import { encaisserVente, createWalkInCustomer } from "@/lib/pos/actions";
 import { buildTicketMessage } from "@/lib/pos/ticketMessage";
 import { previewPosDiscount, type DiscountPreview } from "@/lib/discounts/actions";
 import { POINT_VALUE_FCFA } from "@/lib/customers/loyalty";
@@ -169,7 +170,7 @@ export function PosScreen({ products, customers }: { products: Product[]; custom
                   color: on ? "#fff" : colors.muted,
                 }}
               >
-                {c}
+                {categoryLabel(c)}
               </button>
             );
           })}
@@ -404,11 +405,37 @@ function ProductCard({ product: p, onClick }: { product: Product; onClick: () =>
 
 /* ----- Client attach block (shared) ----- */
 function ClientBlock({ customers }: { customers: Customer[] }) {
+  const router = useRouter();
   const client = useBackoffice((s) => s.client);
   const attachClient = useBackoffice((s) => s.attachClient);
   const detachClient = useBackoffice((s) => s.detachClient);
+  const showToast = useBackoffice((s) => s.showToast);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [creatingBusy, setCreatingBusy] = useState(false);
+
+  function closePicker() {
+    setPickerOpen(false);
+    setQuery("");
+    setCreating(false);
+    setNewName("");
+  }
+
+  async function handleCreate() {
+    setCreatingBusy(true);
+    const res = await createWalkInCustomer({ phone: query.trim(), name: newName.trim() });
+    setCreatingBusy(false);
+    if (!res.ok) {
+      showToast(res.error, "error");
+      return;
+    }
+    attachClient(res.customer);
+    showToast(`${res.customer.name} ajoutée à la base clientes`, "success");
+    closePicker();
+    router.refresh();
+  }
 
   if (client) {
     return (
@@ -452,12 +479,17 @@ function ClientBlock({ customers }: { customers: Customer[] }) {
     const filtered = customers.filter(
       (c) => !q || c.name.toLowerCase().includes(q) || c.phone.toLowerCase().includes(q)
     );
+    const looksLikePhone = query.replace(/[^0-9]/g, "").length >= 6;
+
     return (
       <div>
         <input
           autoFocus
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setCreating(false);
+          }}
           placeholder="Rechercher nom ou téléphone…"
           style={{
             width: "100%",
@@ -471,15 +503,88 @@ function ClientBlock({ customers }: { customers: Customer[] }) {
         />
         <div style={{ maxHeight: 180, overflowY: "auto", marginTop: 8 }}>
           {filtered.length === 0 ? (
-            <div style={{ fontSize: 12.5, color: colors.muted, padding: "8px 2px" }}>Aucune cliente trouvée.</div>
+            creating ? (
+              <div style={{ padding: "6px 2px" }}>
+                <div style={{ fontSize: 12, color: colors.muted, marginBottom: 6 }}>
+                  Nouvelle fiche · {query.trim()}
+                </div>
+                <input
+                  autoFocus
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="Nom de la cliente"
+                  style={{
+                    width: "100%",
+                    height: 38,
+                    padding: "0 12px",
+                    border: `1.5px solid ${colors.borderField}`,
+                    borderRadius: 10,
+                    font: `400 13px ${fonts.ui}`,
+                    outline: "none",
+                  }}
+                />
+                <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                  <button
+                    onClick={handleCreate}
+                    disabled={!newName.trim() || creatingBusy}
+                    style={{
+                      flex: 1,
+                      height: 36,
+                      border: "none",
+                      borderRadius: 9,
+                      background: newName.trim() ? colors.primary : colors.disabled,
+                      color: "#fff",
+                      font: `600 12.5px ${fonts.ui}`,
+                      cursor: newName.trim() ? "pointer" : "not-allowed",
+                    }}
+                  >
+                    {creatingBusy ? "Enregistrement…" : "Créer et rattacher"}
+                  </button>
+                  <button
+                    onClick={() => setCreating(false)}
+                    style={{ height: 36, padding: "0 12px", border: "none", background: "none", color: colors.muted, font: `500 12.5px ${fonts.ui}`, cursor: "pointer" }}
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ padding: "8px 2px" }}>
+                <div style={{ fontSize: 12.5, color: colors.muted, marginBottom: looksLikePhone ? 8 : 0 }}>
+                  Aucune cliente trouvée{looksLikePhone ? " pour ce numéro." : "."}
+                </div>
+                {looksLikePhone ? (
+                  <button
+                    onClick={() => setCreating(true)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 7,
+                      border: "none",
+                      background: "none",
+                      color: colors.primary,
+                      font: `600 13px ${fonts.ui}`,
+                      cursor: "pointer",
+                      padding: "4px 0",
+                    }}
+                  >
+                    <Icon path={ICONS.personPlus} size={16} stroke={colors.primary} />
+                    Créer une fiche pour ce numéro
+                  </button>
+                ) : (
+                  <div style={{ fontSize: 11.5, color: colors.muted }}>
+                    Tapez son numéro pour créer sa fiche.
+                  </div>
+                )}
+              </div>
+            )
           ) : (
             filtered.map((c) => (
               <button
                 key={c.id}
                 onClick={() => {
                   attachClient(c);
-                  setPickerOpen(false);
-                  setQuery("");
+                  closePicker();
                 }}
                 style={{
                   display: "flex",
@@ -502,10 +607,7 @@ function ClientBlock({ customers }: { customers: Customer[] }) {
           )}
         </div>
         <button
-          onClick={() => {
-            setPickerOpen(false);
-            setQuery("");
-          }}
+          onClick={closePicker}
           style={{ marginTop: 6, font: `500 12px ${fonts.ui}`, color: colors.muted, background: "none", border: "none", cursor: "pointer" }}
         >
           Annuler

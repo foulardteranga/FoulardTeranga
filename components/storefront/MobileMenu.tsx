@@ -8,10 +8,7 @@ import { whatsappLink } from "@/lib/format";
 
 const LINKS = [
   { label: "Boutique", href: "/catalogue" },
-  { label: "Nouveautés", href: "/catalogue?cat=Nouveautés" },
-  { label: "Foulards", href: "/catalogue?cat=Foulards" },
-  { label: "Turbans", href: "/catalogue?cat=Turbans" },
-  { label: "Accessoires", href: "/catalogue?cat=Accessoires" },
+  { label: "Nouveautés", href: "/catalogue?isNew=1" },
   { label: "Notre histoire", href: "/#ft-story" },
   { label: "Mon compte", href: "/compte" },
 ];

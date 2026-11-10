@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { fonts, colors } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
-import { filterCatalog, categories, type CatalogFilters } from "@/lib/data/catalog";
+import { filterCatalog, categories, categoryLabel, type CatalogFilters } from "@/lib/data/catalog";
 import { useStorefront } from "@/lib/store/useStorefront";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import { Breadcrumb } from "@/components/storefront/Breadcrumb";
@@ -23,6 +23,7 @@ const MOTIFS = ["Wax", "Bazin", "Uni", "Kente", "Tie & dye"];
 export function CatalogView({ products }: { products: Product[] }) {
   const searchParams = useSearchParams();
   const initialCat = (searchParams.get("cat") as CatalogFilters["cat"]) || "Tous";
+  const initialIsNew = searchParams.get("isNew") === "1";
 
   const [filters, setFilters] = useState<CatalogFilters>({
     cat: initialCat,
@@ -31,6 +32,7 @@ export function CatalogView({ products }: { products: Product[] }) {
     priceMax: 40000,
     query: "",
     sort: "new",
+    isNew: initialIsNew,
   });
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -39,7 +41,7 @@ export function CatalogView({ products }: { products: Product[] }) {
     setLoading(true);
     const timer = setTimeout(() => setLoading(false), 250);
     return () => clearTimeout(timer);
-  }, [filters.cat, filters.color, filters.motif, filters.priceMax, filters.query, filters.sort]);
+  }, [filters.cat, filters.color, filters.motif, filters.priceMax, filters.query, filters.sort, filters.isNew]);
 
   const addToCart = useStorefront((s) => s.addToCart);
   const showToast = useStorefront((s) => s.showToast);
@@ -49,13 +51,22 @@ export function CatalogView({ products }: { products: Product[] }) {
   const setFilter = <K extends keyof CatalogFilters>(key: K, value: CatalogFilters[K]) =>
     setFilters((f) => ({ ...f, [key]: value }));
 
-  const clearFilters = () => setFilters({ cat: "Tous", color: "", motif: "", priceMax: 40000, query: "", sort: "new" });
+  const clearFilters = () =>
+    setFilters({ cat: "Tous", color: "", motif: "", priceMax: 40000, query: "", sort: "new", isNew: false });
+
+  const pageTitle = filters.isNew
+    ? filters.cat === "Tous"
+      ? "Nouveautés"
+      : `Nouveautés · ${categoryLabel(filters.cat)}`
+    : filters.cat === "Tous"
+      ? "Toute la boutique"
+      : categoryLabel(filters.cat);
 
   return (
     <div className="ft-store-page" style={{ maxWidth: 1200, margin: "0 auto" }}>
-      <Breadcrumb items={[{ label: "Accueil", href: "/" }, { label: filters.cat === "Tous" ? "Toute la boutique" : filters.cat }]} />
+      <Breadcrumb items={[{ label: "Accueil", href: "/" }, { label: pageTitle }]} />
       <h1 className="ft-store-h1" style={{ fontFamily: fonts.display, fontWeight: 600, margin: "0 0 4px", letterSpacing: "-.01em" }}>
-        {filters.cat === "Tous" ? "Toute la boutique" : filters.cat}
+        {pageTitle}
       </h1>
       <p style={{ fontSize: 14, color: colors.muted, margin: "0 0 20px" }}>
         {filtered.length} produit{filtered.length > 1 ? "s" : ""}
@@ -102,19 +113,38 @@ export function CatalogView({ products }: { products: Product[] }) {
             </span>
           </div>
 
+          {filters.isNew && (
+            <>
+              <FilterLabel>Nouveautés</FilterLabel>
+              <div style={{ marginBottom: 20 }}>
+                <span
+                  style={{
+                    height: 34, padding: "0 13px", display: "inline-flex", alignItems: "center", borderRadius: 999,
+                    font: `600 13px ${fonts.ui}`,
+                    border: `1.5px solid ${colors.primary}`,
+                    background: colors.primary,
+                    color: "#fff",
+                  }}
+                >
+                  Ajoutés cette semaine ou la semaine dernière
+                </span>
+              </div>
+            </>
+          )}
+
           <FilterLabel>Catégorie</FilterLabel>
           <div style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 20 }}>
             {categories.map((c) => (
               <span
                 key={c}
-                onClick={() => setFilter("cat", c)}
+                onClick={() => setFilters((f) => ({ ...f, cat: c, isNew: c === "Tous" ? false : f.isNew }))}
                 style={{
                   padding: "8px 10px", borderRadius: 8, font: `500 14px ${fonts.ui}`, cursor: "pointer",
                   background: filters.cat === c ? colors.bgInfo : "transparent",
                   color: filters.cat === c ? colors.primary : colors.ink,
                 }}
               >
-                {c}
+                {categoryLabel(c)}
               </span>
             ))}
           </div>

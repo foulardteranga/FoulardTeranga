@@ -13,7 +13,7 @@ const BASE = {
   price: 15000,
   stock: 10,
   swatch: "#26326B",
-  lengths: "Taille unique",
+  lengths: ["M"],
   description: "",
 };
 

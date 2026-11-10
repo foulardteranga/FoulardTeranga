@@ -18,7 +18,8 @@ import {
   deleteProductImage,
 } from "@/lib/inventory/actions";
 import type { StockMovementView } from "@/lib/data/stockMovements.server";
-import { PRODUCT_CATEGORIES } from "@/lib/validators/product";
+import { PRODUCT_CATEGORIES, PRODUCT_SIZES } from "@/lib/validators/product";
+import { CATEGORY_LABELS } from "@/lib/data/catalog";
 import { MANUAL_STOCK_REASONS } from "@/lib/validators/stockMovement";
 import { ProductPhotosField } from "@/components/dashboard/ProductPhotosField";
 import { ProductVariantsField, type ProductVariantItem } from "@/components/dashboard/ProductVariantsField";
@@ -534,7 +535,7 @@ interface NewProductForm {
   price: string;
   stock: string;
   swatch: string;
-  lengths: string;
+  lengths: (typeof PRODUCT_SIZES)[number][];
   description: string;
   image: string;
   gallery: string[];
@@ -548,7 +549,7 @@ const EMPTY_PRODUCT_FORM: NewProductForm = {
   price: "",
   stock: "",
   swatch: SWATCH_PALETTE[0],
-  lengths: "",
+  lengths: [],
   description: "",
   image: "",
   gallery: [],
@@ -620,7 +621,9 @@ function NewProductDrawer({ onClose, onCreated }: { onClose: () => void; onCreat
         </div>
 
         <div style={{ flex: 1, overflowY: "auto", padding: "18px 20px" }}>
-          <FormField label="Nom du produit">
+          <div style={{ font: `500 12px ${fonts.ui}`, color: colors.muted, marginBottom: 14 }}>* Champs obligatoires</div>
+
+          <FormField label="Nom du produit" required>
             <input value={form.name} onChange={(e) => set("name", e.target.value)} style={textField} placeholder="Foulard tissé main" />
           </FormField>
 
@@ -635,27 +638,27 @@ function NewProductDrawer({ onClose, onCreated }: { onClose: () => void; onCreat
             />
           </FormField>
 
-          <FormField label="Catégorie">
+          <FormField label="Catégorie" required>
             <select value={form.category} onChange={(e) => set("category", e.target.value as NewProductForm["category"])} style={textField}>
               {PRODUCT_CATEGORIES.map((c) => (
                 <option key={c} value={c}>
-                  {c}
+                  {CATEGORY_LABELS[c]}
                 </option>
               ))}
             </select>
           </FormField>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <FormField label="Variante (modèle)">
+            <FormField label="Variante (modèle)" required>
               <input value={form.variant} onChange={(e) => set("variant", e.target.value)} style={textField} placeholder="Coton · Élégance" />
             </FormField>
-            <FormField label="Motif">
+            <FormField label="Motif" required>
               <input value={form.motif} onChange={(e) => set("motif", e.target.value)} style={textField} placeholder="Wax, Uni…" />
             </FormField>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <FormField label="Prix (FCFA)">
+            <FormField label="Prix (FCFA)" required>
               <NumericField mode="money" value={form.price} onChange={(v) => set("price", v)} placeholder="15000" min={0} />
             </FormField>
             {variants.length <= 1 ? (
@@ -737,12 +740,50 @@ function NewProductDrawer({ onClose, onCreated }: { onClose: () => void; onCreat
             )}
           </div>
 
-          <FormField label="Longueurs / tailles (séparées par une virgule)">
-            <input value={form.lengths} onChange={(e) => set("lengths", e.target.value)} style={textField} placeholder="Taille unique" />
+          <FormField label="Tailles">
+            <div style={{ display: "flex", gap: 8 }}>
+              {PRODUCT_SIZES.map((size) => {
+                const checked = form.lengths.includes(size);
+                return (
+                  <label
+                    key={size}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      height: 42,
+                      padding: "0 14px",
+                      border: `1.5px solid ${checked ? colors.primary : colors.borderField}`,
+                      borderRadius: 10,
+                      background: checked ? colors.bgInfo : "#fff",
+                      color: checked ? colors.primary : colors.ink,
+                      fontWeight: 600,
+                      fontSize: 14,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) =>
+                        set(
+                          "lengths",
+                          e.target.checked
+                            ? [...form.lengths, size]
+                            : form.lengths.filter((s) => s !== size)
+                        )
+                      }
+                      style={{ margin: 0 }}
+                    />
+                    {size}
+                  </label>
+                );
+              })}
+            </div>
           </FormField>
 
           <div id="ft-product-variants-section">
-            <FormField label="Couleurs & Variantes">
+            <FormField label="Couleurs & Variantes" required>
               <ProductVariantsField
                 variants={variants}
                 onChange={setVariants}
@@ -781,10 +822,13 @@ function NewProductDrawer({ onClose, onCreated }: { onClose: () => void; onCreat
   );
 }
 
-function FormField({ label, children }: { label: string; children: React.ReactNode }) {
+function FormField({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 16 }}>
-      <label style={{ display: "block", font: `600 12px ${fonts.ui}`, color: colors.muted, marginBottom: 7 }}>{label}</label>
+      <label style={{ display: "block", font: `600 12px ${fonts.ui}`, color: colors.muted, marginBottom: 7 }}>
+        {label}
+        {required && <span style={{ color: colors.danger }}> *</span>}
+      </label>
       {children}
     </div>
   );
@@ -999,7 +1043,7 @@ function EditDrawer({
               )}
             </div>
             <div style={{ fontSize: 12, color: "#9a8f7d", marginTop: 2 }}>
-              REF-{p.id.toUpperCase()} · {p.cat}
+              REF-{p.id.toUpperCase()} · {p.cat ? CATEGORY_LABELS[p.cat] : "Sans catégorie"}
             </div>
           </div>
           <button

@@ -17,8 +17,9 @@ enum Role {
 enum ProductCategory {
   Foulards
   Turbans
-  Tissus
-  Accessoires
+  Coiffes
+  Eventails
+  Voiles
 }
 
 enum CustomerSegment {
@@ -175,7 +176,7 @@ model EmployeeRole {
 model Product {
   id          String          @id @default(cuid())
   tenantId    String
-  category    ProductCategory
+  category    ProductCategory?
   name        String
   variant     String
   price       Int
@@ -249,6 +250,14 @@ model Order {
   amountReceived Int? // Montant remis par le client (espèces)
   changeGiven    Int? // Monnaie rendue (espèces)
   paymentDetails Json? // Ventilation des paiements (mixte / split payments)
+  isCustom             Boolean   @default(false)
+  customColorName      String?
+  customColorHex       String?
+  customFabricNote     String?
+  customModel          String?
+  customModelImageUrl  String?
+  customDueDate        DateTime?
+  customDeposit        Int?
 
   tenant       Tenant             @relation(fields: [tenantId], references: [id])
   customer     Customer?          @relation(fields: [customerId], references: [id])

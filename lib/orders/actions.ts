@@ -8,6 +8,7 @@ import { requireZone, getSession } from "@/lib/auth";
 import { requireWritableSession } from "@/lib/impersonation/guards";
 import { kycSchema, type KycInput } from "@/lib/validators/kyc";
 import { orderEditSchema, type OrderEditInput } from "@/lib/validators/orderEdit";
+import { customOrderSchema, type CustomOrderInput } from "@/lib/validators/customOrder";
 import { buildOrderLines, type WebCartLineInput } from "./buildOrderLines";
 import { aggregateQtyByProduct, aggregateQtyByVariant } from "./stockCheck";
 import { money } from "@/lib/format";
@@ -131,6 +132,66 @@ export async function submitWebOrder(
   }
 }
 
+/** Crée une commande personnalisée (sur mesure, sans produit catalogue) — saisie par owner/staff au comptoir. */
+export async function createCustomOrder(
+  input: CustomOrderInput
+): Promise<{ ok: true; ref: string } | { ok: false; error: string }> {
+  const { allowed } = await requireZone("dashboard");
+  if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
+
+  const session = await getSession();
+  if (!session) return { ok: false, error: "Une erreur est survenue, réessayez." };
+  const writable = await requireWritableSession();
+  if (!writable.ok) return { ok: false, error: writable.error };
+
+  const parsed = customOrderSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Informations invalides." };
+
+  try {
+    const tenant = await getCurrentTenant();
+    const d = parsed.data;
+
+    const order = await prisma.$transaction(async (tx) => {
+      const created = await tx.order.create({
+        data: {
+          tenantId: tenant.id,
+          clientName: d.clientName,
+          place: d.place,
+          phone: d.phone,
+          channel: "Boutique",
+          total: d.total,
+          isCustom: true,
+          customColorName: d.colorName || null,
+          customColorHex: d.colorHex || null,
+          customFabricNote: d.fabricNote || null,
+          customModel: d.model || null,
+          customModelImageUrl: d.modelImageUrl || null,
+          customDueDate: d.dueDate ?? null,
+          customDeposit: d.deposit ?? null,
+        },
+      });
+      await tx.orderStatusEvent.create({
+        data: { tenantId: tenant.id, orderId: created.id, authorId: session.userId, status: "nouvelle" },
+      });
+      return created;
+    }, { maxWait: 10000, timeout: 10000 });
+
+    await createNotification({
+      tenantId: tenant.id,
+      type: "nouvelle_commande",
+      title: "Nouvelle commande personnalisée",
+      body: `${order.ref} · ${order.clientName} · ${money(order.total)}`,
+      href: "/admin/commandes",
+    });
+
+    revalidatePath("/admin/commandes");
+    revalidatePath("/admin/tableau-de-bord");
+    return { ok: true, ref: order.ref };
+  } catch {
+    return { ok: false, error: "Une erreur est survenue, réessayez." };
+  }
+}
+
 export async function confirmOrder(ref: string): Promise<{ ok: true } | { ok: false; error: string }> {
   const { allowed } = await requireZone("dashboard");
   if (!allowed) return { ok: false, error: "Une erreur est survenue, réessayez." };
@@ -195,32 +256,43 @@ export async function confirmOrder(ref: string): Promise<{ ok: true } | { ok: fa
         }
       }
 
-      // Remises : re-validation au moment de la validation (source de vérité).
-      // Le sous-total vient des lignes ; la cliente est matchée par téléphone
-      // normalisé (même règle que applyLoyaltyOrder) pour connaître solde et VIP.
+      // Une commande personnalisée n'a aucune OrderLine : son prix est saisi
+      // à la main (createCustomOrder) et ne doit jamais être recalculé depuis
+      // un sous-total de lignes qui vaudrait 0 — aucun code promo ni point
+      // dépensé/remisé n'est accepté sur une commande personnalisée (le gain
+      // de points de fidélité, lui, s'applique normalement via applyLoyaltyOrder
+      // plus bas, identique à une commande catalogue).
       const subtotal = order.lines.reduce((sum, l) => sum + l.lineTotal, 0);
       const normalized = normalizePhone(order.phone);
       const candidates = await tx.customer.findMany({ where: { tenantId: tenant.id } });
       const matched = candidates.find((c) => normalizePhone(c.phone) === normalized) ?? null;
 
       let promoRow = null;
-      if (order.promoCode) {
-        promoRow = await findPromoByCode(tx, tenant.id, order.promoCode);
-        const verdict = validatePromo(promoRow, {
-          now: new Date(),
+      let d: { promoDiscount: number; pointsUsed: number; pointsDiscount: number; total: number } = {
+        promoDiscount: 0,
+        pointsUsed: 0,
+        pointsDiscount: 0,
+        total: order.total,
+      };
+      if (!order.isCustom) {
+        if (order.promoCode) {
+          promoRow = await findPromoByCode(tx, tenant.id, order.promoCode);
+          const verdict = validatePromo(promoRow, {
+            now: new Date(),
+            subtotal,
+            isVip: matched?.vip ?? false,
+          });
+          if (!verdict.ok) promoRow = null; // code plus valide : commande validée SANS la remise promo
+        }
+        d = applyDiscounts({
           subtotal,
-          isVip: matched?.vip ?? false,
+          promo: promoRow,
+          pointsRequested: order.pointsUsed, // l'intention enregistrée à la soumission
+          pointsBalance: matched?.points ?? 0,
         });
-        if (!verdict.ok) promoRow = null; // code plus valide : commande validée SANS la remise promo
-      }
-      const d = applyDiscounts({
-        subtotal,
-        promo: promoRow,
-        pointsRequested: order.pointsUsed, // l'intention enregistrée à la soumission
-        pointsBalance: matched?.points ?? 0,
-      });
-      if (promoRow && d.promoDiscount > 0) {
-        await tx.promoCode.update({ where: { id: promoRow.id }, data: { usedCount: { increment: 1 } } });
+        if (promoRow && d.promoDiscount > 0) {
+          await tx.promoCode.update({ where: { id: promoRow.id }, data: { usedCount: { increment: 1 } } });
+        }
       }
 
       // Rattachement fidélité : miroir de la déduction de stock ci-dessus,
@@ -433,7 +505,7 @@ export async function archiveOrder(
         if (!order) throw new Error("Commande introuvable.");
         if (order.status === "archivee") return; // idempotent : déjà archivée
 
-        const stockReconciled = STOCK_DEDUCTED_STATUSES.includes(order.status);
+        const stockReconciled = STOCK_DEDUCTED_STATUSES.includes(order.status) && order.lines.length > 0;
         if (stockReconciled) {
           const variantDemand = aggregateQtyByVariant(order.lines);
           for (const [variantId, { qty }] of variantDemand) {
@@ -518,7 +590,7 @@ export async function restoreOrder(ref: string): Promise<{ ok: true } | { ok: fa
         if (order.status !== "archivee" || !order.previousStatus) return; // idempotent : pas (ou plus) archivée
 
         const restoredStatus = order.previousStatus;
-        const stockReconciled = STOCK_DEDUCTED_STATUSES.includes(restoredStatus);
+        const stockReconciled = STOCK_DEDUCTED_STATUSES.includes(restoredStatus) && order.lines.length > 0;
         if (stockReconciled) {
           const variantDemand = aggregateQtyByVariant(order.lines);
           for (const [variantId, { qty, nameAtOrder, variantName }] of variantDemand) {

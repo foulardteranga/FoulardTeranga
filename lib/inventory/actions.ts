@@ -27,10 +27,7 @@ export async function createProduct(
   const parsed = productSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Informations invalides." };
 
-  const lengths = parsed.data.lengths
-    .split(",")
-    .map((l) => l.trim())
-    .filter(Boolean);
+  const lengths = parsed.data.lengths;
 
   const rawVariants = parsed.data.variants;
   const variants = rawVariants.length > 0

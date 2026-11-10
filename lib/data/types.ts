@@ -1,8 +1,9 @@
-export type ProductCategory = "Foulards" | "Turbans" | "Tissus" | "Accessoires";
+export type ProductCategory = "Foulards" | "Turbans" | "Coiffes" | "Eventails" | "Voiles";
 
 export interface Product {
   id: string;
-  cat: ProductCategory;
+  /** `null` pour les produits hérités dont l'ancienne catégorie a été supprimée (« Sans catégorie »). */
+  cat: ProductCategory | null;
   name: string;
   variant: string;
   price: number;
@@ -13,7 +14,7 @@ export interface Product {
   colors: string[];
   /** Motif textile (Wax, Bazin, Uni, Kente…) — utilisé par les filtres vitrine. */
   motif: string;
-  /** Longueurs/tailles disponibles (ex. ["90 × 90 cm", "Sur-mesure"] ou ["Taille unique"]). */
+  /** Tailles disponibles (S, M, L) ; peut contenir d'anciennes valeurs texte libre pour les produits créés avant le passage au menu S/M/L. */
   lengths: string[];
   /** Description longue affichée sur la fiche produit. */
   description: string;
@@ -33,6 +34,8 @@ export interface Product {
   active?: boolean;
   /** Date d'archivage (formatée ou ISO). Null si actif. */
   archivedAt?: string | null;
+  /** Date de création (ISO) — utilisée pour le filtre vitrine "Nouveautés". Absente pour des fixtures/mocks. */
+  createdAt?: string;
 }
 
 export interface ProductVariantData {
@@ -123,4 +126,16 @@ export interface Order {
     amountReceived?: number | null;
     changeGiven?: number | null;
   }> | null;
+  isCustom: boolean;
+  customColorName: string | null;
+  customColorHex: string | null;
+  customFabricNote: string | null;
+  customModel: string | null;
+  customModelImageUrl: string | null;
+  /** Formatée JJ/MM/AAAA, `null` si non renseignée ou si la commande n'est pas personnalisée. */
+  customDueDate: string | null;
+  /** Formatée money (ex. « 5 000 FCFA »), `null` si aucun acompte saisi. */
+  customDeposit: string | null;
+  /** = total − acompte, formatée money, `null` si aucun acompte saisi. */
+  customBalanceDue: string | null;
 }
