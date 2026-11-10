@@ -3,9 +3,10 @@ import {
   categories,
   storefrontCategories,
   newestProducts,
-  featuredProduct,
+  productOfTheDay,
   relatedTo,
   filterCatalog,
+  isNewProduct,
 } from "@/lib/data/catalog";
 import { toProduct } from "@/lib/data/catalog.server";
 import type { Product } from "@/lib/data/types";
@@ -103,9 +104,32 @@ describe("newestProducts", () => {
   });
 });
 
-describe("featuredProduct", () => {
-  it("returns the product flagged featured", () => {
-    expect(featuredProduct(FIXTURE_PRODUCTS)!.id).toBe("p2");
+describe("productOfTheDay", () => {
+  it("is stable across calls on the same day", () => {
+    const now = new Date("2026-11-10T09:00:00");
+    const a = productOfTheDay(FIXTURE_PRODUCTS, now);
+    const b = productOfTheDay(FIXTURE_PRODUCTS, new Date("2026-11-10T21:00:00"));
+    expect(a!.id).toBe(b!.id);
+  });
+
+  it("can change on a different day", () => {
+    const picks = new Set<string>();
+    for (let day = 1; day <= 15; day++) {
+      const pick = productOfTheDay(FIXTURE_PRODUCTS, new Date(2026, 10, day));
+      picks.add(pick!.id);
+    }
+    expect(picks.size).toBeGreaterThan(1);
+  });
+
+  it("excludes out-of-stock products when stock remains elsewhere", () => {
+    const products = FIXTURE_PRODUCTS.map((p) => (p.id === "p1" ? { ...p, stock: 0 } : { ...p, stock: 0 }));
+    products[2] = { ...products[2], stock: 5 };
+    const pick = productOfTheDay(products, new Date("2026-11-10T09:00:00"));
+    expect(pick!.id).toBe(products[2].id);
+  });
+
+  it("returns undefined for an empty catalog", () => {
+    expect(productOfTheDay([])).toBeUndefined();
   });
 });
 
@@ -119,8 +143,45 @@ describe("relatedTo", () => {
   });
 });
 
+describe("isNewProduct", () => {
+  // Jeudi 12 novembre 2026 : semaine en cours = lun 09/11 → dim 15/11 ; semaine précédente = lun 02/11 → dim 08/11.
+  const now = new Date("2026-11-12T10:00:00");
+
+  it("is true for a product created earlier in the current week", () => {
+    expect(isNewProduct("2026-11-09T08:00:00", now)).toBe(true);
+  });
+
+  it("is true for a product created during the previous week", () => {
+    expect(isNewProduct("2026-11-03T08:00:00", now)).toBe(true);
+  });
+
+  it("is false for a product created before the previous week", () => {
+    expect(isNewProduct("2026-10-26T23:59:59", now)).toBe(false);
+  });
+
+  it("is false for a product created after the current week", () => {
+    expect(isNewProduct("2026-11-16T00:00:00", now)).toBe(false);
+  });
+
+  it("is false when createdAt is missing", () => {
+    expect(isNewProduct(undefined, now)).toBe(false);
+  });
+});
+
 describe("filterCatalog", () => {
-  const base = { cat: "Tous" as const, color: "", motif: "", priceMax: 999999, query: "", sort: "new" as const };
+  const base = { cat: "Tous" as const, color: "", motif: "", priceMax: 999999, query: "", sort: "new" as const, isNew: false };
+
+  it("filters to products created this week or last week when isNew is set", () => {
+    const recent = new Date();
+    recent.setDate(recent.getDate() - 1);
+    const old = new Date();
+    old.setDate(old.getDate() - 60);
+    const products = [
+      { ...FIXTURE_PRODUCTS[0], createdAt: recent.toISOString() },
+      { ...FIXTURE_PRODUCTS[1], createdAt: old.toISOString() },
+    ];
+    expect(filterCatalog(products, { ...base, isNew: true }).map((p) => p.id)).toEqual(["p1"]);
+  });
 
   it("returns everything with no filters", () => {
     expect(filterCatalog(FIXTURE_PRODUCTS, base)).toHaveLength(12);

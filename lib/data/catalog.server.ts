@@ -28,6 +28,7 @@ export function toProduct(row: PrismaProductWithVariants): Product {
     gallery: row.gallery,
     active: row.active ?? true,
     archivedAt: row.archivedAt ? row.archivedAt.toISOString() : null,
+    createdAt: row.createdAt.toISOString(),
     variants: row.variants
       ? row.variants.map((v) => ({
           id: v.id,

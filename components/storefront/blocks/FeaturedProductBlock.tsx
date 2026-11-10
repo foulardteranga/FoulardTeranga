@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { fonts, colors } from "@/lib/theme/tokens";
 import { stripe } from "@/lib/theme/storefront";
-import { featuredProduct } from "@/lib/data/catalog";
+import { productOfTheDay } from "@/lib/data/catalog";
 import { useStorefront } from "@/lib/store/useStorefront";
 import { money } from "@/lib/format";
 import type { Product } from "@/lib/data/types";
@@ -11,7 +12,7 @@ import type { FeaturedSettings } from "@/lib/storefront/blockSettings";
 import { BlockFrame } from "./BlockFrame";
 
 export function FeaturedProductBlock({ settings, products = [] }: { settings: FeaturedSettings; products?: Product[] }) {
-  const product = featuredProduct(products);
+  const product = productOfTheDay(products);
   const addToCart = useStorefront((s) => s.addToCart);
   const showToast = useStorefront((s) => s.showToast);
 
@@ -25,6 +26,16 @@ export function FeaturedProductBlock({ settings, products = [] }: { settings: Fe
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div className="ft-store-feat" style={{ background: "#fff", border: "1px solid rgba(30,27,24,.08)", borderRadius: 16, overflow: "hidden", display: "grid" }}>
             <div className="ft-store-feat-img" style={{ position: "relative", background: stripe(product.colors[0]), display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {product.image && (
+                <Image
+                  src={product.image}
+                  alt={product.name}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  style={{ objectFit: "cover" }}
+                  priority
+                />
+              )}
               <span style={{ position: "absolute", top: 14, left: 14, font: `700 11px ${fonts.ui}`, padding: "5px 10px", borderRadius: 999, background: "#1E1B18", color: colors.gold, border: `1px solid ${colors.gold}` }}>
                 ★ Coup de cœur
               </span>

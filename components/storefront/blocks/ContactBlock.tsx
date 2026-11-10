@@ -5,6 +5,10 @@ import type { ContactSettings } from "@/lib/storefront/blockSettings";
 import { BlockFrame } from "./BlockFrame";
 
 export function ContactBlock({ settings, whatsappPhone, anchored = true }: { settings: ContactSettings; whatsappPhone?: string | null; anchored?: boolean }) {
+  const mapQuery = encodeURIComponent(settings.address);
+  const embedSrc = `https://www.google.com/maps?q=${mapQuery}&z=15&output=embed`;
+  const mapLink = settings.mapUrl?.trim() || `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
+
   return (
     <BlockFrame id="contact">
       <section id={anchored ? "ft-contact" : undefined} className="ft-store-section">
@@ -27,11 +31,30 @@ export function ContactBlock({ settings, whatsappPhone, anchored = true }: { set
               )}
             </div>
           </div>
-          <div
-            style={{ position: "relative", borderRadius: 16, overflow: "hidden", minHeight: 220, background: "repeating-linear-gradient(45deg,#dfe1e8,#dfe1e8 11px,#e9eaef 11px,#e9eaef 22px)", display: "flex", alignItems: "center", justifyContent: "center" }}
+          <a
+            href={mapLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Ouvrir « ${settings.locationTitle} » dans Maps`}
+            style={{ position: "relative", borderRadius: 16, overflow: "hidden", minHeight: 220, display: "block" }}
           >
-            <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, color: "#8a8d99" }}>carte · localisation</span>
-          </div>
+            <iframe
+              src={embedSrc}
+              title={`Carte — ${settings.locationTitle}`}
+              loading="lazy"
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0, pointerEvents: "none" }}
+            />
+            <span
+              style={{
+                position: "absolute", bottom: 12, right: 12, display: "inline-flex", alignItems: "center", gap: 6,
+                padding: "8px 14px", borderRadius: 999, background: "#fff", boxShadow: "0 2px 8px rgba(30,27,24,.18)",
+                font: `600 13px ${fonts.ui}`, color: colors.primary,
+              }}
+            >
+              <Icon path={ICONS.mapPin} size={16} stroke={colors.primary} strokeWidth={2} />
+              Ouvrir dans Maps
+            </span>
+          </a>
         </div>
       </section>
     </BlockFrame>

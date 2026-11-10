@@ -34,6 +34,8 @@ export interface Product {
   active?: boolean;
   /** Date d'archivage (formatée ou ISO). Null si actif. */
   archivedAt?: string | null;
+  /** Date de création (ISO) — utilisée pour le filtre vitrine "Nouveautés". Absente pour des fixtures/mocks. */
+  createdAt?: string;
 }
 
 export interface ProductVariantData {

@@ -171,6 +171,8 @@ export const contactSchema = z.object({
   address: z.string(),
   hoursTitle: z.string(),
   hours: z.string(),
+  // optionnel + défaut : les pages enregistrées avant l'ajout de la carte n'ont pas cette clé en base.
+  mapUrl: z.string().optional().default(""),
 });
 export type ContactSettings = z.infer<typeof contactSchema>;
 export const contactDefaults: ContactSettings = {
@@ -179,6 +181,7 @@ export const contactDefaults: ContactSettings = {
   address: "Rue du Commerce, Plateau, Abidjan · Côte d'Ivoire",
   hoursTitle: "Horaires",
   hours: "Lun – Sam · 9h – 19h",
+  mapUrl: "",
 };
 export const contactFields: FieldDescriptor[] = [
   { key: "title", label: "Titre", kind: "text" },
@@ -186,6 +189,11 @@ export const contactFields: FieldDescriptor[] = [
   { key: "address", label: "Adresse", kind: "textarea" },
   { key: "hoursTitle", label: "Libellé horaires", kind: "text" },
   { key: "hours", label: "Horaires", kind: "text" },
+  {
+    key: "mapUrl",
+    label: "Lien Google Maps (Google Maps → Partager → Copier le lien)",
+    kind: "url",
+  },
 ];
 
 /* ---- cats ---- */

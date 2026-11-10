@@ -35,9 +35,27 @@ export function newestProducts(products: Product[], limit = 4): Product[] {
   return [...badged, ...rest].slice(0, limit);
 }
 
-/** Le produit vedette de la Home (le premier marqué `featured`, sinon le premier du catalogue). */
-export function featuredProduct(products: Product[]): Product | undefined {
-  return products.find((p) => p.featured) ?? products[0];
+/** Entier stable représentant le jour civil local (change à minuit). */
+function localDayKey(date: Date): number {
+  return date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate();
+}
+
+/** Pseudo-aléatoire déterministe dans [0, 1), stable pour une même graine. */
+function seededRandom(seed: number): number {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
+/**
+ * Produit vedette de la Home : tiré au sort chaque jour (stable toute la journée, change à minuit)
+ * parmi les produits en stock. Repli sur l'ensemble du catalogue si tout est épuisé.
+ */
+export function productOfTheDay(products: Product[], now: Date = new Date()): Product | undefined {
+  const inStock = products.filter((p) => p.stock > 0);
+  const pool = inStock.length > 0 ? inStock : products;
+  if (pool.length === 0) return undefined;
+  const index = Math.floor(seededRandom(localDayKey(now)) * pool.length);
+  return pool[index];
 }
 
 /** Produits de la même catégorie, hors le produit lui-même. */
@@ -54,11 +72,34 @@ export interface CatalogFilters {
   priceMax: number;
   query: string;
   sort: "new" | "asc" | "desc";
+  /** Limite aux produits ajoutés pendant la semaine en cours ou la semaine précédente (lien "Nouveautés"). */
+  isNew: boolean;
+}
+
+/** Lundi 00:00 (heure locale) de la semaine contenant `date`. */
+function startOfWeek(date: Date): Date {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diffToMonday = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - diffToMonday);
+  return d;
+}
+
+/** Vrai si `createdAt` tombe dans la semaine en cours ou la semaine précédente (semaines lundi → dimanche). */
+export function isNewProduct(createdAt: string | Date | undefined, now: Date = new Date()): boolean {
+  if (!createdAt) return false;
+  const created = typeof createdAt === "string" ? new Date(createdAt) : createdAt;
+  const currentWeekStart = startOfWeek(now);
+  const previousWeekStart = new Date(currentWeekStart);
+  previousWeekStart.setDate(previousWeekStart.getDate() - 7);
+  const nextWeekStart = new Date(currentWeekStart);
+  nextWeekStart.setDate(nextWeekStart.getDate() + 7);
+  return created >= previousWeekStart && created < nextWeekStart;
 }
 
 /** Filtrage + tri du catalogue pour l'écran Catalogue de la vitrine. */
 export function filterCatalog(products: Product[], filters: CatalogFilters): Product[] {
   let list = products.filter((p) => filters.cat === "Tous" || p.cat === filters.cat);
+  if (filters.isNew) list = list.filter((p) => isNewProduct(p.createdAt));
   if (filters.color) list = list.filter((p) => p.colors.includes(filters.color));
   if (filters.motif) list = list.filter((p) => p.motif === filters.motif);
   list = list.filter((p) => p.price <= filters.priceMax);
