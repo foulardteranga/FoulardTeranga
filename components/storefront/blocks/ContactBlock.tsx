@@ -1,12 +1,15 @@
 import { fonts, colors } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { whatsappLink } from "@/lib/format";
-import type { ContactSettings } from "@/lib/storefront/blockSettings";
+import { extractMapEmbedUrl, type ContactSettings } from "@/lib/storefront/blockSettings";
 import { BlockFrame } from "./BlockFrame";
 
 export function ContactBlock({ settings, whatsappPhone, anchored = true }: { settings: ContactSettings; whatsappPhone?: string | null; anchored?: boolean }) {
   const mapQuery = encodeURIComponent(settings.address);
-  const embedSrc = `https://www.google.com/maps?q=${mapQuery}&z=15&output=embed`;
+  // Carte précise (position exacte) si la gérante a collé le code d'intégration Google Maps ;
+  // sinon repli sur une recherche par adresse (moins précis, mais fonctionne sans configuration).
+  const preciseEmbed = extractMapEmbedUrl(settings.mapEmbedUrl ?? "");
+  const embedSrc = preciseEmbed || `https://www.google.com/maps?q=${mapQuery}&z=15&output=embed`;
   const mapLink = settings.mapUrl?.trim() || `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
 
   return (

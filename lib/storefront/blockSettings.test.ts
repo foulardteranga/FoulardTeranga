@@ -1,6 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { BLOCK_SETTINGS, BLOCK_LIBRARY, heroFields, storyFields, catsFields, lookFields } from "./blockSettings";
+import { BLOCK_SETTINGS, BLOCK_LIBRARY, heroFields, storyFields, catsFields, lookFields, extractMapEmbedUrl } from "./blockSettings";
 import { DEFAULT_BLOCK_ORDER } from "@/lib/store/useStorefront";
+
+describe("extractMapEmbedUrl", () => {
+  it("extrait le src d'un code HTML d'intégration Google Maps", () => {
+    const html = '<iframe src="https://www.google.com/maps/embed?pb=!1m18!abc" width="600" height="450"></iframe>';
+    expect(extractMapEmbedUrl(html)).toBe("https://www.google.com/maps/embed?pb=!1m18!abc");
+  });
+
+  it("accepte une URL déjà isolée", () => {
+    expect(extractMapEmbedUrl("https://www.google.com/maps/embed?pb=!1m18!abc")).toBe(
+      "https://www.google.com/maps/embed?pb=!1m18!abc"
+    );
+  });
+
+  it("retourne une chaîne vide pour une valeur vide", () => {
+    expect(extractMapEmbedUrl("")).toBe("");
+    expect(extractMapEmbedUrl("   ")).toBe("");
+  });
+});
 
 describe("BLOCK_SETTINGS", () => {
   it("couvre exactement les 9 types de blocs", () => {

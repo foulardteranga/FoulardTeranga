@@ -15,6 +15,18 @@ export interface FieldDescriptor {
   help?: string;
 }
 
+/**
+ * Extrait l'URL d'intégration d'une carte Google Maps depuis ce que la gérante colle dans l'éditeur :
+ * soit le code HTML complet fourni par Google ("Partager → Intégrer une carte → Copier le code HTML"),
+ * soit directement l'URL `src="…"` isolée.
+ */
+export function extractMapEmbedUrl(raw: string): string {
+  const value = raw.trim();
+  if (!value) return "";
+  const match = value.match(/src=["']([^"']+)["']/i);
+  return match ? match[1] : value;
+}
+
 /* ---- hero ---- */
 export const heroSchema = z.object({
   eyebrow: z.string(),
@@ -171,8 +183,9 @@ export const contactSchema = z.object({
   address: z.string(),
   hoursTitle: z.string(),
   hours: z.string(),
-  // optionnel + défaut : les pages enregistrées avant l'ajout de la carte n'ont pas cette clé en base.
+  // optionnel + défaut : les pages enregistrées avant l'ajout de la carte n'ont pas ces clés en base.
   mapUrl: z.string().optional().default(""),
+  mapEmbedUrl: z.string().optional().default(""),
 });
 export type ContactSettings = z.infer<typeof contactSchema>;
 export const contactDefaults: ContactSettings = {
@@ -182,6 +195,7 @@ export const contactDefaults: ContactSettings = {
   hoursTitle: "Horaires",
   hours: "Lun – Sam · 9h – 19h",
   mapUrl: "",
+  mapEmbedUrl: "",
 };
 export const contactFields: FieldDescriptor[] = [
   { key: "title", label: "Titre", kind: "text" },
@@ -193,6 +207,11 @@ export const contactFields: FieldDescriptor[] = [
     key: "mapUrl",
     label: "Lien Google Maps (Google Maps → Partager → Copier le lien)",
     kind: "url",
+  },
+  {
+    key: "mapEmbedUrl",
+    label: "Carte précise (Google Maps → Partager → Intégrer une carte → Copier le code HTML, collez le code entier ici)",
+    kind: "textarea",
   },
 ];
 
