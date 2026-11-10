@@ -250,6 +250,14 @@ model Order {
   amountReceived Int? // Montant remis par le client (espèces)
   changeGiven    Int? // Monnaie rendue (espèces)
   paymentDetails Json? // Ventilation des paiements (mixte / split payments)
+  isCustom             Boolean   @default(false)
+  customColorName      String?
+  customColorHex       String?
+  customFabricNote     String?
+  customModel          String?
+  customModelImageUrl  String?
+  customDueDate        DateTime?
+  customDeposit        Int?
 
   tenant       Tenant             @relation(fields: [tenantId], references: [id])
   customer     Customer?          @relation(fields: [customerId], references: [id])
