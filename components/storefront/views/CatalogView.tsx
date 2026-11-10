@@ -113,28 +113,31 @@ export function CatalogView({ products }: { products: Product[] }) {
             </span>
           </div>
 
-          <FilterLabel>Nouveautés</FilterLabel>
-          <div style={{ marginBottom: 20 }}>
-            <span
-              onClick={() => setFilter("isNew", !filters.isNew)}
-              style={{
-                height: 34, padding: "0 13px", display: "inline-flex", alignItems: "center", borderRadius: 999,
-                font: `600 13px ${fonts.ui}`, cursor: "pointer",
-                border: `1.5px solid ${filters.isNew ? colors.primary : colors.borderField}`,
-                background: filters.isNew ? colors.primary : "#fff",
-                color: filters.isNew ? "#fff" : colors.muted,
-              }}
-            >
-              Ajoutés cette semaine ou la semaine dernière
-            </span>
-          </div>
+          {filters.isNew && (
+            <>
+              <FilterLabel>Nouveautés</FilterLabel>
+              <div style={{ marginBottom: 20 }}>
+                <span
+                  style={{
+                    height: 34, padding: "0 13px", display: "inline-flex", alignItems: "center", borderRadius: 999,
+                    font: `600 13px ${fonts.ui}`,
+                    border: `1.5px solid ${colors.primary}`,
+                    background: colors.primary,
+                    color: "#fff",
+                  }}
+                >
+                  Ajoutés cette semaine ou la semaine dernière
+                </span>
+              </div>
+            </>
+          )}
 
           <FilterLabel>Catégorie</FilterLabel>
           <div style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 20 }}>
             {categories.map((c) => (
               <span
                 key={c}
-                onClick={() => setFilter("cat", c)}
+                onClick={() => setFilters((f) => ({ ...f, cat: c, isNew: c === "Tous" ? false : f.isNew }))}
                 style={{
                   padding: "8px 10px", borderRadius: 8, font: `500 14px ${fonts.ui}`, cursor: "pointer",
                   background: filters.cat === c ? colors.bgInfo : "transparent",
