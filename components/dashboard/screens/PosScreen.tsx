@@ -5,7 +5,7 @@ import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { QtyStepper } from "@/components/ui/QtyStepper";
 import { NumericField } from "@/components/ui/NumericField";
-import { categories } from "@/lib/data/catalog";
+import { categories, categoryLabel } from "@/lib/data/catalog";
 import { money } from "@/lib/format";
 import { useBackoffice, type CartLine } from "@/lib/store/useBackoffice";
 import { encaisserVente } from "@/lib/pos/actions";
@@ -13,6 +13,7 @@ import { buildTicketMessage } from "@/lib/pos/ticketMessage";
 import { previewPosDiscount, type DiscountPreview } from "@/lib/discounts/actions";
 import { POINT_VALUE_FCFA } from "@/lib/customers/loyalty";
 import { PAYMENT_LABELS, type PosPaymentMethod } from "@/lib/payments/labels";
+import { normalizePhone } from "@/lib/customers/normalizePhone";
 import type { Customer, Product, ProductVariantData } from "@/lib/data/types";
 import { PosVariantPickerModal } from "@/components/pos/PosVariantPickerModal";
 import { shouldOpenVariantPicker } from "@/components/pos/posVariantSelection";
@@ -169,7 +170,7 @@ export function PosScreen({ products, customers }: { products: Product[]; custom
                   color: on ? "#fff" : colors.muted,
                 }}
               >
-                {c}
+                {categoryLabel(c)}
               </button>
             );
           })}
@@ -538,6 +539,67 @@ function ClientBlock({ customers }: { customers: Customer[] }) {
   );
 }
 
+/**
+ * Capture légère de la cliente juste avant le paiement : un numéro suffit — s'il
+ * correspond à une fiche existante, elle est rattachée automatiquement (mêmes
+ * avantages fidélité qu'une recherche manuelle). Sinon le nom est demandé en un
+ * geste de plus. Ne s'affiche pas si une cliente est déjà rattachée (ClientBlock) ;
+ * entièrement facultatif — le panier s'encaisse normalement si on l'ignore.
+ */
+function WalkInCaptureField({ customers }: { customers: Customer[] }) {
+  const client = useBackoffice((s) => s.client);
+  const walkInPhone = useBackoffice((s) => s.walkInPhone);
+  const walkInName = useBackoffice((s) => s.walkInName);
+  const setWalkInPhone = useBackoffice((s) => s.setWalkInPhone);
+  const setWalkInName = useBackoffice((s) => s.setWalkInName);
+  const attachClient = useBackoffice((s) => s.attachClient);
+  const showToast = useBackoffice((s) => s.showToast);
+
+  if (client) return null;
+
+  const digits = normalizePhone(walkInPhone).replace(/[^0-9]/g, "");
+  const showNameField = digits.length >= 8;
+
+  function handlePhoneChange(v: string) {
+    setWalkInPhone(v);
+    const normalized = normalizePhone(v);
+    const match = customers.find((c) => normalizePhone(c.phone) === normalized);
+    if (match) {
+      attachClient(match);
+      showToast(`${match.name} retrouvée · ★ ${match.points} points`, "success");
+    }
+  }
+
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <NumericField
+        mode="phone"
+        value={walkInPhone}
+        onChange={handlePhoneChange}
+        placeholder="Numéro de la cliente (optionnel)"
+      />
+      {showNameField && (
+        <input
+          autoFocus
+          value={walkInName}
+          onChange={(e) => setWalkInName(e.target.value)}
+          placeholder="Nom de la cliente"
+          style={{
+            width: "100%",
+            height: 38,
+            marginTop: 8,
+            padding: "0 12px",
+            border: `1.5px solid ${colors.borderField}`,
+            borderRadius: 10,
+            font: `400 13px ${fonts.ui}`,
+            outline: "none",
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
 /* ----- Pay methods (shared) ----- */
 function PayMethods() {
   const pay = useBackoffice((s) => s.pay);
@@ -596,6 +658,8 @@ function PayButton({
   const cart = useBackoffice((s) => s.cart);
   const pay = useBackoffice((s) => s.pay);
   const client = useBackoffice((s) => s.client);
+  const walkInPhone = useBackoffice((s) => s.walkInPhone);
+  const walkInName = useBackoffice((s) => s.walkInName);
   const offline = useBackoffice((s) => s.offline);
   const showToast = useBackoffice((s) => s.showToast);
   const showTicket = useBackoffice((s) => s.showTicket);
@@ -632,6 +696,8 @@ function PayButton({
       changeGiven: checkoutData.changeGiven,
       splitPayments: checkoutData.splitPayments,
       customerId: client?.id ?? null,
+      walkInPhone: !client && walkInName.trim() ? walkInPhone.trim() : undefined,
+      walkInName: !client && walkInName.trim() ? walkInName.trim() : undefined,
       promoCode: promoCode.trim() || undefined,
       pointsRequested: Number(pointsReq) || 0,
     });
@@ -922,6 +988,7 @@ function CartPanelDesktop({
             {money(displayTotal)}
           </span>
         </div>
+        <WalkInCaptureField customers={customers} />
         <PayMethods />
         <PayButton
           total={total}
@@ -1179,6 +1246,7 @@ function CartSheetMobile({
               {money(displayTotal)}
             </span>
           </div>
+          <WalkInCaptureField customers={customers} />
           <PayMethods />
           <PayButton
             total={total}

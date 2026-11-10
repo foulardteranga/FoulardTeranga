@@ -210,7 +210,7 @@ export function ThemeScreen({ products, tenant }: { products: Product[]; tenant:
               <div style={{ display: "flex", gap: 14, fontSize: 12.5, color: colors.muted }}>
                 <span>Foulards</span>
                 <span>Turbans</span>
-                <span>Accessoires</span>
+                <span>Voiles</span>
               </div>
             </div>
             {/* hero */}

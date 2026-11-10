@@ -4,12 +4,29 @@ export const categories: Array<"Tous" | ProductCategory> = [
   "Tous",
   "Foulards",
   "Turbans",
-  "Tissus",
-  "Accessoires",
+  "Coiffes",
+  "Eventails",
+  "Voiles",
 ];
 
-/** Catégories mises en avant sur la Home (les Tissus restent filtrables au catalogue mais hors vignettes). */
-export const storefrontCategories: ProductCategory[] = ["Foulards", "Turbans", "Accessoires"];
+/** Catégories mises en avant sur la Home (vignettes "shop by category"). */
+export const storefrontCategories: ProductCategory[] = ["Foulards", "Turbans", "Coiffes", "Eventails", "Voiles"];
+
+/** Libellé affiché pour chaque catégorie (certaines valeurs stockées en base sont des identifiants sans accent/parenthèses). */
+export const CATEGORY_LABELS: Record<ProductCategory, string> = {
+  Foulards: "Foulards",
+  Turbans: "Turbans",
+  Coiffes: "Coiffes (bibi)",
+  Eventails: "Éventails",
+  Voiles: "Voiles",
+};
+
+/** Libellé d'une catégorie, y compris le filtre spécial "Tous" et les produits sans catégorie (legacy). */
+export function categoryLabel(cat: "Tous" | ProductCategory | null): string {
+  if (cat === "Tous") return "Tous";
+  if (cat === null) return "Sans catégorie";
+  return CATEGORY_LABELS[cat];
+}
 
 /** Produits mis en avant sur la Home : les articles badgés d'abord, puis le reste, dans l'ordre du catalogue. */
 export function newestProducts(products: Product[], limit = 4): Product[] {

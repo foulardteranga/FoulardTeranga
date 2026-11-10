@@ -10,6 +10,7 @@ import { stripe } from "@/lib/theme/storefront";
 import { useStorefront } from "@/lib/store/useStorefront";
 import { money, fmt } from "@/lib/format";
 import { Breadcrumb } from "@/components/storefront/Breadcrumb";
+import { CATEGORY_LABELS } from "@/lib/data/catalog";
 import { AvailabilityChip } from "@/components/storefront/AvailabilityChip";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import type { Product, ProductVariantData } from "@/lib/data/types";
@@ -130,7 +131,9 @@ export function ProductView({ product, related }: { product: Product; related: P
       <Breadcrumb
         items={[
           { label: "Accueil", href: "/" },
-          { label: product.cat, href: `/catalogue?cat=${encodeURIComponent(product.cat)}` },
+          ...(product.cat
+            ? [{ label: CATEGORY_LABELS[product.cat], href: `/catalogue?cat=${encodeURIComponent(product.cat)}` }]
+            : []),
           { label: product.name },
         ]}
       />

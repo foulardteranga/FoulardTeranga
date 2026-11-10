@@ -194,6 +194,24 @@ export async function encaisserVente(
         clientName = customer.name;
         phone = customer.phone;
         place = customer.place;
+      } else if (parsed.data.walkInPhone && parsed.data.walkInName) {
+        // Capture légère au comptoir (voir WalkInCaptureField) : retrouve la
+        // fiche par téléphone normalisé ou en crée une — même logique que les
+        // commandes web validées (confirmOrder / applyLoyaltyOrder).
+        const loyalty = await applyLoyaltyOrder({
+          tx,
+          tenantId: tenant.id,
+          orderTotal: discounts.total,
+          clientName: parsed.data.walkInName,
+          phone: parsed.data.walkInPhone,
+          place,
+          pointsToDebit: 0, // pas de points en cours pour une fiche tout juste rattachée
+        });
+        customerId = loyalty.customerId;
+        vipAtOrder = loyalty.vipBefore;
+        loyaltyInfo = { pointsEarned: loyalty.pointsEarned, newBalance: loyalty.newBalance };
+        clientName = parsed.data.walkInName;
+        phone = parsed.data.walkInPhone;
       }
 
       const order = await tx.order.create({

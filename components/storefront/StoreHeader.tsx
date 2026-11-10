@@ -5,13 +5,15 @@ import { colors, fonts } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
 import { useStorefront } from "@/lib/store/useStorefront";
 import { cartCount } from "@/lib/store/cartLogic";
+import { storefrontCategories, CATEGORY_LABELS } from "@/lib/data/catalog";
 
 const NAV_LINKS = [
   { label: "Boutique", href: "/catalogue" },
   { label: "Nouveautés", href: "/catalogue?cat=Nouveautés" },
-  { label: "Foulards", href: "/catalogue?cat=Foulards" },
-  { label: "Turbans", href: "/catalogue?cat=Turbans" },
-  { label: "Accessoires", href: "/catalogue?cat=Accessoires" },
+  ...storefrontCategories.map((cat) => ({
+    label: CATEGORY_LABELS[cat],
+    href: `/catalogue?cat=${encodeURIComponent(cat)}`,
+  })),
   { label: "Notre histoire", href: "/#ft-story" },
 ];
 

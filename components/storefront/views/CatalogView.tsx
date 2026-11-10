@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { fonts, colors } from "@/lib/theme/tokens";
 import { Icon, ICONS } from "@/components/ui/Icon";
-import { filterCatalog, categories, type CatalogFilters } from "@/lib/data/catalog";
+import { filterCatalog, categories, categoryLabel, type CatalogFilters } from "@/lib/data/catalog";
 import { useStorefront } from "@/lib/store/useStorefront";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import { Breadcrumb } from "@/components/storefront/Breadcrumb";
@@ -53,9 +53,9 @@ export function CatalogView({ products }: { products: Product[] }) {
 
   return (
     <div className="ft-store-page" style={{ maxWidth: 1200, margin: "0 auto" }}>
-      <Breadcrumb items={[{ label: "Accueil", href: "/" }, { label: filters.cat === "Tous" ? "Toute la boutique" : filters.cat }]} />
+      <Breadcrumb items={[{ label: "Accueil", href: "/" }, { label: filters.cat === "Tous" ? "Toute la boutique" : categoryLabel(filters.cat) }]} />
       <h1 className="ft-store-h1" style={{ fontFamily: fonts.display, fontWeight: 600, margin: "0 0 4px", letterSpacing: "-.01em" }}>
-        {filters.cat === "Tous" ? "Toute la boutique" : filters.cat}
+        {filters.cat === "Tous" ? "Toute la boutique" : categoryLabel(filters.cat)}
       </h1>
       <p style={{ fontSize: 14, color: colors.muted, margin: "0 0 20px" }}>
         {filtered.length} produit{filtered.length > 1 ? "s" : ""}
@@ -114,7 +114,7 @@ export function CatalogView({ products }: { products: Product[] }) {
                   color: filters.cat === c ? colors.primary : colors.ink,
                 }}
               >
-                {c}
+                {categoryLabel(c)}
               </span>
             ))}
           </div>

@@ -31,6 +31,36 @@ describe("posSaleSchema — remises", () => {
   });
 });
 
+describe("posSaleSchema — capture cliente comptoir (walkIn)", () => {
+  it("accepte walkInPhone et walkInName optionnels", () => {
+    const r = posSaleSchema.safeParse({
+      ...base,
+      paymentMethod: "espece",
+      walkInPhone: "+225 07 12 45 67 89",
+      walkInName: "Aïcha Koffi",
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.walkInPhone).toBe("+225 07 12 45 67 89");
+      expect(r.data.walkInName).toBe("Aïcha Koffi");
+    }
+  });
+
+  it("accepte une vente sans walkInPhone ni walkInName (comportement actuel inchangé)", () => {
+    expect(posSaleSchema.safeParse({ ...base, paymentMethod: "espece" }).success).toBe(true);
+  });
+
+  it("refuse un walkInPhone au format invalide", () => {
+    const r = posSaleSchema.safeParse({ ...base, paymentMethod: "espece", walkInPhone: "abc" });
+    expect(r.success).toBe(false);
+  });
+
+  it("refuse un walkInName vide", () => {
+    const r = posSaleSchema.safeParse({ ...base, paymentMethod: "espece", walkInName: "" });
+    expect(r.success).toBe(false);
+  });
+});
+
 describe("posSaleSchema — montant reçu et paiements multiples", () => {
   it("accepte amountReceived et changeGiven valides", () => {
     const r = posSaleSchema.safeParse({

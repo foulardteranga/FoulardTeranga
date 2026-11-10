@@ -1,8 +1,9 @@
-export type ProductCategory = "Foulards" | "Turbans" | "Tissus" | "Accessoires";
+export type ProductCategory = "Foulards" | "Turbans" | "Coiffes" | "Eventails" | "Voiles";
 
 export interface Product {
   id: string;
-  cat: ProductCategory;
+  /** `null` pour les produits hérités dont l'ancienne catégorie a été supprimée (« Sans catégorie »). */
+  cat: ProductCategory | null;
   name: string;
   variant: string;
   price: number;
@@ -13,7 +14,7 @@ export interface Product {
   colors: string[];
   /** Motif textile (Wax, Bazin, Uni, Kente…) — utilisé par les filtres vitrine. */
   motif: string;
-  /** Longueurs/tailles disponibles (ex. ["90 × 90 cm", "Sur-mesure"] ou ["Taille unique"]). */
+  /** Tailles disponibles (S, M, L) ; peut contenir d'anciennes valeurs texte libre pour les produits créés avant le passage au menu S/M/L. */
   lengths: string[];
   /** Description longue affichée sur la fiche produit. */
   description: string;

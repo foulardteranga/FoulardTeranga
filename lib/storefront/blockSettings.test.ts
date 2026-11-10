@@ -29,7 +29,9 @@ describe("champs image", () => {
     expect(storyFields.find((f) => f.key === "image")?.kind).toBe("image");
     expect(catsFields.find((f) => f.key === "foulardsImage")?.kind).toBe("image");
     expect(catsFields.find((f) => f.key === "turbansImage")?.kind).toBe("image");
-    expect(catsFields.find((f) => f.key === "accessoiresImage")?.kind).toBe("image");
+    expect(catsFields.find((f) => f.key === "coiffesImage")?.kind).toBe("image");
+    expect(catsFields.find((f) => f.key === "eventailsImage")?.kind).toBe("image");
+    expect(catsFields.find((f) => f.key === "voilesImage")?.kind).toBe("image");
   });
 
   it("hero.images est un champ de type imageList avec minItems: 5 et maxItems: 10", () => {

@@ -1,6 +1,8 @@
 import { z } from "zod";
 
-export const PRODUCT_CATEGORIES = ["Foulards", "Turbans", "Tissus", "Accessoires"] as const;
+export const PRODUCT_CATEGORIES = ["Foulards", "Turbans", "Coiffes", "Eventails", "Voiles"] as const;
+
+export const PRODUCT_SIZES = ["S", "M", "L"] as const;
 
 /** N'accepte que les URLs publiques de notre bucket Supabase Storage (anti-injection d'URL externe). */
 function isAllowedProductImageUrl(url: string): boolean {
@@ -33,7 +35,7 @@ export const productSchema = z.object({
   swatch: z.string().trim().regex(/^#[0-9a-fA-F]{6}$/, "Couleur invalide."),
   image: productImageUrl.optional(),
   gallery: z.array(productImageUrl).default([]),
-  lengths: z.string().trim().default(""),
+  lengths: z.array(z.enum(PRODUCT_SIZES)).default([]),
   description: z.string().trim().default(""),
   variants: z.array(productVariantInputSchema).default([]),
 });

@@ -193,7 +193,11 @@ export const catsSchema = z.object({
   title: z.string(),
   foulardsImage: z.string(),
   turbansImage: z.string(),
-  accessoiresImage: z.string(),
+  // optionnelles + defaut : les pages enregistrées avant l'ajout de ces
+  // catégories n'ont pas ces clés en base, le parse ne doit pas échouer.
+  coiffesImage: z.string().optional().default(""),
+  eventailsImage: z.string().optional().default(""),
+  voilesImage: z.string().optional().default(""),
 });
 export type CatsSettings = z.infer<typeof catsSchema>;
 export const catsDefaults: CatsSettings = {
@@ -201,13 +205,17 @@ export const catsDefaults: CatsSettings = {
   title: "",
   foulardsImage: "",
   turbansImage: "",
-  accessoiresImage: "",
+  coiffesImage: "",
+  eventailsImage: "",
+  voilesImage: "",
 };
 export const catsFields: FieldDescriptor[] = [
   { key: "title", label: "Titre de section (optionnel)", kind: "text" },
   { key: "foulardsImage", label: "Image — Foulards", kind: "image" },
   { key: "turbansImage", label: "Image — Turbans", kind: "image" },
-  { key: "accessoiresImage", label: "Image — Accessoires", kind: "image" },
+  { key: "coiffesImage", label: "Image — Coiffes (bibi)", kind: "image" },
+  { key: "eventailsImage", label: "Image — Éventails", kind: "image" },
+  { key: "voilesImage", label: "Image — Voiles", kind: "image" },
 ];
 
 /* ---- grid ---- */
